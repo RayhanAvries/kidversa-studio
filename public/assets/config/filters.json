@@ -1,0 +1,12 @@
+[
+    { "id": "none", "name": "Original", "filter": "none", "overlay": "" },
+    { "id": "gray", "name": "Mono", "filter": "grayscale(100%)", "overlay": "" },
+    { "id": "sepia", "name": "Sepia", "filter": "sepia(80%)", "overlay": "" },
+    { "id": "vintage", "name": "Vintage", "filter": "sepia(35%) contrast(88%) brightness(92%)", "overlay": "rgba(210,180,140,0.1)" },
+    { "id": "cool", "name": "Arctic", "filter": "hue-rotate(170deg) saturate(75%) brightness(108%)", "overlay": "rgba(100,150,255,0.07)" },
+    { "id": "warm", "name": "Golden", "filter": "hue-rotate(-25deg) saturate(125%) brightness(102%)", "overlay": "rgba(255,200,100,0.08)" },
+    { "id": "drama", "name": "Drama", "filter": "contrast(135%) saturate(105%) brightness(88%)", "overlay": "rgba(0,0,0,0.05)" },
+    { "id": "dream", "name": "Dreamy", "filter": "contrast(82%) saturate(65%) brightness(112%) blur(0.3px)", "overlay": "rgba(255,255,255,0.07)" },
+    { "id": "vivid", "name": "Vivid", "filter": "saturate(190%) contrast(108%) brightness(106%)", "overlay": "rgba(255,220,50,0.03)" },
+    { "id": "noir", "name": "Noir", "filter": "grayscale(100%) contrast(150%) brightness(75%)", "overlay": "rgba(0,0,0,0.12)" }
+]
