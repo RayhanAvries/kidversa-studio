@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kidversa Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #FFFFFF;
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .dot-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(#E2E8F0 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 0;
+            animation: blobMorph 12s infinite ease-in-out;
+        }
+
+        .blob-purple {
+            width: 350px;
+            height: 350px;
+            background: rgba(168, 85, 247, 0.15);
+            top: -100px;
+            right: -80px;
+            animation-delay: 0s;
+        }
+
+        .blob-yellow {
+            width: 300px;
+            height: 300px;
+            background: rgba(234, 179, 8, 0.12);
+            bottom: -80px;
+            left: -60px;
+            animation-delay: -4s;
+            animation-duration: 15s;
+        }
+
+        .blob-purple-sm {
+            width: 200px;
+            height: 200px;
+            background: rgba(124, 58, 237, 0.1);
+            top: 50%;
+            left: 70%;
+            animation-delay: -8s;
+            animation-duration: 10s;
+        }
+
+        @keyframes blobMorph {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+                border-radius: 40% 60% 60% 40% / 60% 30% 70% 40%;
+            }
+            25% {
+                transform: translate(40px, -30px) scale(1.15);
+                border-radius: 60% 40% 30% 70% / 40% 60% 30% 70%;
+            }
+            50% {
+                transform: translate(-20px, 40px) scale(0.9);
+                border-radius: 30% 70% 50% 50% / 50% 40% 60% 50%;
+            }
+            75% {
+                transform: translate(-40px, -20px) scale(1.1);
+                border-radius: 50% 50% 40% 60% / 30% 60% 40% 70%;
+            }
+        }
+
+        .scene {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 35px;
+            padding: 20px;
+        }
+
+        .logo-stage {
+            position: relative;
+            width: 140px;
+            height: 140px;
+        }
+
+        .logo-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 2px dashed rgba(168, 85, 247, 0.25);
+            animation: ringSpin 15s linear infinite;
+        }
+
+        .logo-ring:nth-child(1) {
+            width: 165px;
+            height: 165px;
+        }
+
+        .logo-ring:nth-child(2) {
+            width: 195px;
+            height: 195px;
+            border-color: rgba(234, 179, 8, 0.3);
+            animation-duration: 20s;
+            animation-direction: reverse;
+        }
+
+        .logo-ring:nth-child(3) {
+            width: 225px;
+            height: 225px;
+            border-color: rgba(168, 85, 247, 0.15);
+            border-style: solid;
+            animation-duration: 25s;
+        }
+
+        .logo-dot {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            top: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .logo-ring:nth-child(1) .logo-dot {
+            background: #A855F7;
+            box-shadow: 0 0 12px #A855F7;
+        }
+
+        .logo-ring:nth-child(2) .logo-dot {
+            background: #EAB308;
+            box-shadow: 0 0 12px #EAB308;
+        }
+
+        .logo-ring:nth-child(3) .logo-dot {
+            background: #7C3AED;
+            box-shadow: 0 0 12px #7C3AED;
+        }
+
+        @keyframes ringSpin {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .logo-core {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            z-index: 3;
+            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .logo-core:hover {
+            transform: scale(1.06) translateY(-6px);
+        }
+
+        .logo-img {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            object-fit: contain;
+            background: #FFFFFF;
+            padding: 16px;
+            border: 2px solid #F3F4F6;
+            transition: all 0.5s ease;
+            box-shadow: 0 10px 40px rgba(168, 85, 247, 0.1);
+        }
+
+        .logo-core:hover .logo-img {
+            border-color: #A855F7;
+            box-shadow: 0 20px 60px rgba(168, 85, 247, 0.2), 0 0 0 12px rgba(168, 85, 247, 0.04);
+        }
+
+        .logo-fallback {
+            display: none;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #A855F7, #7C3AED);
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #F3F4F6;
+            box-shadow: 0 10px 40px rgba(168, 85, 247, 0.15);
+            transition: all 0.5s ease;
+        }
+
+        .logo-core:hover .logo-fallback {
+            border-color: #EAB308;
+            box-shadow: 0 20px 60px rgba(168, 85, 247, 0.25), 0 0 0 12px rgba(234, 179, 8, 0.08);
+        }
+
+        .logo-fallback i {
+            font-size: 3.5rem;
+            color: #FFFFFF;
+        }
+
+        .brand-block {
+            text-align: center;
+        }
+
+        .brand-title {
+            font-size: clamp(2.2rem, 5vw, 3rem);
+            font-weight: 800;
+            color: #1F2937;
+            letter-spacing: -2px;
+            line-height: 1.1;
+            transition: letter-spacing 0.4s ease;
+        }
+
+        .brand-title:hover {
+            letter-spacing: 0px;
+        }
+
+        .brand-title .accent {
+            color: #A855F7;
+            position: relative;
+            display: inline-block;
+        }
+
+        .brand-title .accent::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: rgba(234, 179, 8, 0.4);
+            border-radius: 3px;
+            z-index: -1;
+            transition: height 0.3s ease;
+        }
+
+        .brand-title:hover .accent::after {
+            height: 10px;
+        }
+
+        .brand-sub {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #9CA3AF;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            margin-top: 6px;
+            transition: all 0.4s ease;
+        }
+
+        .brand-sub:hover {
+            color: #A855F7;
+            letter-spacing: 8px;
+        }
+
+        .btn-trigger {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 19px 52px;
+            background: #A855F7;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 60px;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(168, 85, 247, 0.25);
+        }
+
+        .btn-trigger::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #7C3AED, #A855F7, #EAB308);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            border-radius: 60px;
+            z-index: -1;
+        }
+
+        .btn-trigger:hover::before {
+            opacity: 1;
+        }
+
+        .btn-trigger:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 50px rgba(168, 85, 247, 0.35), 0 0 0 16px rgba(234, 179, 8, 0.06);
+            gap: 18px;
+        }
+
+        .btn-trigger:active {
+            transform: scale(0.94);
+            transition: all 0.1s ease;
+            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-trigger .btn-icon {
+            font-size: 1.2rem;
+            transition: all 0.4s ease;
+        }
+
+        .btn-trigger:hover .btn-icon {
+            transform: rotate(-12deg) scale(1.2);
+        }
+
+        .btn-trigger .btn-arrow {
+            transition: all 0.4s ease;
+            opacity: 0.7;
+        }
+
+        .btn-trigger:hover .btn-arrow {
+            opacity: 1;
+            transform: translateX(5px);
+        }
+
+        .btn-ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(0);
+            animation: rippleOut 0.7s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes rippleOut {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        .tag-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #9CA3AF;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            padding: 10px 20px;
+            border-radius: 40px;
+            background: #F9FAFB;
+            cursor: default;
+            transition: all 0.4s ease;
+            border: 1px solid transparent;
+        }
+
+        .tag:hover {
+            color: #A855F7;
+            background: #FFFFFF;
+            border-color: #E2E8F0;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.04);
+        }
+
+        .tag:nth-child(2):hover {
+            color: #EAB308;
+            border-color: #FDE68A;
+        }
+
+        .tag:nth-child(3):hover {
+            color: #7C3AED;
+            border-color: #C4B5FD;
+        }
+
+        @media (max-width: 480px) {
+            .scene {
+                gap: 28px;
+            }
+
+            .logo-stage {
+                width: 115px;
+                height: 115px;
+            }
+
+            .logo-img,
+            .logo-fallback {
+                width: 115px;
+                height: 115px;
+                padding: 14px;
+            }
+
+            .logo-ring:nth-child(1) { width: 140px; height: 140px; }
+            .logo-ring:nth-child(2) { width: 165px; height: 165px; }
+            .logo-ring:nth-child(3) { width: 190px; height: 190px; }
+
+            .btn-trigger {
+                padding: 17px 42px;
+                font-size: 0.9rem;
+                letter-spacing: 1px;
+                gap: 10px;
+            }
+
+            .tag {
+                font-size: 0.7rem;
+                letter-spacing: 2px;
+                padding: 8px 16px;
+            }
+
+            .brand-sub {
+                letter-spacing: 5px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .scene {
+                gap: 22px;
+            }
+
+            .logo-stage {
+                width: 100px;
+                height: 100px;
+            }
+
+            .logo-img,
+            .logo-fallback {
+                width: 100px;
+                height: 100px;
+                padding: 12px;
+            }
+
+            .logo-ring:nth-child(1) { width: 120px; height: 120px; border-width: 1.5px; }
+            .logo-ring:nth-child(2) { width: 140px; height: 140px; border-width: 1.5px; }
+            .logo-ring:nth-child(3) { width: 160px; height: 160px; border-width: 1px; }
+
+            .brand-title {
+                font-size: 1.6rem;
+            }
+
+            .brand-sub {
+                font-size: 0.7rem;
+                letter-spacing: 4px;
+            }
+
+            .btn-trigger {
+                padding: 15px 34px;
+                font-size: 0.8rem;
+                gap: 8px;
+            }
+
+            .tag {
+                font-size: 0.65rem;
+                padding: 7px 14px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .btn-trigger {
+                padding: 21px 64px;
+                font-size: 1.05rem;
+            }
+
+            .logo-stage {
+                width: 160px;
+                height: 160px;
+            }
+
+            .logo-img,
+            .logo-fallback {
+                width: 160px;
+                height: 160px;
+                padding: 18px;
+            }
+
+            .logo-ring:nth-child(1) { width: 185px; height: 185px; }
+            .logo-ring:nth-child(2) { width: 215px; height: 215px; }
+            .logo-ring:nth-child(3) { width: 245px; height: 245px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dot-pattern"></div>
+    <div class="blob blob-purple"></div>
+    <div class="blob blob-yellow"></div>
+    <div class="blob blob-purple-sm"></div>
+
+    <div class="scene">
+        <div class="logo-stage">
+            <div class="logo-ring"><span class="logo-dot"></span></div>
+            <div class="logo-ring"><span class="logo-dot"></span></div>
+            <div class="logo-ring"><span class="logo-dot"></span></div>
+            <div class="logo-core">
+                <img src="logo.png" 
+                     alt="Kidversa Studio Logo" 
+                     class="logo-img"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="logo-fallback">
+                    <i class="fas fa-star"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="brand-block">
+            <h1 class="brand-title">Kidversa <span class="accent">Studio</span></h1>
+            <p class="brand-sub">Creative Visuals</p>
+        </div>
+
+        <a href="take-photo.php" class="btn-trigger" id="startButton">
+            Start Capture
+        </a>
+    </div>
+
+    <script>
+        const startButton = document.getElementById('startButton');
+
+        startButton.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const rect = this.getBoundingClientRect();
+            const ripple = document.createElement('span');
+            ripple.classList.add('btn-ripple');
+            const size = Math.max(rect.width, rect.height);
+            ripple.style.width = ripple.style.height = size + 'px';
+
+            const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : rect.left + rect.width / 2);
+            const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : rect.top + rect.height / 2);
+
+            ripple.style.left = (clientX - rect.left - size / 2) + 'px';
+            ripple.style.top = (clientY - rect.top - size / 2) + 'px';
+
+            this.appendChild(ripple);
+
+            setTimeout(() => {
+                ripple.remove();
+                window.location.href = 'take-photo.php';
+            }, 350);
+        });
+
+        if (navigator.vibrate) {
+            startButton.addEventListener('touchstart', () => {
+                navigator.vibrate(8);
+            });
+        }
+
+        document.addEventListener('dblclick', (e) => {
+            if (e.target.closest('.btn-trigger, .tag')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        const appHeight = () => {
+            document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+        };
+        window.addEventListener('resize', appHeight);
+        appHeight();
+    </script>
+</body>
+</html>
