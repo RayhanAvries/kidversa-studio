@@ -16,10 +16,10 @@
             </a>
         </div>
         <div class="contact-item">
-            <a href="tel:+6281234567890" class="contact-link">
+            <a href="tel:+6281222189918" class="contact-link">
                 <div class="contact-icon"><i class="fas fa-phone"></i></div>
                 <div class="contact-label">Telepon</div>
-                <div class="contact-value">+62 812-3456-7890</div>
+                <div class="contact-value">++62 812-2218-9918</div>
             </a>
         </div>
     </div>
