@@ -14,6 +14,7 @@ try {
     }
 
     $filename = $_GET['filename'];
+    $filename = trim($filename);
 
     if (preg_match('/[^a-zA-Z0-9._-]/', $filename)) {
         throw new Exception('Invalid filename format');

@@ -132,6 +132,9 @@ export class Booth {
     handleSessionEnd() {
         this.ui.updateTimer(0);
         this.ui.showToastMessage(Lang.get('timeUpWarning'));
+        if (this.captured && !this.finalData) {
+            this.finish();
+        }
     }
 
     startCountdown() {
@@ -189,6 +192,7 @@ export class Booth {
     async retake() {
         this.captured = null;
         this.finalData = null;
+        this.currentSavedFile = null;
         document.getElementById('camVideo').style.display = 'block';
         document.getElementById('camCanvas').style.display = 'none';
         this.frames.loadFrame();
@@ -213,7 +217,7 @@ export class Booth {
 
     async finish() {
         if (!this.captured) return;
-        
+
         const getLocation = () => {
             return new Promise((resolve) => {
                 if (!navigator.geolocation) {
@@ -237,8 +241,18 @@ export class Booth {
         };
 
         const location = await getLocation();
-        await this.genFinal();
-        
+        const success = await this.genFinal();
+
+        if (!success && !this.finalData) {
+            await this.useCapturedData();
+        }
+
+        if (!this.finalData) {
+            console.error('No valid image data available after genFinal');
+            alert('Failed to prepare photo. Please try again.');
+            return;
+        }
+
         try {
             const saveRes = await fetch('api/save-photo.php', {
                 method: 'POST',
@@ -249,15 +263,38 @@ export class Booth {
                 })
             });
             const saveData = await saveRes.json();
-            
+
             if (saveData.success) {
                 this.currentSavedFile = saveData.filename;
             }
         } catch (e) {
             console.error('Failed to save photo on finish:', e);
         }
-        
+
         this.ui.showPrintModal();
+    }
+
+    async useCapturedData() {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = this.cameraConfig.TW;
+        tempCanvas.height = this.cameraConfig.TH;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.fillStyle = '#ffffff';
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+        const tempImg = new Image();
+        await new Promise((resolve, reject) => {
+            tempImg.onload = resolve;
+            tempImg.onerror = reject;
+            tempImg.src = this.captured;
+        });
+
+        const filterResult = this.filters.applyFilter(this.selFilter);
+        tempCtx.filter = filterResult.filter;
+        tempCtx.drawImage(tempImg, 0, 0, tempCanvas.width, tempCanvas.height);
+        tempCtx.filter = 'none';
+
+        this.finalData = tempCanvas.toDataURL('image/png', 1);
     }
 
     genFinal() {
@@ -279,17 +316,19 @@ export class Booth {
                 fi.onload = () => {
                     fctx.drawImage(fi, 0, 0, fc.width, fc.height);
                     this.finalData = fc.toDataURL('image/png', 1);
-                    resolve();
+                    resolve(true);
                 };
                 fi.onerror = () => {
                     this.finalData = fc.toDataURL('image/png', 1);
-                    resolve();
+                    console.log('Frame image load failed, using captured data without frame');
+                    resolve(false);
                 };
                 fi.src = `${Config.paths().frames}/${this.frames.selFrame}.png`;
             };
             img.onerror = () => {
+                console.error('Main image load failed, cannot generate final photo');
                 this.finalData = null;
-                resolve();
+                resolve(false);
             };
             img.src = this.captured;
         });
@@ -368,10 +407,17 @@ window.sendEmail = async () => {
 
     let imageData = window.booth.finalData;
     if (!imageData) {
+        console.log('Calling genFinal() from sendEmail due to missing finalData');
         await window.booth.genFinal();
         imageData = window.booth.finalData;
     }
-    
+
+    if (!imageData) {
+        console.error('Image data still missing after genFinal() call');
+        alert('Image data is missing. Please try taking a photo again.');
+        return;
+    }
+
     const payload = {
          email: email,
          image: imageData,
@@ -379,16 +425,13 @@ window.sendEmail = async () => {
              timestamp: new Date().toLocaleString(Config.get('locale', 'id-ID')),
              location: locationStr
          }
-     };
+      };
 
     const originalBtnText = btnSend.innerHTML;
     btnSend.disabled = true;
     btnSend.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
     try {
-        if (!imageData) {
-            throw new Error('Image data is missing');
-        }
         const res = await fetch('api/send-email.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -399,7 +442,7 @@ window.sendEmail = async () => {
         if (data.success) {
             btnSend.innerHTML = '<i class="fas fa-check"></i> Success';
             btnSend.style.background = '#28a745';
-            
+
             let countdown = Config.email().modal?.countdown ?? 10;
             const countdownEl = document.getElementById('emailCountdown');
             const timer = setInterval(() => {
@@ -420,7 +463,7 @@ window.sendEmail = async () => {
             throw new Error(data.message || 'Failed to send email');
         }
     } catch (e) {
-        alert(Lang.get('error.prefix') + e.message);
+        alert(Lang.get('error.prefix') + (e.message || 'Failed to send email'));
         btnSend.disabled = false;
         btnSend.innerHTML = `<i class="fas fa-redo"></i> ${Lang.get('email.retry')}`;
         btnSend.style.background = '#dc3545';
@@ -521,8 +564,15 @@ document.addEventListener('DOMContentLoaded', () => {
 window.openQRModal = async () => {
     const booth = window.booth;
     if (!booth?.finalData) {
-        booth.ui.showToastMessage(Lang.get('photo.notReady'));
-        return;
+        if (!booth?.captured) {
+            booth.ui.showToastMessage(Lang.get('photo.notReady'));
+            return;
+        }
+        await booth.genFinal();
+        if (!booth.finalData) {
+            booth.ui.showToastMessage(Lang.get('photo.notReady'));
+            return;
+        }
     }
 
     const ui = booth.ui;
@@ -548,7 +598,12 @@ window.openQRModal = async () => {
             booth.currentSavedFile = filename;
         }
 
-        const qrUrl = `api/generate-qr.php?filename=${encodeURIComponent(filename)}`;
+        if (!filename || typeof filename !== 'string' || filename.trim() === '') {
+            throw new Error('Valid filename not available');
+        }
+
+        const baseUrl = window.location.protocol + '//' + window.location.host;
+        const qrUrl = `${baseUrl}/api/generate-qr.php?filename=${encodeURIComponent(filename)}`;
         
         const qrImage = document.getElementById('qrImage');
         qrImage.onload = function() {
