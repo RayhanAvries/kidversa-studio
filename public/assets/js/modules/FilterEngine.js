@@ -6,7 +6,6 @@ export class FilterEngine {
         this.vid = document.getElementById('camVideo');
         this.cnv = document.getElementById('camCanvas');
     }
-
     applyFilter(filterId) {
         const f = this.filters.find(x => x.id === filterId);
         if (!f) return null;
@@ -18,7 +17,6 @@ export class FilterEngine {
         
         return f;
     }
-
     buildFilterUI() {
         this.filterRow.innerHTML = '';
         this.filters.forEach((f, i) => {
@@ -29,7 +27,6 @@ export class FilterEngine {
             this.filterRow.appendChild(d);
         });
     }
-
     async initPreviews(stream) {
         this.previewVideos = [];
         this.filters.forEach(f => {
@@ -43,7 +40,6 @@ export class FilterEngine {
         });
         this.startPreviewLoop();
     }
-
     startPreviewLoop() {
         if (this.previewRaf) cancelAnimationFrame(this.previewRaf);
         const loop = () => {
@@ -68,7 +64,6 @@ export class FilterEngine {
         };
         loop();
     }
-
     stopPreviews() {
         if (this.previewRaf) cancelAnimationFrame(this.previewRaf);
         this.previewRaf = null;

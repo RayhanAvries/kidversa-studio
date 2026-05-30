@@ -1,6 +1,7 @@
 <?php
-require_once __DIR__ . '/../../src/Config/AppConfig.php';
-use Kidversa\Config\AppConfig;
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use Kidversa\Services\PhotoService;
 
 header('Content-Type: application/json');
 
@@ -11,12 +12,11 @@ try {
 
     $filename = $_POST['filename'];
 
-    if (preg_match('/[^a-zA-Z0-9._-]/', $filename)) {
+    if (!PhotoService::validateFilename($filename)) {
         throw new Exception('Invalid filename format');
     }
 
-    $uploadDir = AppConfig::UPLOAD_PATH;
-    $filePath = $uploadDir . $filename;
+    $filePath = PhotoService::getPath($filename);
 
     if (file_exists($filePath)) {
         if (unlink($filePath)) {

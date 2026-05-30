@@ -1,3 +1,4 @@
+import { Lang } from './Lang.js';
 export class BoothUI {
     constructor() {
         this.btnCap = document.getElementById('btnCapture');
@@ -13,6 +14,13 @@ export class BoothUI {
         this.mainArea = document.getElementById('mainArea');
     }
 
+    showToastMessage(message) {
+        if (this.toastWarn) {
+            this.toastWarn.textContent = message;
+            this.showToast();
+        }
+    }
+
     updateTimer(timeLeft) {
         const m = Math.floor(Math.max(0, timeLeft) / 60);
         const s = Math.max(0, timeLeft) % 60;
@@ -24,15 +32,6 @@ export class BoothUI {
 
     setCaptureButtonState(disabled) {
         this.btnCap.disabled = disabled;
-    }
-
-    setCaptureButtonText(text, icon) {
-        this.btnCap.innerHTML = text;
-    }
-
-    showToast() {
-        this.toastWarn.classList.add('show');
-        setTimeout(() => this.toastWarn.classList.remove('show'), 3000);
     }
 
     startCountdownUI(number) {
@@ -71,6 +70,7 @@ export class BoothUI {
     setQRLoading(isLoading) {
         const loading = document.getElementById('qrLoading');
         const image = document.getElementById('qrImage');
+        if (!loading || !image) return;
         if (isLoading) {
             loading.style.display = 'block';
             image.style.display = 'none';
@@ -113,5 +113,20 @@ export class BoothUI {
 
     scrollToTop() {
         this.mainArea.scrollTop = 0;
+    }
+
+    showToast() {
+        if (this.toastWarn) {
+            this.toastWarn.style.display = 'block';
+            setTimeout(() => {
+                if (this.toastWarn) {
+                    this.toastWarn.style.display = 'none';
+                }
+            }, 3000);
+        }
+    }
+
+    showTimeUpWarning() {
+        this.showToastMessage(Lang.get('warning'));
     }
 }

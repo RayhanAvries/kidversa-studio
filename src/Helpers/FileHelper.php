@@ -4,6 +4,10 @@ namespace Kidversa\Helpers;
 use Kidversa\Config\AppConfig;
 
 class FileHelper {
+    public static function getUploadDir(): string {
+        return AppConfig::UPLOAD_PATH;
+    }
+    
     public static function getFrameList(): array {
         $frames = [];
         $dir = AppConfig::FRAME_DIR;

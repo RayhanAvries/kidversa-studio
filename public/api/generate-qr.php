@@ -1,7 +1,5 @@
 <?php
 require_once __DIR__ . '/../../vendor/autoload.php';
-require_once __DIR__ . '/../../src/Config/AppConfig.php';
-use Kidversa\Config\AppConfig;
 
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
@@ -23,7 +21,7 @@ try {
 
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'];
-    $downloadUrl = "$protocol://$host/view-photo.php?file=$filename";
+    $downloadUrl = "$protocol://$host/view-photo.php?file={$filename}";
 
     $qrCode = new QrCode(
         data: $downloadUrl,
@@ -36,7 +34,7 @@ try {
 
     $writer = new PngWriter();
 
-    $logoPath = AppConfig::LOGO_PATH;
+    $logoPath = __DIR__ . '/../assets/img/logo.png';
     if (file_exists($logoPath)) {
         $logo = new Logo(
             path: $logoPath,
@@ -56,3 +54,4 @@ try {
     http_response_code(400);
     echo "Error generating QR: " . $e->getMessage();
 }
+

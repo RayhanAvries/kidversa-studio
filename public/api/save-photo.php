@@ -1,6 +1,8 @@
 <?php
-require_once __DIR__ . '/../../src/Config/AppConfig.php';
-use Kidversa\Config\AppConfig;
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use Kidversa\Helpers\FileHelper;
+use Kidversa\Services\PhotoService;
 
 header('Content-Type: application/json');
 
@@ -12,6 +14,7 @@ try {
     }
 
     $imageData = $input['image'];
+    $locationMeta = $input['metadata']['location'] ?? null;
 
     if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
         $imageData = substr($imageData, strpos($imageData, ',') + 1);
@@ -25,10 +28,9 @@ try {
         throw new Exception('Invalid base64 data');
     }
 
-    $timestamp = date('Ymd_His');
-    $filename = AppConfig::PHOTO_PREFIX . $timestamp . '.' . $extension;
-    $uploadDir = AppConfig::UPLOAD_PATH;
-    $filePath = $uploadDir . $filename;
+    $filename = PhotoService::generateFilename();
+    $uploadDir = FileHelper::getUploadDir();
+    $filePath = $uploadDir . '/' . $filename;
 
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0777, true);
@@ -36,6 +38,11 @@ try {
 
     if (file_put_contents($filePath, $decodedData) === false) {
         throw new Exception('Failed to save image to disk');
+    }
+    if ($locationMeta) {
+        $metaPath = $uploadDir . '/' . pathinfo($filename, PATHINFO_FILENAME) . '.json';
+        $metaData = ['location' => $locationMeta];
+        file_put_contents($metaPath, json_encode($metaData));
     }
 
     echo json_encode([

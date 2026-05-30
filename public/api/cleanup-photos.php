@@ -1,59 +1,51 @@
 <?php
-require_once __DIR__ . '/../../src/Config/AppConfig.php';
-use Kidversa\Config\AppConfig;
+spl_autoload_register(function ($class) {
+    $prefix = 'Kidversa\\';
+    $base_dir = __DIR__ . '/../../src/';
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) return;
+    $relative_class = substr($class, $len);
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+    if (file_exists($file)) {
+        require $file;
+    }
+});
+
+use Kidversa\Helpers\FileHelper;
+use Kidversa\Services\PhotoService;
 
 header('Content-Type: application/json');
 
 try {
-    // Tentukan upload directory relatif terhadap lokasi file PHP ini dijalankan (web server vs CLI)
-    $uploadDir = AppConfig::UPLOAD_PATH;
+    $uploadDir = FileHelper::getUploadDir();
     
     if (!is_dir($uploadDir)) {
         echo json_encode([
             'success' => true,
+            'hasFiles' => false,
             'message' => 'Upload directory does not exist: ' . $uploadDir
         ]);
         exit;
     }
 
     $files = scandir($uploadDir);
+    $fileCount = 0;
     $deletedCount = 0;
-    $now = time();
-    $maxAgeSeconds = 60 * 60; // 60 minutes
 
     foreach ($files as $file) {
         if ($file === '.' || $file === '..' || $file === '.gitkeep') {
             continue;
         }
 
-        $filePath = $uploadDir . $file;
+        $filePath = $uploadDir . '/' . $file;
         
         if (!is_file($filePath)) {
             continue;
         }
 
-        // Ambil timestamp dari nama file (format: kidversa_Ymd_His.png)
-        // Contoh: kidversa_20260524_130930.png
-        $timestampStr = '';
-        if (preg_match('/_(\d{8}_\d{6})\./', $file, $matches)) {
-            $timestampStr = $matches[1];
-        }
-
-        $fileTime = null;
-        if (!empty($timestampStr)) {
-            // Parse Ymd_His
-            $dateTime = DateTime::createFromFormat('Ymd_His', $timestampStr);
-            if ($dateTime) {
-                $fileTime = $dateTime->getTimestamp();
-            }
-        }
-
-        // Fallback jika format nama file tidak sesuai, gunakan file modification time (mtime)
-        if (!$fileTime) {
-            $fileTime = filemtime($filePath);
-        }
-
-        if ($fileTime && ($now - $fileTime) > $maxAgeSeconds) {
+        $fileCount++;
+        
+        if (PhotoService::isExpired($file, $filePath)) {
             if (unlink($filePath)) {
                 $deletedCount++;
             }
@@ -62,13 +54,17 @@ try {
 
     echo json_encode([
         'success' => true,
+        'hasFiles' => $fileCount > 0,
+        'deletedCount' => $deletedCount,
         'message' => "Successfully cleaned up. Deleted $deletedCount photo(s)."
     ]);
 
-} catch (Exception $e) {
+} catch (Throwable $e) {
     http_response_code(500);
     echo json_encode([
         'success' => false,
+        'hasFiles' => false,
         'message' => $e->getMessage()
     ]);
 }
+
