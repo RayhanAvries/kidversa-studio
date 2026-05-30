@@ -182,7 +182,40 @@ export class Booth {
             const ctx = this.camera.ctx;
             ctx.clearRect(0, 0, this.camera.cnv.width, this.camera.cnv.height);
             ctx.filter = this.filters.applyFilter(this.selFilter).filter;
-            ctx.drawImage(img, 0, 0, this.camera.cnv.width, this.camera.cnv.height);
+            
+            // Use cropping instead of stretching to maintain aspect ratio
+            const imgWidth = img.width;
+            const imgHeight = img.height;
+            const canvasWidth = this.camera.cnv.width;
+            const canvasHeight = this.camera.cnv.height;
+            
+            // Calculate the aspect ratios
+            const imgRatio = imgWidth / imgHeight;
+            const canvasRatio = canvasWidth / canvasHeight;
+            
+            let drawWidth, drawHeight, offsetX, offsetY;
+            
+            // Determine crop dimensions based on aspect ratios
+            if (imgRatio > canvasRatio) {
+                // Image is wider than canvas - crop sides
+                drawHeight = imgHeight;
+                drawWidth = imgHeight * canvasRatio;
+                offsetX = (imgWidth - drawWidth) / 2;
+                offsetY = 0;
+            } else {
+                // Image is taller than canvas - crop top/bottom
+                drawWidth = imgWidth;
+                drawHeight = imgWidth / canvasRatio;
+                offsetX = 0;
+                offsetY = (imgHeight - drawHeight) / 2;
+            }
+            
+            // Draw the cropped image
+            ctx.drawImage(
+                img,
+                offsetX, offsetY, drawWidth, drawHeight,  // Source rectangle (cropped)
+                0, 0, canvasWidth, canvasHeight  // Destination rectangle (full canvas)
+            );
             ctx.filter = 'none';
         };
         img.src = this.captured;
@@ -291,7 +324,40 @@ export class Booth {
 
         const filterResult = this.filters.applyFilter(this.selFilter);
         tempCtx.filter = filterResult.filter;
-        tempCtx.drawImage(tempImg, 0, 0, tempCanvas.width, tempCanvas.height);
+        
+        // Use cropping instead of stretching to maintain aspect ratio
+        const imgWidth = tempImg.width;
+        const imgHeight = tempImg.height;
+        const canvasWidth = tempCanvas.width;
+        const canvasHeight = tempCanvas.height;
+        
+        // Calculate the aspect ratios
+        const imgRatio = imgWidth / imgHeight;
+        const canvasRatio = canvasWidth / canvasHeight;
+        
+        let drawWidth, drawHeight, offsetX, offsetY;
+        
+        // Determine crop dimensions based on aspect ratios
+        if (imgRatio > canvasRatio) {
+            // Image is wider than canvas - crop sides
+            drawHeight = imgHeight;
+            drawWidth = imgHeight * canvasRatio;
+            offsetX = (imgWidth - drawWidth) / 2;
+            offsetY = 0;
+        } else {
+            // Image is taller than canvas - crop top/bottom
+            drawWidth = imgWidth;
+            drawHeight = imgWidth / canvasRatio;
+            offsetX = 0;
+            offsetY = (imgHeight - drawHeight) / 2;
+        }
+        
+        // Draw the cropped image
+        tempCtx.drawImage(
+            tempImg,
+            offsetX, offsetY, drawWidth, drawHeight,  // Source rectangle (cropped)
+            0, 0, canvasWidth, canvasHeight  // Destination rectangle (full canvas)
+        );
         tempCtx.filter = 'none';
 
         this.finalData = tempCanvas.toDataURL('image/png', 1);
@@ -309,7 +375,40 @@ export class Booth {
             const img = new Image();
             img.onload = () => {
                 fctx.filter = this.filters.applyFilter(this.selFilter).filter;
-                fctx.drawImage(img, 0, 0, fc.width, fc.height);
+                
+                // Use cropping instead of stretching to maintain aspect ratio
+                const imgWidth = img.width;
+                const imgHeight = img.height;
+                const canvasWidth = fc.width;
+                const canvasHeight = fc.height;
+                
+                // Calculate the aspect ratios
+                const imgRatio = imgWidth / imgHeight;
+                const canvasRatio = canvasWidth / canvasHeight;
+                
+                let drawWidth, drawHeight, offsetX, offsetY;
+                
+                // Determine crop dimensions based on aspect ratios
+                if (imgRatio > canvasRatio) {
+                    // Image is wider than canvas - crop sides
+                    drawHeight = imgHeight;
+                    drawWidth = imgHeight * canvasRatio;
+                    offsetX = (imgWidth - drawWidth) / 2;
+                    offsetY = 0;
+                } else {
+                    // Image is taller than canvas - crop top/bottom
+                    drawWidth = imgWidth;
+                    drawHeight = imgWidth / canvasRatio;
+                    offsetX = 0;
+                    offsetY = (imgHeight - drawHeight) / 2;
+                }
+                
+                // Draw the cropped image
+                fctx.drawImage(
+                    img,
+                    offsetX, offsetY, drawWidth, drawHeight,  // Source rectangle (cropped)
+                    0, 0, canvasWidth, canvasHeight  // Destination rectangle (full canvas)
+                );
                 fctx.filter = 'none';
                 
                 const fi = new Image();
