@@ -7,25 +7,13 @@ use Kidversa\Services\PhotoService;
 header('Content-Type: application/json');
 
 try {
-    $input = json_decode(file_get_contents('php://input'), true);
-
-    if (!isset($input['image']) || empty($input['image'])) {
-        throw new Exception('No image data provided');
+    if (!isset($_FILES['image'])) {
+        throw new Exception('No image file uploaded');
     }
 
-    $imageData = $input['image'];
-    $locationMeta = $input['metadata']['location'] ?? null;
-
-    if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
-        $imageData = substr($imageData, strpos($imageData, ',') + 1);
-        $extension = strtolower($type[1]);
-    } else {
-        $extension = 'png';
-    }
-
-    $decodedData = base64_decode($imageData);
-    if ($decodedData === false) {
-        throw new Exception('Invalid base64 data');
+    $file = $_FILES['image'];
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        throw new Exception('Upload error: ' . $file['error']);
     }
 
     $filename = PhotoService::generateFilename();
@@ -36,12 +24,23 @@ try {
         mkdir($uploadDir, 0777, true);
     }
 
-    if (file_put_contents($filePath, $decodedData) === false) {
+    if (move_uploaded_file($file['tmp_name'], $filePath) === false) {
         throw new Exception('Failed to save image to disk');
     }
-    if ($locationMeta) {
+
+    $locationLat = $_POST['location_lat'] ?? null;
+    $locationLng = $_POST['location_lng'] ?? null;
+    $locationName = $_POST['location_name'] ?? null;
+
+    if ($locationLat && $locationLng) {
         $metaPath = $uploadDir . '/' . pathinfo($filename, PATHINFO_FILENAME) . '.json';
-        $metaData = ['location' => $locationMeta];
+        $metaData = [
+            'location' => [
+                'lat' => $locationLat,
+                'lng' => $locationLng,
+                'name' => $locationName ?? 'Unknown'
+            ]
+        ];
         file_put_contents($metaPath, json_encode($metaData));
     }
 

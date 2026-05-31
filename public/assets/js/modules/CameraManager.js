@@ -72,7 +72,6 @@ export class CameraManager {
         const w = Math.floor(r.width);
         const h = Math.floor(r.height);
         
-        // Maintain 16:9 aspect ratio
         const targetWidth = w;
         const targetHeight = Math.round(w * 9 / 16);
         
@@ -91,38 +90,32 @@ export class CameraManager {
                     this.ctx.save();
                     this.ctx.scale(-1, 1);
                     
-                    // Calculate dimensions to maintain aspect ratio without stretching
                     const videoWidth = this.vid.videoWidth;
                     const videoHeight = this.vid.videoHeight;
                     const canvasWidth = this.cnv.width;
                     const canvasHeight = this.cnv.height;
                     
-                    // Calculate the aspect ratios
                     const videoRatio = videoWidth / videoHeight;
                     const canvasRatio = canvasWidth / canvasHeight;
                     
                     let drawWidth, drawHeight, offsetX, offsetY;
                     
-                    // Determine crop dimensions based on aspect ratios
                     if (videoRatio > canvasRatio) {
-                        // Video is wider than canvas - crop sides
                         drawHeight = videoHeight;
                         drawWidth = videoHeight * canvasRatio;
                         offsetX = (videoWidth - drawWidth) / 2;
                         offsetY = 0;
                     } else {
-                        // Video is taller than canvas - crop top/bottom
                         drawWidth = videoWidth;
                         drawHeight = videoWidth / canvasRatio;
                         offsetX = 0;
                         offsetY = (videoHeight - drawHeight) / 2;
                     }
                     
-                    // Draw the cropped video
                     this.ctx.drawImage(
                         this.vid,
-                        offsetX, offsetY, drawWidth, drawHeight,  // Source rectangle (cropped)
-                        -this.cnv.width, 0, this.cnv.width, this.cnv.height  // Destination rectangle (full canvas)
+                        offsetX, offsetY, drawWidth, drawHeight,
+                        -this.cnv.width, 0, this.cnv.width, this.cnv.height
                     );
                     this.ctx.restore();
                 }

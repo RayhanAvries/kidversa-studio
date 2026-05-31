@@ -41,7 +41,6 @@ export class FrameManager {
 
     loadFrame() {
         const img = new Image();
-        // Directly set src and display; onload may not fire if cached
         this.frameImg.src = `${this.getFramePath()}/${this.selFrame}.png`;
         this.frameImg.style.display = 'block';
     }

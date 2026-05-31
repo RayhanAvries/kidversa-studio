@@ -183,38 +183,32 @@ export class Booth {
             ctx.clearRect(0, 0, this.camera.cnv.width, this.camera.cnv.height);
             ctx.filter = this.filters.applyFilter(this.selFilter).filter;
             
-            // Use cropping instead of stretching to maintain aspect ratio
             const imgWidth = img.width;
             const imgHeight = img.height;
             const canvasWidth = this.camera.cnv.width;
             const canvasHeight = this.camera.cnv.height;
             
-            // Calculate the aspect ratios
             const imgRatio = imgWidth / imgHeight;
             const canvasRatio = canvasWidth / canvasHeight;
             
             let drawWidth, drawHeight, offsetX, offsetY;
             
-            // Determine crop dimensions based on aspect ratios
             if (imgRatio > canvasRatio) {
-                // Image is wider than canvas - crop sides
                 drawHeight = imgHeight;
                 drawWidth = imgHeight * canvasRatio;
                 offsetX = (imgWidth - drawWidth) / 2;
                 offsetY = 0;
             } else {
-                // Image is taller than canvas - crop top/bottom
                 drawWidth = imgWidth;
                 drawHeight = imgWidth / canvasRatio;
                 offsetX = 0;
                 offsetY = (imgHeight - drawHeight) / 2;
             }
-            
-            // Draw the cropped image
+
             ctx.drawImage(
                 img,
-                offsetX, offsetY, drawWidth, drawHeight,  // Source rectangle (cropped)
-                0, 0, canvasWidth, canvasHeight  // Destination rectangle (full canvas)
+                offsetX, offsetY, drawWidth, drawHeight,
+                0, 0, canvasWidth, canvasHeight
             );
             ctx.filter = 'none';
         };
@@ -248,8 +242,19 @@ export class Booth {
         this.filters.initPreviews(this.camera.stream);
     }
 
+    dataURLtoBlob(dataurl) {
+        const arr = dataurl.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], { type: mime });
+    }
+
     async finish() {
-        // Store original button state and set loading state
         const originalText = this.ui.btnDone.textContent;
         this.ui.btnDone.disabled = true;
         this.ui.btnDone.textContent = 'Processing...';
@@ -259,29 +264,12 @@ export class Booth {
                 return;
             }
 
-            const getLocation = () => {
-                return new Promise((resolve) => {
-                    if (!navigator.geolocation) {
-                        resolve({ lat: -6.9175, lng: 107.6191, name: 'Bandung' });
-                        return;
-                    }
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                            resolve({
-                                lat: pos.coords.latitude,
-                                lng: pos.coords.longitude,
-                                name: 'Kidversa Studio, Bandung'
-                            });
-                        },
-                        () => {
-                            resolve({ lat: -6.9175, lng: 107.6191, name: 'Bandung' });
-                        },
-                        { timeout: 5000 }
-                    );
-                });
-            };
+            const location = window.__appPermissions?.position ? {
+                lat: window.__appPermissions.position.coords.latitude,
+                lng: window.__appPermissions.position.coords.longitude,
+                name: 'Kidversa Studio, Bandung'
+            } : { lat: -6.9175, lng: 107.6191, name: 'Bandung' };
 
-            const location = await getLocation();
             const success = await this.genFinal();
 
             if (!success && !this.finalData) {
@@ -294,14 +282,19 @@ export class Booth {
                 return;
             }
 
+            this.ui.showPrintModal();
+
             try {
+                const blob = this.dataURLtoBlob(this.finalData);
+                const formData = new FormData();
+                formData.append('image', blob, 'capture.png');
+                formData.append('location_lat', location.lat);
+                formData.append('location_lng', location.lng);
+                formData.append('location_name', location.name);
+
                 const saveRes = await fetch('api/save-photo.php', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        image: this.finalData,
-                        metadata: { location }
-                    })
+                    body: formData
                 });
                 const saveData = await saveRes.json();
 
@@ -309,12 +302,9 @@ export class Booth {
                     this.currentSavedFile = saveData.filename;
                 }
             } catch (e) {
-                console.error('Failed to save photo on finish:', e);
+                console.error('Failed to save photo in background:', e);
             }
-
-            this.ui.showPrintModal();
         } finally {
-            // Reset button state
             this.ui.btnDone.disabled = false;
             this.ui.btnDone.textContent = originalText;
         }
@@ -338,42 +328,36 @@ export class Booth {
         const filterResult = this.filters.applyFilter(this.selFilter);
         tempCtx.filter = filterResult.filter;
         
-        // Use cropping instead of stretching to maintain aspect ratio
         const imgWidth = tempImg.width;
         const imgHeight = tempImg.height;
         const canvasWidth = tempCanvas.width;
         const canvasHeight = tempCanvas.height;
         
-        // Calculate the aspect ratios
         const imgRatio = imgWidth / imgHeight;
         const canvasRatio = canvasWidth / canvasHeight;
         
         let drawWidth, drawHeight, offsetX, offsetY;
         
-        // Determine crop dimensions based on aspect ratios
         if (imgRatio > canvasRatio) {
-            // Image is wider than canvas - crop sides
             drawHeight = imgHeight;
             drawWidth = imgHeight * canvasRatio;
             offsetX = (imgWidth - drawWidth) / 2;
             offsetY = 0;
         } else {
-            // Image is taller than canvas - crop top/bottom
             drawWidth = imgWidth;
             drawHeight = imgWidth / canvasRatio;
             offsetX = 0;
             offsetY = (imgHeight - drawHeight) / 2;
         }
         
-        // Draw the cropped image
         tempCtx.drawImage(
             tempImg,
-            offsetX, offsetY, drawWidth, drawHeight,  // Source rectangle (cropped)
-            0, 0, canvasWidth, canvasHeight  // Destination rectangle (full canvas)
+            offsetX, offsetY, drawWidth, drawHeight,
+            0, 0, canvasWidth, canvasHeight
         );
         tempCtx.filter = 'none';
 
-        this.finalData = tempCanvas.toDataURL('image/png', 1);
+            this.finalData = tempCanvas.toDataURL('image/png');
     }
 
     genFinal() {
@@ -389,49 +373,43 @@ export class Booth {
             img.onload = () => {
                 fctx.filter = this.filters.applyFilter(this.selFilter).filter;
                 
-                // Use cropping instead of stretching to maintain aspect ratio
                 const imgWidth = img.width;
                 const imgHeight = img.height;
                 const canvasWidth = fc.width;
                 const canvasHeight = fc.height;
                 
-                // Calculate the aspect ratios
                 const imgRatio = imgWidth / imgHeight;
                 const canvasRatio = canvasWidth / canvasHeight;
                 
                 let drawWidth, drawHeight, offsetX, offsetY;
                 
-                // Determine crop dimensions based on aspect ratios
                 if (imgRatio > canvasRatio) {
-                    // Image is wider than canvas - crop sides
                     drawHeight = imgHeight;
                     drawWidth = imgHeight * canvasRatio;
                     offsetX = (imgWidth - drawWidth) / 2;
                     offsetY = 0;
                 } else {
-                    // Image is taller than canvas - crop top/bottom
                     drawWidth = imgWidth;
                     drawHeight = imgWidth / canvasRatio;
                     offsetX = 0;
                     offsetY = (imgHeight - drawHeight) / 2;
                 }
                 
-                // Draw the cropped image
                 fctx.drawImage(
                     img,
-                    offsetX, offsetY, drawWidth, drawHeight,  // Source rectangle (cropped)
-                    0, 0, canvasWidth, canvasHeight  // Destination rectangle (full canvas)
+                    offsetX, offsetY, drawWidth, drawHeight,
+                    0, 0, canvasWidth, canvasHeight
                 );
                 fctx.filter = 'none';
                 
                 const fi = new Image();
                 fi.onload = () => {
                     fctx.drawImage(fi, 0, 0, fc.width, fc.height);
-                    this.finalData = fc.toDataURL('image/png', 1);
+                    this.finalData = fc.toDataURL('image/png');
                     resolve(true);
                 };
                 fi.onerror = () => {
-                    this.finalData = fc.toDataURL('image/png', 1);
+                    this.finalData = fc.toDataURL('image/png');
                     console.log('Frame image load failed, using captured data without frame');
                     resolve(false);
                 };
@@ -586,11 +564,10 @@ window.sendEmail = async () => {
     }
 };
 
-window.printNow = () => {
-    if (!window.booth?.finalData) return;
+    window.printNow = () => {
+        if (!window.booth?.finalData) return;
 
-    // Convert data URL to Blob to avoid browser limitations with large data URLs
-    const dataURL = window.booth.finalData;
+        const dataURL = window.booth.finalData;
     const byteString = atob(dataURL.split(',')[1]);
     const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
     const ab = new ArrayBuffer(byteString.length);
@@ -601,34 +578,29 @@ window.printNow = () => {
     const blob = new Blob([ab], {type: mimeString});
     const blobUrl = URL.createObjectURL(blob);
 
-    // Use hidden iframe approach to avoid popup blockers
     const iframe = document.createElement('iframe');
     iframe.style.position = 'absolute';
     iframe.style.left = '-9999px';
     iframe.style.top = '-9999px';
     iframe.style.width = '100%';
     iframe.style.height = '100%';
-    document.body.appendChild(iframe);
+        document.body.appendChild(iframe);
 
-    // Flag to ensure print is only triggered once
-    let printTriggered = false;
+        let printTriggered = false;
     const triggerPrintOnce = () => {
         if (printTriggered) return;
         printTriggered = true;
         
-        try {
-            // Try direct print first
-            iframe.contentWindow.print();
-        } catch (e) {
-            // Fallback to focus and print
             try {
-                iframe.contentWindow.focus();
                 iframe.contentWindow.print();
-            } catch (e2) {
-                // Last resort: try parent window print
-                window.print();
+            } catch (e) {
+                try {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                } catch (e2) {
+                    window.print();
+                }
             }
-        }
     };
 
     const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
@@ -670,16 +642,12 @@ window.printNow = () => {
 </html>`);
     iframeDoc.close();
 
-    // Expose print function to iframe
     window.triggerPrintFromIframe = triggerPrintOnce;
 
-    // Single reliable trigger after a short delay
     setTimeout(triggerPrintOnce, 1000);
 
-    // Clean up after print
     setTimeout(() => {
         try {
-            // Remove the global function
             delete window.triggerPrintFromIframe;
             document.body.removeChild(iframe);
             URL.revokeObjectURL(blobUrl);
