@@ -588,13 +588,105 @@ window.sendEmail = async () => {
 
 window.printNow = () => {
     if (!window.booth?.finalData) return;
-    const w = window.open('', '_blank', 'width=800,height=600');
-    if (!w) {
-        alert(Lang.get('print.allowPopups'));
-        return;
+
+    // Convert data URL to Blob to avoid browser limitations with large data URLs
+    const dataURL = window.booth.finalData;
+    const byteString = atob(dataURL.split(',')[1]);
+    const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
     }
-    w.document.write(`<!DOCTYPE html><html><head><title></title><style>*{margin:0;padding:0}body{display:flex;justify-content:center;align-items:center;min-height:100vh;background:#fff}img{max-width:100%;height:auto}@page {margin:0;}</style></head><body><img src="${window.booth.finalData}" onload="window.print()"></body></html>`);
-    w.document.close();
+    const blob = new Blob([ab], {type: mimeString});
+    const blobUrl = URL.createObjectURL(blob);
+
+    // Use hidden iframe approach to avoid popup blockers
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.left = '-9999px';
+    iframe.style.top = '-9999px';
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    document.body.appendChild(iframe);
+
+    // Flag to ensure print is only triggered once
+    let printTriggered = false;
+    const triggerPrintOnce = () => {
+        if (printTriggered) return;
+        printTriggered = true;
+        
+        try {
+            // Try direct print first
+            iframe.contentWindow.print();
+        } catch (e) {
+            // Fallback to focus and print
+            try {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            } catch (e2) {
+                // Last resort: try parent window print
+                window.print();
+            }
+        }
+    };
+
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+    iframeDoc.open();
+    iframeDoc.write(`<!DOCTYPE html><html>
+<head>
+    <title>Print Photo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            background: #fff;
+            margin: 0;
+            padding: 0;
+        }
+        img { 
+            max-width: 100%; 
+            height: auto; 
+            display: block;
+        }
+        @page { 
+            margin: 0; 
+            size: auto;
+        }
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <img src="${blobUrl}" onload="setTimeout(() => { window.parent.triggerPrintFromIframe && window.parent.triggerPrintFromIframe(); }, 300);">
+</body>
+</html>`);
+    iframeDoc.close();
+
+    // Expose print function to iframe
+    window.triggerPrintFromIframe = triggerPrintOnce;
+
+    // Single reliable trigger after a short delay
+    setTimeout(triggerPrintOnce, 1000);
+
+    // Clean up after print
+    setTimeout(() => {
+        try {
+            // Remove the global function
+            delete window.triggerPrintFromIframe;
+            document.body.removeChild(iframe);
+            URL.revokeObjectURL(blobUrl);
+        } catch (e) {
+            console.warn('Failed to cleanup print iframe:', e);
+        }
+    }, 15000);
 };
 
 document.getElementById('printModal').addEventListener('click', function(e) {
