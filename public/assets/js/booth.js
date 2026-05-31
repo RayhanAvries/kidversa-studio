@@ -249,62 +249,75 @@ export class Booth {
     }
 
     async finish() {
-        if (!this.captured) return;
-
-        const getLocation = () => {
-            return new Promise((resolve) => {
-                if (!navigator.geolocation) {
-                    resolve({ lat: -6.9175, lng: 107.6191, name: 'Bandung' });
-                    return;
-                }
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        resolve({
-                            lat: pos.coords.latitude,
-                            lng: pos.coords.longitude,
-                            name: 'Kidversa Studio, Bandung'
-                        });
-                    },
-                    () => {
-                        resolve({ lat: -6.9175, lng: 107.6191, name: 'Bandung' });
-                    },
-                    { timeout: 5000 }
-                );
-            });
-        };
-
-        const location = await getLocation();
-        const success = await this.genFinal();
-
-        if (!success && !this.finalData) {
-            await this.useCapturedData();
-        }
-
-        if (!this.finalData) {
-            console.error('No valid image data available after genFinal');
-            alert('Failed to prepare photo. Please try again.');
-            return;
-        }
+        // Store original button state and set loading state
+        const originalText = this.ui.btnDone.textContent;
+        this.ui.btnDone.disabled = true;
+        this.ui.btnDone.textContent = 'Processing...';
 
         try {
-            const saveRes = await fetch('api/save-photo.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    image: this.finalData,
-                    metadata: { location }
-                })
-            });
-            const saveData = await saveRes.json();
-
-            if (saveData.success) {
-                this.currentSavedFile = saveData.filename;
+            if (!this.captured) {
+                return;
             }
-        } catch (e) {
-            console.error('Failed to save photo on finish:', e);
-        }
 
-        this.ui.showPrintModal();
+            const getLocation = () => {
+                return new Promise((resolve) => {
+                    if (!navigator.geolocation) {
+                        resolve({ lat: -6.9175, lng: 107.6191, name: 'Bandung' });
+                        return;
+                    }
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            resolve({
+                                lat: pos.coords.latitude,
+                                lng: pos.coords.longitude,
+                                name: 'Kidversa Studio, Bandung'
+                            });
+                        },
+                        () => {
+                            resolve({ lat: -6.9175, lng: 107.6191, name: 'Bandung' });
+                        },
+                        { timeout: 5000 }
+                    );
+                });
+            };
+
+            const location = await getLocation();
+            const success = await this.genFinal();
+
+            if (!success && !this.finalData) {
+                await this.useCapturedData();
+            }
+
+            if (!this.finalData) {
+                console.error('No valid image data available after genFinal');
+                alert('Failed to prepare photo. Please try again.');
+                return;
+            }
+
+            try {
+                const saveRes = await fetch('api/save-photo.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image: this.finalData,
+                        metadata: { location }
+                    })
+                });
+                const saveData = await saveRes.json();
+
+                if (saveData.success) {
+                    this.currentSavedFile = saveData.filename;
+                }
+            } catch (e) {
+                console.error('Failed to save photo on finish:', e);
+            }
+
+            this.ui.showPrintModal();
+        } finally {
+            // Reset button state
+            this.ui.btnDone.disabled = false;
+            this.ui.btnDone.textContent = originalText;
+        }
     }
 
     async useCapturedData() {
