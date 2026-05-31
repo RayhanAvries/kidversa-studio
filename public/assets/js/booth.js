@@ -580,7 +580,7 @@ window.printNow = () => {
         alert(Lang.get('print.allowPopups'));
         return;
     }
-    w.document.write(`<!DOCTYPE html><html><head><title>Print</title><style>*{margin:0;padding:0}body{display:flex;justify-content:center;align-items:center;min-height:100vh;background:#fff}img{max-width:100%;height:auto}</style></head><body><img src="${this.finalData}"></body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><title></title><style>*{margin:0;padding:0}body{display:flex;justify-content:center;align-items:center;min-height:100vh;background:#fff}img{max-width:100%;height:auto}@page {margin:0;}</style></head><body><img src="${window.booth.finalData}" onload="window.print()"></body></html>`);
     w.document.close();
 };
 
