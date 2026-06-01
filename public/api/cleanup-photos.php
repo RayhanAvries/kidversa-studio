@@ -18,7 +18,7 @@ header('Content-Type: application/json');
 
 try {
     $uploadDir = FileHelper::getUploadDir();
-    
+
     if (!is_dir($uploadDir)) {
         echo json_encode([
             'success' => true,
@@ -38,13 +38,13 @@ try {
         }
 
         $filePath = $uploadDir . '/' . $file;
-        
+
         if (!is_file($filePath)) {
             continue;
         }
 
         $fileCount++;
-        
+
         if (PhotoService::isExpired($file, $filePath)) {
             if (unlink($filePath)) {
                 $deletedCount++;
@@ -58,7 +58,6 @@ try {
         'deletedCount' => $deletedCount,
         'message' => "Successfully cleaned up. Deleted $deletedCount photo(s)."
     ]);
-
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode([
@@ -67,4 +66,3 @@ try {
         'message' => $e->getMessage()
     ]);
 }
-

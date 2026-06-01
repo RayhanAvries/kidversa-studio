@@ -3,6 +3,7 @@ namespace Kidversa\Config;
 
 class AppConfig {
     public const UPLOAD_PATH = __DIR__ . '/../../public/uploads/photos';
+    public const PHOTO_UPLOAD_PATH = __DIR__ . '/../../public/uploads/photos';
     public const FRAME_DIR = __DIR__ . '/../../public/assets/img/frames';
     public const LOGO_PATH = __DIR__ . '/../../public/assets/img/logo.png';
 

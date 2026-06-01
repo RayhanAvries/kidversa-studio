@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Kidversa\Services\EmailService;
+use Kidversa\Config\AppConfig;
 
 header('Content-Type: application/json');
 
@@ -13,10 +14,22 @@ try {
     }
 
     $email = $input['email'] ?? '';
-    $imageBase64 = $input['image'] ?? '';
-    $metadata = $input['metadata'] ?? [];
+    $filename = $input['filename'] ?? '';
 
-    $result = EmailService::sendPhotoEmail($email, $imageBase64, $metadata);
+    if (empty($filename)) {
+        throw new Exception('Filename is required');
+    }
+
+    if (!preg_match('/^[a-zA-Z0-9._-]+$/', $filename)) {
+        throw new Exception('Invalid filename format');
+    }
+
+    $photoPath = AppConfig::PHOTO_UPLOAD_PATH . '/' . $filename;
+    if (!file_exists($photoPath)) {
+        throw new Exception('Photo file not found');
+    }
+
+    $result = EmailService::sendPhotoEmail($email, $photoPath);
 
     if ($result) {
         echo json_encode([
@@ -33,4 +46,3 @@ try {
         'message' => $e->getMessage()
     ]);
 }
-

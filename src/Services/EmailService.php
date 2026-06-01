@@ -64,40 +64,29 @@ class EmailService {
         );
     }
     
-    public static function sendPhotoEmail(string $email, string $imageBase64, array $metadata = []): bool {
+    public static function sendPhotoEmail(string $email, string $photoPath): bool {
         if (!preg_match(AppConfig::EMAIL_REGEX, $email)) {
             throw new Exception('Please provide a valid @gmail.com email address');
         }
         
-        if (empty($imageBase64)) {
-            throw new Exception('Image data is missing');
+        if (!file_exists($photoPath)) {
+            throw new Exception('Photo file not found');
         }
-        
-        $imageData = str_replace('data:image/png;base64,', '', $imageBase64);
-        $imageData = str_replace(' ', '+', $imageData);
-        $imageBinary = base64_decode($imageData);
-        
-        if (!$imageBinary) {
-            throw new Exception('Failed to decode image data');
-        }
-        
-        $tempFile = sys_get_temp_dir() . '/kidversa_' . uniqid() . '.png';
-        file_put_contents($tempFile, $imageBinary);
         
         try {
             $mail = self::getMailer();
             $mail->addAddress($email);
-            $mail->addAttachment($tempFile, AppConfig::EMAIL_ATTACHMENT_NAME);
+            $mail->addAttachment($photoPath, AppConfig::EMAIL_ATTACHMENT_NAME);
             
-            $timestamp = $metadata['timestamp'] ?? date('Y-m-d H:i:s');
-            $location = $metadata['location'] ?? 'Not available';
+            $timestamp = date('Y-m-d H:i:s');
+            $location = 'Kidversa Studio, Bandung';
             
             $mail->isHTML(true);
             $mail->Subject = AppConfig::EMAIL_SUBJECT;
             $mail->Body = self::getEmailTemplate($email, $timestamp, $location);
             $mail->AltBody = self::getAltBody($timestamp, $location);
             
-            $mail->addEmbeddedImage($tempFile, 'photo_img');
+            $mail->addEmbeddedImage($photoPath, 'photo_img');
             $logoPath = AppConfig::LOGO_PATH;
             if (file_exists($logoPath)) {
                 $mail->addEmbeddedImage($logoPath, 'logo_img');
@@ -106,10 +95,9 @@ class EmailService {
             $mail->send();
             return true;
             
-        } finally {
-            if (file_exists($tempFile)) {
-                unlink($tempFile);
-            }
+        } catch (Exception $e) {
+            error_log('Email send failed: ' . $e->getMessage());
+            return false;
         }
     }
 }

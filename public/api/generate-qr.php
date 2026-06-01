@@ -41,7 +41,7 @@ try {
             path: $logoPath,
             resizeToWidth: 60
         );
-        
+
         $result = $writer->write($qrCode, $logo);
     } else {
         $result = $writer->write($qrCode);
@@ -50,9 +50,7 @@ try {
     header('Content-Type: image/png');
     echo $result->getString();
     exit;
-
 } catch (Exception $e) {
     http_response_code(400);
     echo "Error generating QR: " . $e->getMessage();
 }
-

@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../../vendor/autoload.php';
+
 use Kidversa\Config\AppConfig;
+
 $frameDir = AppConfig::FRAME_DIR;
 $frames = [];
 if (is_dir($frameDir)) {

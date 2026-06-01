@@ -31,7 +31,6 @@ try {
 
     readfile($filePath);
     exit;
-
 } catch (Exception $e) {
     http_response_code(404);
     echo json_encode([

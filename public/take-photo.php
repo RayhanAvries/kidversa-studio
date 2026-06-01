@@ -15,8 +15,17 @@
     <div class="top-bar">
         <div class="brand"><i class="fas fa-star" style="color:#EAB308;"></i>Kidversa <span>Studio</span></div>
         <div class="top-actions">
-            <div class="timer-wrap"><span class="timer" id="timer">01:30</span></div>
-            <button class="btn-back" onclick="location.href='index.php'"><i class="fas fa-arrow-left"></i>Back</button>
+            <div class="timer-config-wrap">
+                <i class="fas fa-clock"></i>
+                <select class="timer-select" id="captureTimerSelect">
+                    <option value="3">3s</option>
+                    <option value="5" selected>5s</option>
+                    <option value="10">10s</option>
+                    <option value="30">30s</option>
+                </select>
+            </div>
+            <div id="handDetectBadgeWrap"></div>
+            <button class="btn-back" id="btnBack"><i class="fas fa-arrow-left"></i>Back</button>
         </div>
     </div>
     <div class="main-area" id="mainArea">
@@ -28,7 +37,6 @@
                 <img id="frameImg" src="" alt="Frame">
                 <div class="flash" id="flashFx"></div>
                 <div class="countdown" id="cdOverlay"><span id="cdNumber">3</span></div>
-                <div class="toast warn" id="toastWarn"><i class="fas fa-exclamation-triangle"></i> Time's up! Last capture</div>
             </div>
         </div>
         <div class="btn-row">
@@ -39,18 +47,19 @@
     </div>
     <div class="controls">
         <div class="section-title">Filters</div>
-        <div class="scroll-row" id="filterRow"></div>
+        <div class="filter-scroll-container">
+            <div class="scroll-row" id="filterRow"></div>
+        </div>
         <div class="section-title" style="margin-top:5px">Frames</div>
         <div class="scroll-row" id="frameRow"></div>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 <script type="module">
     import { Booth } from './assets/js/booth.js';
-    window.addEventListener('DOMContentLoaded', () => {
-        if (!window.app) {
-            window.app = new Booth();
-        }
-    });
 </script>
 <?php include 'partials/modals/print-modal.php'; ?>
 <?php include 'partials/modals/qr-modal.php'; ?>

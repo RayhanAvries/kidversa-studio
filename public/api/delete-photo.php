@@ -27,7 +27,6 @@ try {
     } else {
         echo json_encode(['success' => true, 'message' => 'File not found, nothing to delete']);
     }
-
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode([
