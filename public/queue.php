@@ -46,10 +46,10 @@
     </div>
 
     <div class="queue-footer" id="queueFooter" style="display:none">
-        <button class="queue-btn-action queue-btn-select-all" id="queueSelectAll">
+        <button class="queue-footer-btn queue-footer-select" id="queueSelectAll">
             <i class="fas fa-check-double"></i> Pilih Semua
         </button>
-        <button class="queue-btn-action queue-btn-delete-selected" id="queueDeleteSelected" disabled>
+        <button class="queue-footer-btn queue-footer-delete" id="queueDeleteSelected" disabled>
             <i class="fas fa-trash-alt"></i> Hapus <span id="queueDeleteCount"></span>
         </button>
     </div>

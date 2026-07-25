@@ -24,6 +24,24 @@
                     <div class="flash" id="flashFx"></div>
                     <div class="countdown" id="cdOverlay"><span id="cdNumber">3</span></div>
                 </div>
+                <div class="photo-tools-card" id="sidebar">
+                    <div class="photo-tools-inner" id="sidebarContent">
+                        <div class="photo-tools-title"><i class="fas fa-sliders-h"></i> Pengaturan</div>
+                        <div class="photo-tools-divider"></div>
+                        <div class="timer-config-wrap">
+                            <i class="fas fa-clock"></i>
+                            <select class="timer-select" id="captureTimerSelect">
+                                <option value="3">3s</option>
+                                <option value="5" selected>5s</option>
+                                <option value="10">10s</option>
+                                <option value="30">30s</option>
+                            </select>
+                        </div>
+                        <div id="handDetectBadgeWrap"></div>
+                        <div class="photo-tools-divider"></div>
+                        <button class="btn-back" id="btnBack"><i class="fas fa-arrow-left"></i> Back</button>
+                    </div>
+                </div>
             </div>
             <div class="btn-row">
                 <button class="btn-capture" id="btnCapture" disabled><i class="fas fa-camera"></i>Capture</button>
@@ -33,24 +51,7 @@
                 <button class="btn-queue" id="btnQueue" style="display:none"><i class="fas fa-list"></i>Queue</button>
             </div>
         </div>
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-inner" id="sidebarContent">
-                <div class="timer-config-wrap">
-                    <i class="fas fa-clock"></i>
-                    <select class="timer-select" id="captureTimerSelect">
-                        <option value="3">3s</option>
-                        <option value="5" selected>5s</option>
-                        <option value="10">10s</option>
-                        <option value="30">30s</option>
-                    </select>
-                </div>
-                <div id="handDetectBadgeWrap"></div>
-                <button class="btn-back" id="btnBack"><i class="fas fa-arrow-left"></i>Back</button>
-            </div>
-        </aside>
     </div>
-    <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-cog"></i></button>
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <div class="controls">
         <div class="section-title">Filters</div>
         <div class="filter-scroll-container">
