@@ -14,15 +14,54 @@
 <body>
 <div class="queue-page">
     <?php $activePage = 'queue'; include __DIR__ . '/partials/app-header.php'; ?>
+
+    <div class="queue-stats" id="queueStats" style="display:none">
+        <div class="stats-row">
+            <span class="stat-item"><i class="fas fa-layer-group"></i> <span id="statTotal">0</span> antrian</span>
+            <span class="stat-divider">|</span>
+            <span class="stat-item"><i class="fas fa-weight-hanging"></i> <span id="statTotalSize">0 KB</span></span>
+            <span class="stat-divider">|</span>
+            <span class="stat-item queue-stat-pending"><i class="fas fa-clock"></i> <span id="statPending">0</span> menunggu</span>
+            <span class="stat-divider">|</span>
+            <span class="stat-item queue-stat-completed"><i class="fas fa-check-circle"></i> <span id="statCompleted">0</span> selesai</span>
+            <span class="stat-divider">|</span>
+            <span class="stat-item queue-stat-failed"><i class="fas fa-times-circle"></i> <span id="statFailed">0</span> gagal</span>
+        </div>
+    </div>
+
+    <div class="queue-filters" id="queueFilters" style="display:none">
+        <button class="queue-filter-btn active" data-filter="all">Semua</button>
+        <button class="queue-filter-btn" data-filter="pending"><i class="fas fa-clock"></i> Proses</button>
+        <button class="queue-filter-btn" data-filter="completed"><i class="fas fa-check"></i> Selesai</button>
+        <button class="queue-filter-btn" data-filter="failed"><i class="fas fa-times"></i> Gagal</button>
+    </div>
+
     <div class="queue-content" id="queueContent" style="display:none">
         <div class="queue-list" id="queueList"></div>
     </div>
+
     <div class="queue-empty" id="queueEmpty" style="display:none">
         <i class="fas fa-check-circle"></i>
         <p>Antrian kosong.<br>Semua operasi telah selesai.</p>
     </div>
-    <div class="queue-footer" id="queueFooter">
-        <button class="queue-btn-clear" id="queueClearAll"><i class="fas fa-trash-alt"></i> &nbsp;Hapus Selesai & Gagal</button>
+
+    <div class="queue-footer" id="queueFooter" style="display:none">
+        <div class="queue-footer-selection" id="queueSelectionBar" style="display:none">
+            <span class="queue-selection-count" id="queueSelectionCount">0 dipilih</span>
+            <div class="queue-selection-actions">
+                <button class="queue-btn-action queue-btn-delete-selected" id="queueDeleteSelected" disabled>
+                    <i class="fas fa-trash-alt"></i> Hapus Dipilih
+                </button>
+            </div>
+        </div>
+        <div class="queue-footer-bulk" id="queueBulkActions">
+            <button class="queue-btn-action queue-btn-delete-completed" id="queueDeleteCompleted">
+                <i class="fas fa-check-circle"></i> Hapus Selesai
+            </button>
+            <button class="queue-btn-action queue-btn-delete-failed" id="queueDeleteFailed">
+                <i class="fas fa-times-circle"></i> Hapus Gagal
+            </button>
+        </div>
     </div>
 </div>
 <script type="module">
