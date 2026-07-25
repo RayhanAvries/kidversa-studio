@@ -146,8 +146,18 @@ export class QueuePage {
         if (footer) footer.style.display = 'block';
 
         await this._checkServerStatus();
+        await this._clearStaleErrors();
         this._applyFilter();
         this._refreshStats();
+    }
+
+    async _clearStaleErrors() {
+        const stale = this.items.filter(i =>
+            (i.status === 'completed' || i.status === 'verified') && i.error
+        );
+        for (const item of stale) {
+            await this.queue.updateStatus(item.id, item.status);
+        }
     }
 
     async _checkServerStatus() {
@@ -262,7 +272,7 @@ export class QueuePage {
                     <div class="queue-progress-fill ${displayStatus}" style="width: ${this._getProgressWidth(item, displayStatus)}%"></div>
                 </div>
                 ${this._renderProgressText(item, displayStatus)}
-                ${item.error ? `<div class="queue-item-error"><i class="fas fa-exclamation-circle"></i> ${this._escapeHtml(item.error)}</div>` : ''}
+                ${item.error && displayStatus !== 'completed' && displayStatus !== 'verified' ? `<div class="queue-item-error"><i class="fas fa-exclamation-circle"></i> ${this._escapeHtml(item.error)}</div>` : ''}
                 <div class="queue-item-actions">
                     ${displayStatus === 'pending' || displayStatus === 'failed' ? `
                         <button class="queue-btn-retry" data-id="${item.id}">
