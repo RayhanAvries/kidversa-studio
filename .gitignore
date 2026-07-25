@@ -27,6 +27,7 @@ composer.lock
 
 # Storage
 /storage/ratelimit/
+/storage/chunks/
 
 # Project management
 plans/
@@ -38,3 +39,7 @@ docker-compose.override.yml
 
 # Logs
 *.log
+
+./AGENTS.md
+.AGENTS.md
+./AGENTS.md
