@@ -658,68 +658,23 @@ let boothCleanupStarted = false;
 const startBoothCleanupInterval = () => {
     if (boothCleanupStarted) return;
     boothCleanupStarted = true;
-    let cleanupInterval = null;
-    let monitorInterval = null;
+
     const cleanupIntervalMs = Config.get('session.cleanupInterval', 900000);
-    const monitorIntervalMs = 900000;
 
     const runCleanup = async () => {
         try {
             const csrfToken = window.booth?.csrfToken;
             if (!csrfToken) return;
             const res = await fetch('api/cleanup-photos.php?csrf_token=' + encodeURIComponent(csrfToken));
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            if (!res.ok) return;
             const contentType = res.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                throw new TypeError("Received non-JSON response from server.");
-            }
-            const data = await res.json();
-            if (data.success && data.hasFiles !== undefined) {
-                if (!data.hasFiles && cleanupInterval) {
-                    clearInterval(cleanupInterval);
-                    cleanupInterval = null;
-                }
-            }
+            if (!contentType || !contentType.includes("application/json")) return;
+            await res.json();
         } catch (e) {
             console.error('[Booth] Photo cleanup failed:', e);
         }
     };
 
-    const startCleanupLoop = () => {
-        if (cleanupInterval) return;
-        cleanupInterval = setInterval(runCleanup, cleanupIntervalMs);
-    };
-
-    const stopCleanupLoop = () => {
-        if (cleanupInterval) {
-            clearInterval(cleanupInterval);
-            cleanupInterval = null;
-        }
-    };
-
-    const monitorFolder = async () => {
-        try {
-            const csrfToken = window.booth?.csrfToken;
-            if (!csrfToken) return;
-            const res = await fetch('api/cleanup-photos.php?csrf_token=' + encodeURIComponent(csrfToken));
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            const contentType = res.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                throw new TypeError("Received non-JSON response from server.");
-            }
-            const data = await res.json();
-            if (data.success && data.hasFiles !== undefined) {
-                if (data.hasFiles) {
-                    startCleanupLoop();
-                } else {
-                    stopCleanupLoop();
-                }
-            }
-        } catch (e) {
-            console.error('[Booth] Folder monitor failed:', e);
-        }
-    };
-
-    monitorInterval = setInterval(monitorFolder, monitorIntervalMs);
-    monitorFolder();
+    runCleanup();
+    setInterval(runCleanup, cleanupIntervalMs);
 };

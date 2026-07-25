@@ -6,6 +6,7 @@ use Kidversa\Helpers\RateLimitHelper;
 use Kidversa\Helpers\SecurityHelper;
 use Kidversa\Helpers\CsrfHelper;
 use Kidversa\Services\PhotoService;
+use Kidversa\Helpers\ChunkAssemblyHelper;
 
 SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
@@ -24,6 +25,8 @@ if (!CsrfHelper::validateToken($csrfToken)) {
 }
 
 try {
+    ChunkAssemblyHelper::cleanupStale(3600);
+
     $uploadDir = FileHelper::getUploadDir();
 
     if (!is_dir($uploadDir)) {
