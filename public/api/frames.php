@@ -2,6 +2,9 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Kidversa\Config\AppConfig;
+use Kidversa\Helpers\SecurityHelper;
+
+SecurityHelper::sendApiSecurityHeaders();
 
 $frameDir = AppConfig::FRAME_DIR;
 $frames = [];

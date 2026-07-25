@@ -3,7 +3,9 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\ValidationHelper;
+use Kidversa\Helpers\SecurityHelper;
 
+SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
 
 try {

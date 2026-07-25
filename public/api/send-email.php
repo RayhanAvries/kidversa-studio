@@ -6,7 +6,9 @@ use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Helpers\CsrfHelper;
 use Kidversa\Helpers\RateLimitHelper;
+use Kidversa\Helpers\SecurityHelper;
 
+SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
 
 if (!RateLimitHelper::isAllowed('send-email', 5, 60)) {

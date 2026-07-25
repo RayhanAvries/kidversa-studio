@@ -5,8 +5,10 @@ use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Helpers\CsrfHelper;
 use Kidversa\Helpers\RateLimitHelper;
+use Kidversa\Helpers\SecurityHelper;
 use Kidversa\Services\PhotoService;
 
+SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
 
 if (!RateLimitHelper::isAllowed('save-photo', 10, 60)) {

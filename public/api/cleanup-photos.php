@@ -13,8 +13,10 @@ spl_autoload_register(function ($class) {
 
 use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\RateLimitHelper;
+use Kidversa\Helpers\SecurityHelper;
 use Kidversa\Services\PhotoService;
 
+SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
 
 if (!RateLimitHelper::isAllowed('cleanup-photos', 1, 30)) {

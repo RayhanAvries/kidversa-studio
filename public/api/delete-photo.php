@@ -4,8 +4,10 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Helpers\CsrfHelper;
 use Kidversa\Helpers\PathHelper;
+use Kidversa\Helpers\SecurityHelper;
 use Kidversa\Services\PhotoService;
 
+SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
 
 if (!CsrfHelper::validateRequest()) {

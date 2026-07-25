@@ -1,0 +1,29 @@
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+</IfModule>
+
+# Enable mod_rewrite
+RewriteEngine On
+
+# Redirect to public directory
+RewriteRule ^$ public/ [L]
+
+# Prevent directory listing
+Options -Indexes
+
+# Prevent .env access
+<Files .env>
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Prevent access to sensitive files
+<FilesMatch "\.(git|env|htaccess|htpasswd)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
