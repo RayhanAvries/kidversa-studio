@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\ValidationHelper;
+use Kidversa\Helpers\PathHelper;
 
 try {
     if (!isset($_GET['file']) || empty($_GET['file'])) {
@@ -15,7 +16,7 @@ try {
         throw new Exception('Invalid filename format');
     }
 
-    $filePath = PhotoService::getPath($filename);
+    $filePath = PathHelper::getSafeUploadPath($filename);
 
     if (!file_exists($filePath)) {
         throw new Exception('File not found');

@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Helpers\CsrfHelper;
+use Kidversa\Helpers\PathHelper;
 use Kidversa\Services\PhotoService;
 
 header('Content-Type: application/json');
@@ -24,7 +25,7 @@ try {
         throw new Exception('Invalid filename format');
     }
 
-    $filePath = PhotoService::getPath($filename);
+    $filePath = PathHelper::getSafeUploadPath($filename);
 
     if (file_exists($filePath)) {
         if (unlink($filePath)) {
