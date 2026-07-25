@@ -25,7 +25,6 @@ class EmailService {
     }
     
     private static function getEmailTemplate(string $email, string $timestamp, string $location): string {
-        $baseUrl = 'https://www.kidversa.fun';
         return "
         <div style='font-family: \"Plus Jakarta Sans\", system-ui, sans-serif; max-width: 600px; margin: 20px auto; background: #FFFFFF; border-radius: 22px; padding: 40px; border: 1px solid #E5E7EB; box-shadow: 0 12px 40px rgba(0,0,0,0.08);'>
             <div style='text-align: center; margin-bottom: 30px;'>
@@ -46,7 +45,7 @@ class EmailService {
 
             <div style='text-align: center; margin-top: 30px;'>
                 <p style='color: #6B7280; font-size: 14px;'>Butuh bantuan? Silahkan hubungi kami di:</p>
-                <a href='{$baseUrl}/contact' style='display: inline-block; background: linear-gradient(135deg, #A855F7, #7C3AED); color: #FFFFFF; padding: 12px 24px; border-radius: 60px; text-decoration: none; font-weight: bold;'>Hubungi Kami</a>
+                <a href='" . AppConfig::APP_URL . "/contact' style='display: inline-block; background: linear-gradient(135deg, #A855F7, #7C3AED); color: #FFFFFF; padding: 12px 24px; border-radius: 60px; text-decoration: none; font-weight: bold;'>Hubungi Kami</a>
             </div>
 
             <div style='text-align: center; margin-top: 40px; font-size: 12px; color: #9CA3AF;'>
@@ -79,7 +78,7 @@ class EmailService {
             $mail->addAttachment($photoPath, AppConfig::EMAIL_ATTACHMENT_NAME);
             
             $timestamp = date('Y-m-d H:i:s');
-            $location = 'Kidversa Studio, Bandung';
+            $location = AppConfig::STUDIO_LOCATION;
             
             $mail->isHTML(true);
             $mail->Subject = AppConfig::EMAIL_SUBJECT;

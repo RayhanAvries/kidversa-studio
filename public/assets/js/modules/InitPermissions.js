@@ -1,4 +1,4 @@
-export const DEFAULT_LOCATION = "Bandung Jawabarat";
+export const DEFAULT_LOCATION = "Bandung, Jawa Barat";
 export async function initPermissions() {
   console.log("[InitPermissions] Requesting permissions...");
   const result = { cameraStream: null, position: null, DEFAULT_LOCATION };

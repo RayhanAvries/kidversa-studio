@@ -17,10 +17,13 @@ class AppConfig {
 
     public const STUDIO_NAME = 'Kidversa Studio';
     public const STUDIO_LOCATION = 'Bandung, Indonesia';
+    public const STUDIO_PHONE = '+62 812-2218-9918';
+    public const STUDIO_PHONE_LINK = '+6281222189918';
+    public const STUDIO_EMAIL = 'kidversafun@gmail.com';
+    public const APP_URL = 'https://www.kidversa.fun';
     public const DEFAULT_LAT = -6.9175;
     public const DEFAULT_LNG = 107.6191;
     public const DEFAULT_LOCATION_NAME = 'Bandung';
-    public const STUDIO_EMAIL = 'kidversafun@gmail.com';
 
     public const EMAIL_SUBJECT = 'Foto Kidversa Studio Anda Sudah Siap! 📸';
     public const EMAIL_ATTACHMENT_NAME = 'my_kidversa_photo.png';
