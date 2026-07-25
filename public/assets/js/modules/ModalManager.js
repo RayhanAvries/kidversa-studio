@@ -1,5 +1,7 @@
 import { Config } from './Config.js';
 import { Lang } from './Lang.js';
+import { BlobDownloader } from './BlobDownloader.js';
+import { ClientQR } from './ClientQR.js';
 
 export class ModalManager {
     constructor(booth) {
@@ -73,15 +75,21 @@ export class ModalManager {
         btnSend.disabled = true;
         btnSend.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
+        const operation = {
+            type: 'send_email',
+            data: {
+                filename: this.booth.savedFilename,
+                email: email,
+                csrf_token: this.booth.csrfToken
+            },
+            maxRetries: 3
+        };
+
         try {
             const res = await fetch('api/send-email.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    filename: this.booth.savedFilename,
-                    email: email,
-                    csrf_token: this.booth.csrfToken
-                })
+                body: JSON.stringify(operation.data)
             });
 
             if (!res.ok) throw new Error(`Server error: ${res.status}`);
@@ -113,14 +121,17 @@ export class ModalManager {
             }
         } catch (e) {
             console.error('[ModalManager] sendEmail Error:', e);
-            alert(Lang.get('error.prefix') + (e.message || 'Failed to send email'));
+
+            await this.booth.operationQueue.enqueue(operation);
+
+            alert(Lang.get('error.prefix') + 'Gagal mengirim email. Email akan dikirim ulang secara otomatis.');
             btnSend.disabled = false;
-            btnSend.innerHTML = `<i class="fas fa-redo"></i> ${Lang.get('email.retry')}`;
-            btnSend.style.background = '#dc3545';
+            btnSend.innerHTML = `<i class="fas fa-clock"></i> Queued`;
+            btnSend.style.background = '#F59E0B';
             setTimeout(() => {
                 btnSend.innerHTML = originalBtnText;
                 btnSend.style.background = '';
-            }, 3000);
+            }, 5000);
         }
     }
 
@@ -176,18 +187,43 @@ export class ModalManager {
             return;
         }
 
+        const btnDownload = document.querySelector('.btn-download');
+        const originalText = btnDownload?.innerHTML;
+        if (btnDownload) {
+            btnDownload.disabled = true;
+            btnDownload.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+        }
+
         try {
             const photoUrl = 'uploads/photos/' + statusCheck.filename;
-            const link = document.createElement('a');
-            link.href = photoUrl;
-            link.download = 'kidversa-photo-' + Date.now() + '.png';
-            link.target = '_blank';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            await BlobDownloader.downloadWithRetry(
+                photoUrl,
+                'kidversa-photo-' + Date.now() + '.png',
+                (progress) => {
+                    if (btnDownload) {
+                        btnDownload.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${progress.percent}%`;
+                    }
+                },
+                3
+            );
+
+            if (btnDownload) {
+                btnDownload.innerHTML = '<i class="fas fa-check"></i> Done';
+                setTimeout(() => {
+                    btnDownload.disabled = false;
+                    btnDownload.innerHTML = originalText;
+                }, 2000);
+            }
         } catch (e) {
             console.error('[ModalManager] Download error:', e);
-            alert(Lang.get('error.prefix') + 'Gagal mengunduh foto');
+            if (btnDownload) {
+                btnDownload.disabled = false;
+                btnDownload.innerHTML = `<i class="fas fa-redo"></i> Retry`;
+                setTimeout(() => {
+                    btnDownload.innerHTML = originalText;
+                }, 3000);
+            }
+            alert(Lang.get('error.prefix') + 'Gagal mengunduh foto. Silakan coba lagi.');
         }
     }
 
@@ -296,16 +332,17 @@ export class ModalManager {
 
         try {
             const baseUrl = window.location.protocol + '//' + window.location.host;
-            const qrUrl = `${baseUrl}/api/generate-qr.php?filename=${encodeURIComponent(statusCheck.filename)}`;
+            const viewUrl = `${baseUrl}/view-photo.php?file=${encodeURIComponent(statusCheck.filename)}`;
+
+            const qrDataUrl = await ClientQR.generate(viewUrl, {
+                size: 300,
+                darkColor: '#000000',
+                lightColor: '#ffffff'
+            });
 
             const qrImage = document.getElementById('qrImage');
+            qrImage.src = qrDataUrl;
             qrImage.onload = () => this.booth.ui.setQRLoading(false);
-            qrImage.onerror = () => {
-                console.error('[ModalManager] Failed to load QR image');
-                alert('Failed to generate QR code');
-                this.booth.ui.hideQRModal();
-            };
-            this.booth.ui.setQRImage(qrUrl);
         } catch (e) {
             console.error('[ModalManager] QR Modal Error:', e);
             this.booth.ui.showToastMessage('Error: ' + e.message);
