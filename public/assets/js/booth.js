@@ -8,6 +8,9 @@ import { initPermissions } from './modules/InitPermissions.js';
 import { HandDetection } from './modules/HandDetection.js';
 import { HandDetectionUI } from './modules/HandDetectionUI.js';
 import { ModalManager } from './modules/ModalManager.js';
+import { ChunkUploader } from './modules/ChunkUploader.js';
+import { OperationQueue } from './modules/OperationQueue.js';
+import { RetryManager } from './modules/RetryManager.js';
 
 export class Booth {
     constructor() {
@@ -36,6 +39,10 @@ export class Booth {
         this.counting = false;
         this.csrfToken = null;
 
+        this.chunkUploader = new ChunkUploader();
+        this.operationQueue = new OperationQueue();
+        this.retryManager = new RetryManager(this.operationQueue);
+
         this.init();
     }
 
@@ -48,6 +55,8 @@ export class Booth {
             const csrfData = await csrfRes.json();
             this.csrfToken = csrfData.token;
         }
+
+        await this.operationQueue.init();
 
         const filterRes = await fetch('assets/config/filters.json');
         if (!filterRes.ok) throw new Error(`Filters fetch failed: ${filterRes.status}`);
@@ -319,30 +328,32 @@ export class Booth {
         let percent = 0;
         const messages = isReplacement ? [
             "Mempersiapkan data gambar...",
-            "Memproses filter dan frame baru...",
             "Menghapus berkas foto lama di server...",
-            "Mengunggah hasil komposisi baru...",
-            "Mengompresi format file...",
-            "Menyimpan foto dengan aman...",
+            "Mengunggah foto per-bagian...",
+            "Menggabungkan foto di server...",
             "Hampir selesai..."
         ] : [
             "Mempersiapkan data gambar...",
-            "Mengompresi format file...",
-            "Memproses filter dan frame...",
-            "Menghubungkan ke server...",
-            "Mengunggah berkas foto...",
-            "Menyimpan foto dengan aman...",
+            "Mengunggah foto per-bagian...",
+            "Menggabungkan foto di server...",
             "Hampir selesai..."
         ];
         const progressInterval = setInterval(() => {
             if (percent < 90) {
-                percent += Math.floor(Math.random() * 8) + 3;
+                percent += Math.floor(Math.random() * 5) + 2;
                 if (percent > 90) percent = 90;
                 const step = Math.floor((percent / 100) * messages.length);
                 const currentMsg = messages[Math.min(step, messages.length - 1)];
                 this.ui.updateLoadingProgress(percent, currentMsg);
             }
-        }, 150);
+        }, 200);
+
+        const location = window.__appPermissions?.position ? {
+            lat: window.__appPermissions.position.coords.latitude,
+            lng: window.__appPermissions.position.coords.longitude,
+            name: window.__appPermissions.position.name || "Kidversa Studio, Bandung"
+        } : { lat: -6.9175, lng: 107.6191, name: "Bandung" };
+
         try {
             if (isReplacement && this.savedFilename) {
                 this.ui.updateLoadingProgress(percent, "Menghapus berkas foto lama di server...");
@@ -354,46 +365,79 @@ export class Booth {
                     body: deleteFormData
                 });
             }
+
             const compositeCanvas = await this.composeFinalImage(this.rawData, this.cameraConfig.TW, this.cameraConfig.TH);
             this.captured = compositeCanvas.toDataURL("image/png");
             const blob = await this.dataURLtoBlob(this.captured);
-            const formData = new FormData();
-            formData.append("image", blob, "capture.png");
-            const location = window.__appPermissions?.position ? {
-                lat: window.__appPermissions.position.coords.latitude,
-                lng: window.__appPermissions.position.coords.longitude,
-                name: window.__appPermissions.position.name || "Kidversa Studio, Bandung"
-            } : { lat: -6.9175, lng: 107.6191, name: "Bandung" };
-            formData.append("location_lat", location.lat);
-            formData.append("location_lng", location.lng);
-            formData.append("location_name", location.name);
-            formData.append("csrf_token", this.csrfToken);
+
             const uploadKey = "upload_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
             this.uploadKey = uploadKey;
             this.pendingUpload = { key: uploadKey, startTime: Date.now() };
-            const saveRes = await fetch("api/save-photo.php", {
-                method: "POST",
-                body: formData
+
+            const dt = new Date();
+            const ts = dt.getFullYear().toString() +
+                String(dt.getMonth() + 1).padStart(2, '0') +
+                String(dt.getDate()).padStart(2, '0') + '_' +
+                String(dt.getHours()).padStart(2, '0') +
+                String(dt.getMinutes()).padStart(2, '0') +
+                String(dt.getSeconds()).padStart(2, '0');
+            const generatedFilename = `kidversa_${ts}.png`;
+
+            const operation = {
+                type: 'save_photo',
+                data: {
+                    filename: generatedFilename,
+                    location: location,
+                    csrfToken: this.csrfToken
+                },
+                maxRetries: 5
+            };
+
+            const result = await this.retryManager.execute(operation, async () => {
+                return await this.chunkUploader.upload(
+                    blob,
+                    operation.data.filename,
+                    this.csrfToken,
+                    location,
+                    (progress) => {
+                        const uploadPercent = Math.round(progress.percent * 0.8);
+                        this.ui.updateLoadingProgress(
+                            Math.min(uploadPercent, 80),
+                            `Mengunggah foto... (${progress.chunk}/${progress.totalChunks})`
+                        );
+                    }
+                );
             });
-            const saveData = await saveRes.json();
+
             clearInterval(progressInterval);
-            if (saveData.success) {
-                this.savedFilename = saveData.filename;
+
+            if (result && result.success) {
+                this.savedFilename = result.filename;
                 this.pendingUpload = null;
                 this.ui.updateLoadingProgress(100, "Selesai!");
                 setTimeout(() => {
                     this.ui.hideLoadingOverlay();
                 }, 500);
             } else {
-                throw new Error(saveData.message || "Gagal menyimpan foto");
+                throw new Error(result?.message || "Gagal menyimpan foto");
             }
         } catch (e) {
             clearInterval(progressInterval);
             this.ui.hideLoadingOverlay();
             console.error(e);
-            this.savedFilename = null;
             this.pendingUpload = null;
-            alert("Error: " + e.message);
+
+            const failedOp = {
+                type: 'save_photo',
+                data: {
+                    captured: this.captured,
+                    csrfToken: this.csrfToken
+                },
+                maxRetries: 5
+            };
+            await this.operationQueue.enqueue(failedOp);
+
+            alert("Gagal mengunggah foto. Foto akan dicoba lagi secara otomatis saat jaringan membaik.");
         }
     }
 
