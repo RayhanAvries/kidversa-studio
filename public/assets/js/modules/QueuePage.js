@@ -140,6 +140,7 @@ export class QueuePage {
             return;
         }
 
+        if (content) content.style.display = 'block';
         if (stats) stats.style.display = 'block';
         if (filters) filters.style.display = 'flex';
         if (footer) footer.style.display = 'block';
