@@ -3,7 +3,6 @@ export class HandDetection {
     this.enabled = false;
     this.running = false;
     this.hands = null;
-    this.camera = null;
     this.videoEl = null;
     this.onDetect = options.onDetect || (() => {});
     this.onStatusChange = options.onStatusChange || (() => {});

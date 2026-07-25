@@ -104,7 +104,7 @@ export class CameraManager {
       this.cnv.height = targetHeight;
     }
   }
-  startDraw(onDraw) {
+  startDraw() {
     if (this.raf) cancelAnimationFrame(this.raf);
     const draw = () => {
       if (this.vid.readyState >= 2 && this.ready) {

@@ -10,8 +10,6 @@ import { HandDetectionUI } from './modules/HandDetectionUI.js';
 
 export class Booth {
     constructor() {
-        console.log('[Booth] Constructor started');
-        window.booth = this;
         this.cameraConfig = {
             TW: Config.get('photo.width', 1920),
             TH: Config.get('photo.height', 1080),
