@@ -8,15 +8,42 @@ export class OperationQueue {
 
     async init() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open(this.dbName, 1);
+            const request = indexedDB.open(this.dbName, 2);
 
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
-                if (!db.objectStoreNames.contains(this.storeName)) {
+                const oldVersion = event.oldVersion;
+
+                if (oldVersion < 1 || !db.objectStoreNames.contains(this.storeName)) {
                     const store = db.createObjectStore(this.storeName, { keyPath: 'id' });
                     store.createIndex('status', 'status', { unique: false });
                     store.createIndex('createdAt', 'createdAt', { unique: false });
                     store.createIndex('type', 'type', { unique: false });
+                }
+
+                if (oldVersion < 2 && db.objectStoreNames.contains(this.storeName)) {
+                    const tx = event.target.transaction;
+                    const store = tx.objectStore(this.storeName);
+                    const cursorReq = store.openCursor();
+                    cursorReq.onsuccess = (e) => {
+                        const cursor = e.target.result;
+                        if (cursor) {
+                            const entry = cursor.value;
+                            let needsUpdate = false;
+                            if (entry.totalSize === undefined) {
+                                entry.totalSize = 0;
+                                if (entry.data?.blobBase64) {
+                                    const base64Clean = entry.data.blobBase64.split(',')[1] || entry.data.blobBase64;
+                                    entry.totalSize = Math.ceil((base64Clean.length * 3) / 4);
+                                }
+                                needsUpdate = true;
+                            }
+                            if (entry.uploadedChunks === undefined) { entry.uploadedChunks = 0; needsUpdate = true; }
+                            if (entry.totalChunks === undefined) { entry.totalChunks = 0; needsUpdate = true; }
+                            if (needsUpdate) store.put(entry);
+                            cursor.continue();
+                        }
+                    };
                 }
             };
 
@@ -34,6 +61,12 @@ export class OperationQueue {
     async enqueue(operation) {
         if (!this.db) await this.init();
 
+        let totalSize = 0;
+        if (operation.data?.blobBase64) {
+            const base64Clean = operation.data.blobBase64.split(',')[1] || operation.data.blobBase64;
+            totalSize = Math.ceil((base64Clean.length * 3) / 4);
+        }
+
         const entry = {
             id: 'op_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
             type: operation.type,
@@ -43,7 +76,10 @@ export class OperationQueue {
             maxRetries: operation.maxRetries || 5,
             createdAt: Date.now(),
             lastAttemptAt: null,
-            error: null
+            error: null,
+            totalSize: totalSize,
+            uploadedChunks: 0,
+            totalChunks: 0
         };
 
         return new Promise((resolve, reject) => {
@@ -153,6 +189,28 @@ export class OperationQueue {
         });
     }
 
+    async updateProgress(id, progress) {
+        if (!this.db) await this.init();
+
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(this.storeName, 'readwrite');
+            const store = tx.objectStore(this.storeName);
+            const getReq = store.get(id);
+
+            getReq.onsuccess = () => {
+                const entry = getReq.result;
+                if (entry) {
+                    if (progress.uploadedChunks !== undefined) entry.uploadedChunks = progress.uploadedChunks;
+                    if (progress.totalChunks !== undefined) entry.totalChunks = progress.totalChunks;
+                    store.put(entry);
+                }
+                resolve();
+            };
+
+            getReq.onerror = () => reject(getReq.error);
+        });
+    }
+
     async remove(id) {
         if (!this.db) await this.init();
 
@@ -175,11 +233,25 @@ export class OperationQueue {
 
     async getStats() {
         const all = await this.getAll();
-        return {
+        const stats = {
             total: all.length,
-            pending: all.filter(op => op.status === 'pending').length,
-            completed: all.filter(op => op.status === 'completed').length,
-            failed: all.filter(op => op.status === 'failed').length
+            pending: 0,
+            completed: 0,
+            failed: 0,
+            totalSize: 0,
+            pendingSize: 0,
+            completedSize: 0,
+            failedSize: 0
         };
+
+        for (const op of all) {
+            stats[op.status] = (stats[op.status] || 0) + 1;
+            stats.totalSize += op.totalSize || 0;
+            if (op.status === 'pending') stats.pendingSize += op.totalSize || 0;
+            if (op.status === 'completed') stats.completedSize += op.totalSize || 0;
+            if (op.status === 'failed') stats.failedSize += op.totalSize || 0;
+        }
+
+        return stats;
     }
 }
