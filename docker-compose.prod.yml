@@ -1,0 +1,22 @@
+services:
+  app:
+    build: .
+    ports:
+      - "80:80"
+    environment:
+      - APACHE_DOCUMENT_ROOT=/var/www/html/public
+    env_file:
+      - .env
+    volumes:
+      - uploads:/var/www/html/public/uploads
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  uploads:
+    driver: local
