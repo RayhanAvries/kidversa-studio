@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Kidversa\Helpers\FileHelper;
+use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Services\PhotoService;
 
 header('Content-Type: application/json');
@@ -11,11 +12,12 @@ try {
         throw new Exception('No image file uploaded');
     }
 
-    $file = $_FILES['image'];
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        throw new Exception('Upload error: ' . $file['error']);
+    $validationErrors = ValidationHelper::validateUploadedFile($_FILES['image']);
+    if (!empty($validationErrors)) {
+        throw new Exception(implode(', ', $validationErrors));
     }
 
+    $file = $_FILES['image'];
     $filename = PhotoService::generateFilename();
     $uploadDir = FileHelper::getUploadDir();
     $filePath = $uploadDir . '/' . $filename;

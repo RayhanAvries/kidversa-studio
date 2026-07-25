@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Kidversa\Services\EmailService;
 use Kidversa\Helpers\FileHelper;
+use Kidversa\Helpers\ValidationHelper;
 
 header('Content-Type: application/json');
 
@@ -20,7 +21,7 @@ try {
         throw new Exception('Filename is required');
     }
 
-    if (!preg_match('/^[a-zA-Z0-9._-]+$/', $filename)) {
+    if (!ValidationHelper::validateFilename($filename)) {
         throw new Exception('Invalid filename format');
     }
 

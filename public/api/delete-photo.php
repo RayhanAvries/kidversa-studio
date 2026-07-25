@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 
+use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Services\PhotoService;
 
 header('Content-Type: application/json');
@@ -12,7 +13,7 @@ try {
 
     $filename = $_POST['filename'];
 
-    if (!PhotoService::validateFilename($filename)) {
+    if (!ValidationHelper::validateFilename($filename)) {
         throw new Exception('Invalid filename format');
     }
 

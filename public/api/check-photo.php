@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Kidversa\Helpers\FileHelper;
+use Kidversa\Helpers\ValidationHelper;
 
 header('Content-Type: application/json');
 
@@ -13,7 +14,7 @@ try {
         exit;
     }
 
-    if (!preg_match('/^[a-zA-Z0-9._-]+$/', $filename)) {
+    if (!ValidationHelper::validateFilename($filename)) {
         echo json_encode(['exists' => false]);
         exit;
     }

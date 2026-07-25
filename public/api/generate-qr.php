@@ -7,6 +7,7 @@ use Endroid\QrCode\Logo\Logo;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\RoundBlockSizeMode;
+use Kidversa\Helpers\ValidationHelper;
 
 try {
     if (!isset($_GET['filename']) || empty($_GET['filename'])) {
@@ -16,7 +17,7 @@ try {
     $filename = $_GET['filename'];
     $filename = trim($filename);
 
-    if (preg_match('/[^a-zA-Z0-9._-]/', $filename)) {
+    if (!ValidationHelper::validateFilename($filename)) {
         throw new Exception('Invalid filename format');
     }
 

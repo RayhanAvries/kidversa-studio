@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Kidversa\Helpers\FileHelper;
-use Kidversa\Services\PhotoService;
+use Kidversa\Helpers\ValidationHelper;
 
 try {
     if (!isset($_GET['file']) || empty($_GET['file'])) {
@@ -11,7 +11,7 @@ try {
 
     $filename = $_GET['file'];
 
-    if (!PhotoService::validateFilename($filename)) {
+    if (!ValidationHelper::validateFilename($filename)) {
         throw new Exception('Invalid filename format');
     }
 
