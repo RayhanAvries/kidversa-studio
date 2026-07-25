@@ -1,0 +1,2 @@
+# Deny direct access to chunk upload directory
+Deny from all
