@@ -1,8 +1,11 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Kidversa\Controllers;
 
-use Kidversa\Services\PhotoService;
 use Kidversa\Config\AppConfig;
+use Kidversa\Services\PhotoService;
 
 class PhotoController
 {
@@ -11,7 +14,7 @@ class PhotoController
         $data = [
             'exists' => false,
             'expired' => false,
-            'fileInfo' => null
+            'fileInfo' => null,
         ];
 
         if (!empty($filename) && PhotoService::validateFilename($filename)) {

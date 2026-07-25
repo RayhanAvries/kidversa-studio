@@ -1,10 +1,12 @@
 <?php
+
+declare(strict_types=1);
 require_once __DIR__ . '/../../src/bootstrap.php';
 
-use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Helpers\CsrfHelper;
 use Kidversa\Helpers\PathHelper;
 use Kidversa\Helpers\SecurityHelper;
+use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Services\PhotoService;
 
 SecurityHelper::sendApiSecurityHeaders();
@@ -42,6 +44,6 @@ try {
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => $e->getMessage(),
     ]);
 }

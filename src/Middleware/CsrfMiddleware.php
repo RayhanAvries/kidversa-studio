@@ -1,13 +1,18 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Kidversa\Middleware;
 
 use Kidversa\Helpers\CsrfHelper;
 
-class CsrfMiddleware implements MiddlewareInterface {
-    public function handle(callable $next): void {
+class CsrfMiddleware implements MiddlewareInterface
+{
+    public function handle(callable $next): void
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-            
+
             if (strpos($contentType, 'application/json') !== false) {
                 $input = json_decode(file_get_contents('php://input'), true);
                 $token = $input['csrf_token'] ?? null;
@@ -20,7 +25,7 @@ class CsrfMiddleware implements MiddlewareInterface {
                 header('Content-Type: application/json');
                 echo json_encode([
                     'success' => false,
-                    'message' => 'Invalid CSRF token'
+                    'message' => 'Invalid CSRF token',
                 ]);
                 return;
             }

@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 require_once __DIR__ . '/../../src/bootstrap.php';
 
 use Kidversa\Helpers\CsrfHelper;
@@ -11,5 +13,5 @@ $token = CsrfHelper::generateToken();
 
 echo json_encode([
     'success' => true,
-    'token' => $token
+    'token' => $token,
 ]);

@@ -1,21 +1,23 @@
 <?php
+
+declare(strict_types=1);
 require_once __DIR__ . '/../../src/bootstrap.php';
 
-use Endroid\QrCode\QrCode;
-use Endroid\QrCode\Writer\PngWriter;
-use Endroid\QrCode\Logo\Logo;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\Logo\Logo;
+use Endroid\QrCode\QrCode;
 use Endroid\QrCode\RoundBlockSizeMode;
-use Kidversa\Helpers\ValidationHelper;
+use Endroid\QrCode\Writer\PngWriter;
 use Kidversa\Helpers\RateLimitHelper;
 use Kidversa\Helpers\SecurityHelper;
+use Kidversa\Helpers\ValidationHelper;
 
 SecurityHelper::sendApiSecurityHeaders();
 
 if (!RateLimitHelper::isAllowed('generate-qr', 20, 60)) {
     http_response_code(429);
-    echo "Rate limit exceeded. Please try again later.";
+    echo 'Rate limit exceeded. Please try again later.';
     exit;
 }
 
@@ -63,5 +65,5 @@ try {
     exit;
 } catch (Exception $e) {
     http_response_code(400);
-    echo "Error generating QR: " . $e->getMessage();
+    echo 'Error generating QR: ' . $e->getMessage();
 }

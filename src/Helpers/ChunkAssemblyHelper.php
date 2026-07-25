@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Kidversa\Helpers;
 
 class ChunkAssemblyHelper
@@ -72,7 +74,7 @@ class ChunkAssemblyHelper
         }
 
         $finalPath = $uploadDir . '/' . $meta['filename'];
-        $handle = fopen($finalPath, 'wb');
+        $handle = fopen($finalPath, 'w');
 
         for ($i = 0; $i < $meta['total_chunks']; $i++) {
             $chunkPath = $sessionDir . '/chunk_' . str_pad($i, 6, '0', STR_PAD_LEFT);

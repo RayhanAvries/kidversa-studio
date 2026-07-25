@@ -25,7 +25,7 @@ return (new PhpCsFixer\Config())
         'function_declaration' => ['closure_function_spacing' => 'one'],
         'include' => true,
         'increment_style' => ['style' => 'post'],
-        'no_alias_functions' => ['strict' => true],
+        'no_alias_functions' => true,
         'no_alias_language_construct_call' => true,
         'no_blank_lines_after_class_opening' => true,
         'no_blank_lines_after_phpdoc' => true,
@@ -64,7 +64,7 @@ return (new PhpCsFixer\Config())
         'single_quote' => true,
         'trailing_comma_in_multiline' => ['elements' => ['arrays']],
         'trim_array_spaces' => true,
-        'WhitespaceAfterCommaInArray' => true,
+        'whitespace_after_comma_in_array' => true,
     ])
     ->setFinder($finder)
     ->setRiskyAllowed(true)

@@ -1,7 +1,11 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Kidversa\Config;
 
-class AppConfig {
+class AppConfig
+{
     public const PHOTO_UPLOAD_PATH = PhotoConfig::UPLOAD_PATH;
     public const FRAME_DIR = PhotoConfig::FRAME_DIR;
     public const LOGO_PATH = PhotoConfig::LOGO_PATH;

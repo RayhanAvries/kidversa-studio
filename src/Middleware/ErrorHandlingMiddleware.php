@@ -1,9 +1,14 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Kidversa\Middleware;
 
-class ErrorHandlingMiddleware implements MiddlewareInterface {
-    public function handle(callable $next): void {
-        set_exception_handler(function (\Throwable $e) {
+class ErrorHandlingMiddleware implements MiddlewareInterface
+{
+    public function handle(callable $next): void
+    {
+        set_exception_handler(static function (\Throwable $e): void {
             http_response_code(500);
             header('Content-Type: application/json');
             $message = $e->getMessage();
@@ -12,11 +17,11 @@ class ErrorHandlingMiddleware implements MiddlewareInterface {
             }
             echo json_encode([
                 'success' => false,
-                'message' => $message
+                'message' => $message,
             ]);
         });
 
-        set_error_handler(function ($severity, $message, $file, $line) {
+        set_error_handler(static function ($severity, $message, $file, $line): void {
             throw new \ErrorException($message, 0, $severity, $file, $line);
         });
 

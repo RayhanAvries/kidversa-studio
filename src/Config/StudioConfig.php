@@ -1,7 +1,11 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Kidversa\Config;
 
-class StudioConfig {
+class StudioConfig
+{
     public const NAME = 'Kidversa Studio';
     public const LOCATION = 'Bandung, Indonesia';
     public const PHONE = '+62 812-2218-9918';
@@ -15,10 +19,10 @@ class StudioConfig {
     public const MONTHS_INDONESIAN = [
         '01' => 'Januari', '02' => 'Februari', '03' => 'Maret', '04' => 'April',
         '05' => 'Mei', '06' => 'Juni', '07' => 'Juli', '08' => 'Agustus',
-        '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember'
+        '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember',
     ];
 
     public const DAYS_INDONESIAN = [
-        'Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'
+        'Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu',
     ];
 }

@@ -1,14 +1,20 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Kidversa\Middleware;
 
-class CorsMiddleware implements MiddlewareInterface {
+class CorsMiddleware implements MiddlewareInterface
+{
     private string $allowedOrigin;
 
-    public function __construct(string $allowedOrigin = '*') {
+    public function __construct(string $allowedOrigin = '*')
+    {
         $this->allowedOrigin = $allowedOrigin;
     }
 
-    public function handle(callable $next): void {
+    public function handle(callable $next): void
+    {
         header("Access-Control-Allow-Origin: {$this->allowedOrigin}");
         header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
         header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');

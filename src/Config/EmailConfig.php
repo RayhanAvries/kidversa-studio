@@ -1,7 +1,11 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Kidversa\Config;
 
-class EmailConfig {
+class EmailConfig
+{
     public const SUBJECT = 'Foto Kidversa Studio Anda Sudah Siap! 📸';
     public const ATTACHMENT_NAME = 'my_kidversa_photo.png';
     public const GMAIL_ONLY = true;

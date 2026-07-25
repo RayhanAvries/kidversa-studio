@@ -1,8 +1,13 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Kidversa\Middleware;
 
-class JsonResponseMiddleware implements MiddlewareInterface {
-    public function handle(callable $next): void {
+class JsonResponseMiddleware implements MiddlewareInterface
+{
+    public function handle(callable $next): void
+    {
         header('Content-Type: application/json');
         $next();
     }

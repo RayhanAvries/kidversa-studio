@@ -1,12 +1,14 @@
 <?php
+
+declare(strict_types=1);
 require_once __DIR__ . '/../../src/bootstrap.php';
 
-use Kidversa\Services\EmailService;
-use Kidversa\Helpers\FileHelper;
-use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Helpers\CsrfHelper;
+use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\RateLimitHelper;
 use Kidversa\Helpers\SecurityHelper;
+use Kidversa\Helpers\ValidationHelper;
+use Kidversa\Services\EmailService;
 
 SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
@@ -50,7 +52,7 @@ try {
     if ($result) {
         echo json_encode([
             'success' => true,
-            'message' => 'Email sent successfully!'
+            'message' => 'Email sent successfully!',
         ]);
     } else {
         throw new Exception('Failed to send email');
@@ -60,6 +62,6 @@ try {
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => $e->getMessage(),
     ]);
 }

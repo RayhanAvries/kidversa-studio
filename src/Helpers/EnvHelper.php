@@ -1,10 +1,15 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Kidversa\Helpers;
 
-class EnvHelper {
+class EnvHelper
+{
     private static $loadedEnv = [];
 
-    public static function load($path) {
+    public static function load($path)
+    {
         if (!file_exists($path)) {
             return false;
         }
@@ -16,7 +21,7 @@ class EnvHelper {
                 continue;
             }
             $parts = explode('=', $trimmed, 2);
-            if (count($parts) === 2) {
+            if (\count($parts) === 2) {
                 [$name, $value] = $parts;
                 self::$loadedEnv[trim($name)] = trim($value);
             }
@@ -24,8 +29,8 @@ class EnvHelper {
         return true;
     }
 
-    public static function get($name, $default = null) {
+    public static function get($name, $default = null)
+    {
         return self::$loadedEnv[$name] ?? $default;
     }
 }
-

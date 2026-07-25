@@ -1,10 +1,15 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Kidversa\Helpers;
 
-class RateLimitHelper {
+class RateLimitHelper
+{
     private const STORAGE_DIR = __DIR__ . '/../../storage/ratelimit';
 
-    public static function isAllowed(string $key, int $maxRequests, int $windowSeconds): bool {
+    public static function isAllowed(string $key, int $maxRequests, int $windowSeconds): bool
+    {
         $rateLimitDir = self::getStorageDir();
         if (!is_dir($rateLimitDir)) {
             mkdir($rateLimitDir, 0755, true);
@@ -27,17 +32,19 @@ class RateLimitHelper {
 
         $data = [
             'window_start' => $now,
-            'count' => 1
+            'count' => 1,
         ];
         file_put_contents($file, json_encode($data));
         return true;
     }
 
-    public static function recordRequest(string $key): void {
+    public static function recordRequest(string $key): void
+    {
         self::isAllowed($key, PHP_INT_MAX, PHP_INT_MAX);
     }
 
-    public static function cleanup(int $maxAge = 3600): void {
+    public static function cleanup(int $maxAge = 3600): void
+    {
         $rateLimitDir = self::getStorageDir();
         if (!is_dir($rateLimitDir)) {
             return;
@@ -54,7 +61,8 @@ class RateLimitHelper {
         }
     }
 
-    private static function getStorageDir(): string {
+    private static function getStorageDir(): string
+    {
         return self::STORAGE_DIR;
     }
 }

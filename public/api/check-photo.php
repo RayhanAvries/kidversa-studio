@@ -1,9 +1,11 @@
 <?php
+
+declare(strict_types=1);
 require_once __DIR__ . '/../../src/bootstrap.php';
 
 use Kidversa\Helpers\FileHelper;
-use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Helpers\SecurityHelper;
+use Kidversa\Helpers\ValidationHelper;
 
 SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');

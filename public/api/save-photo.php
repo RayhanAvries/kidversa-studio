@@ -1,11 +1,13 @@
 <?php
+
+declare(strict_types=1);
 require_once __DIR__ . '/../../src/bootstrap.php';
 
-use Kidversa\Helpers\FileHelper;
-use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Helpers\CsrfHelper;
+use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\RateLimitHelper;
 use Kidversa\Helpers\SecurityHelper;
+use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Services\PhotoService;
 
 SecurityHelper::sendApiSecurityHeaders();
@@ -56,21 +58,21 @@ try {
             'location' => [
                 'lat' => $locationLat,
                 'lng' => $locationLng,
-                'name' => $locationName ?? 'Unknown'
-            ]
+                'name' => $locationName ?? 'Unknown',
+            ],
         ];
         file_put_contents($metaPath, json_encode($metaData));
     }
 
     echo json_encode([
         'success' => true,
-        'filename' => $filename
+        'filename' => $filename,
     ]);
 
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => $e->getMessage(),
     ]);
 }

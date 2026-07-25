@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 require_once __DIR__ . '/../../src/bootstrap.php';
 
 use Kidversa\Config\AppConfig;
@@ -11,7 +13,9 @@ $frames = [];
 if (is_dir($frameDir)) {
     $files = scandir($frameDir);
     foreach ($files as $file) {
-        if ($file === '.' || $file === '..') continue;
+        if ($file === '.' || $file === '..') {
+            continue;
+        }
         if (pathinfo($file, PATHINFO_EXTENSION) === 'png') {
             $frames[] = pathinfo($file, PATHINFO_FILENAME);
         }

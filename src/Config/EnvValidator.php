@@ -1,9 +1,13 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Kidversa\Config;
 
 use Kidversa\Helpers\EnvHelper;
 
-class EnvValidator {
+class EnvValidator
+{
     private const REQUIRED_VARS = [
         'SMTP_HOST',
         'SMTP_PORT',
@@ -11,15 +15,16 @@ class EnvValidator {
         'SMTP_PASS',
         'SMTP_FROM',
         'BASE_URL',
-        'STUDIO_EMAIL'
+        'STUDIO_EMAIL',
     ];
 
     private const OPTIONAL_VARS = [
         'APP_DEBUG' => 'false',
-        'APP_ENV' => 'production'
+        'APP_ENV' => 'production',
     ];
 
-    public static function validate(): array {
+    public static function validate(): array
+    {
         $errors = [];
         $warnings = [];
 
@@ -62,20 +67,24 @@ class EnvValidator {
         return $errors;
     }
 
-    public static function getRequiredVars(): array {
+    public static function getRequiredVars(): array
+    {
         return self::REQUIRED_VARS;
     }
 
-    public static function getOptionalVars(): array {
+    public static function getOptionalVars(): array
+    {
         return self::OPTIONAL_VARS;
     }
 
-    public static function isValid(): bool {
+    public static function isValid(): bool
+    {
         return empty(self::validate());
     }
 
-    private static function getEnvPath(): string {
-        $rootDir = dirname(__DIR__, 2);
-        return $rootDir . DIRECTORY_SEPARATOR . '.env';
+    private static function getEnvPath(): string
+    {
+        $rootDir = \dirname(__DIR__, 2);
+        return $rootDir . \DIRECTORY_SEPARATOR . '.env';
     }
 }

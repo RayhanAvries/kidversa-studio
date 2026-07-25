@@ -1,12 +1,14 @@
 <?php
+
+declare(strict_types=1);
 require_once __DIR__ . '/../../src/bootstrap.php';
 
+use Kidversa\Helpers\ChunkAssemblyHelper;
+use Kidversa\Helpers\CsrfHelper;
 use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\RateLimitHelper;
 use Kidversa\Helpers\SecurityHelper;
-use Kidversa\Helpers\CsrfHelper;
 use Kidversa\Services\PhotoService;
-use Kidversa\Helpers\ChunkAssemblyHelper;
 
 SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
@@ -33,7 +35,7 @@ try {
         echo json_encode([
             'success' => true,
             'hasFiles' => false,
-            'message' => 'Upload directory does not exist: ' . $uploadDir
+            'message' => 'Upload directory does not exist: ' . $uploadDir,
         ]);
         exit;
     }
@@ -66,13 +68,13 @@ try {
         'success' => true,
         'hasFiles' => $fileCount > 0,
         'deletedCount' => $deletedCount,
-        'message' => "Successfully cleaned up. Deleted $deletedCount photo(s)."
+        'message' => "Successfully cleaned up. Deleted $deletedCount photo(s).",
     ]);
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode([
         'success' => false,
         'hasFiles' => false,
-        'message' => $e->getMessage()
+        'message' => $e->getMessage(),
     ]);
 }

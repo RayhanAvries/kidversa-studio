@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 $rootDir = dirname(__DIR__);
@@ -7,17 +8,17 @@ require_once $rootDir . '/vendor/autoload.php';
 
 $envPath = $rootDir . '/.env';
 if (file_exists($envPath)) {
-    \Kidversa\Helpers\EnvHelper::load($envPath);
+    Kidversa\Helpers\EnvHelper::load($envPath);
 }
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$timezone = \Kidversa\Helpers\EnvHelper::get('APP_TIMEZONE', 'Asia/Jakarta');
+$timezone = Kidversa\Helpers\EnvHelper::get('APP_TIMEZONE', 'Asia/Jakarta');
 date_default_timezone_set($timezone);
 
-if (\Kidversa\Helpers\EnvHelper::get('APP_DEBUG', 'false') === 'true') {
+if (Kidversa\Helpers\EnvHelper::get('APP_DEBUG', 'false') === 'true') {
     error_reporting(E_ALL);
     ini_set('display_errors', '1');
 } else {
@@ -33,7 +34,7 @@ foreach ($requiredExtensions as $ext) {
     }
 }
 
-$uploadDir = \Kidversa\Config\AppConfig::PHOTO_UPLOAD_PATH;
+$uploadDir = Kidversa\Config\AppConfig::PHOTO_UPLOAD_PATH;
 if (!is_dir($uploadDir)) {
     mkdir($uploadDir, 0755, true);
 }

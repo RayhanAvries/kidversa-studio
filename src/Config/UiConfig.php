@@ -1,7 +1,11 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Kidversa\Config;
 
-class UiConfig {
+class UiConfig
+{
     public const GEOLOCATION_TIMEOUT = 5000;
 
     public const QR_CODE_SIZE = 300;
