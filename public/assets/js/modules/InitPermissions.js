@@ -1,6 +1,5 @@
 export const DEFAULT_LOCATION = "Bandung, Jawa Barat";
 export async function initPermissions() {
-  console.log("[InitPermissions] Requesting permissions...");
   const result = { cameraStream: null, position: null, DEFAULT_LOCATION };
 
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -9,7 +8,6 @@ export async function initPermissions() {
         video: true,
         audio: false,
       });
-      console.log("[InitPermissions] Camera access granted");
     } catch (e) {
       console.warn(
         "[InitPermissions] Primary camera request failed, trying fallback...",
@@ -20,7 +18,6 @@ export async function initPermissions() {
           video: { facingMode: "user" },
           audio: false,
         });
-        console.log("[InitPermissions] Fallback camera access granted");
       } catch (e2) {
         console.error("[InitPermissions] All camera requests failed", e2);
       }
@@ -32,14 +29,12 @@ export async function initPermissions() {
   }
 
   try {
-    console.log("[InitPermissions] Requesting geolocation...");
     result.position = await new Promise((res, rej) => {
       navigator.geolocation.getCurrentPosition(res, rej, {
         timeout: 3000,
         maximumAge: 0,
       });
     });
-    console.log("[InitPermissions] Geolocation granted");
   } catch (e) {
     console.warn("[InitPermissions] Geolocation failed or timed out", e);
   }

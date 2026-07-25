@@ -31,15 +31,12 @@ export class Booth {
         this.handDetect = null;
         this.handDetectUI = null;
 
-        console.log('BoothUI instance methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(this.ui)));
-
         this.counting = false;
 
         this.init();
     }
 
     async init() {
-      console.log('[Booth] init() method called');
       try {
         await Config.load();
 
