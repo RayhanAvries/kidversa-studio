@@ -66,5 +66,14 @@
 <?php include 'partials/modals/qr-modal.php'; ?>
 <?php include 'partials/modals/email-modal.php'; ?>
 <?php include 'partials/footer.php'; ?>
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/assets/sw.js')
+            .then(reg => console.log('SW registered:', reg.scope))
+            .catch(err => console.error('SW registration failed:', err));
+    });
+}
+</script>
 </body>
 </html>
