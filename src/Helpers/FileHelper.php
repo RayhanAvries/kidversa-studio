@@ -5,7 +5,7 @@ use Kidversa\Config\AppConfig;
 
 class FileHelper {
     public static function getUploadDir(): string {
-        return AppConfig::UPLOAD_PATH;
+        return AppConfig::PHOTO_UPLOAD_PATH;
     }
     
     public static function getFrameList(): array {

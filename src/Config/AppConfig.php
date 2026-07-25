@@ -2,7 +2,6 @@
 namespace Kidversa\Config;
 
 class AppConfig {
-    public const UPLOAD_PATH = __DIR__ . '/../../public/uploads/photos';
     public const PHOTO_UPLOAD_PATH = __DIR__ . '/../../public/uploads/photos';
     public const FRAME_DIR = __DIR__ . '/../../public/assets/img/frames';
     public const LOGO_PATH = __DIR__ . '/../../public/assets/img/logo.png';
@@ -12,9 +11,6 @@ class AppConfig {
     public const PHOTO_EXPIRY_TIME = 3600;
     public const PHOTO_FILENAME_PREFIX = 'kidversa';
     public const PHOTO_TIMESTAMP_FORMAT = 'Ymd_His';
-
-    public const FALLBACK_WIDTH = 1280;
-    public const FALLBACK_HEIGHT = 720;
 
     public const SESSION_TIMER = 90;
     public const CLEANUP_INTERVAL = 30000;
@@ -31,10 +27,8 @@ class AppConfig {
     public const EMAIL_GMAIL_ONLY = true;
     public const EMAIL_REGEX = '/^[a-z0-9._%+-]+@gmail\.com$/i';
     public const EMAIL_ALT_BODY = "Terima kasih telah mengunjungi Kidversa Studio! Foto Anda terlampir dalam email ini.\n\nWaktu Pengambilan: {timestamp}\nLokasi: {location}";
-    public const EMAIL_MODAL_COUNTDOWN = 10;
 
     public const GEOLOCATION_TIMEOUT = 5000;
-    public const DEFAULT_LOCALE = 'id-ID';
 
     public const QR_CODE_SIZE = 300;
     public const QR_CODE_MARGIN = 10;
