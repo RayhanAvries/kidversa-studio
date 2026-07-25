@@ -21,7 +21,7 @@ try {
     $filePath = $uploadDir . '/' . $filename;
 
     if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
+        mkdir($uploadDir, 0755, true);
     }
 
     if (move_uploaded_file($file['tmp_name'], $filePath) === false) {
