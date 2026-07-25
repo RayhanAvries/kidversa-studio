@@ -1604,25 +1604,9 @@ button:disabled {
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-}
-.queue-footer-bulk {
   display: flex;
   gap: 8px;
   justify-content: center;
-}
-.queue-footer-selection {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.queue-selection-count {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #a855f7;
-}
-.queue-selection-actions {
-  display: flex;
-  gap: 8px;
 }
 .queue-btn-action {
   padding: 8px 16px;
@@ -1642,13 +1626,9 @@ button:disabled {
 .queue-btn-action:active { transform: scale(0.95); }
 .queue-btn-action:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-.queue-btn-delete-completed:hover {
-  border-color: #10b981;
-  color: #10b981;
-}
-.queue-btn-delete-failed:hover {
-  border-color: #ef4444;
-  color: #ef4444;
+.queue-btn-select-all:hover {
+  border-color: #a855f7;
+  color: #a855f7;
 }
 .queue-btn-delete-selected {
   background: #ef4444;

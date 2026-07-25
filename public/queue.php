@@ -46,22 +46,12 @@
     </div>
 
     <div class="queue-footer" id="queueFooter" style="display:none">
-        <div class="queue-footer-selection" id="queueSelectionBar" style="display:none">
-            <span class="queue-selection-count" id="queueSelectionCount">0 dipilih</span>
-            <div class="queue-selection-actions">
-                <button class="queue-btn-action queue-btn-delete-selected" id="queueDeleteSelected" disabled>
-                    <i class="fas fa-trash-alt"></i> Hapus Dipilih
-                </button>
-            </div>
-        </div>
-        <div class="queue-footer-bulk" id="queueBulkActions">
-            <button class="queue-btn-action queue-btn-delete-completed" id="queueDeleteCompleted">
-                <i class="fas fa-check-circle"></i> Hapus Selesai
-            </button>
-            <button class="queue-btn-action queue-btn-delete-failed" id="queueDeleteFailed">
-                <i class="fas fa-times-circle"></i> Hapus Gagal
-            </button>
-        </div>
+        <button class="queue-btn-action queue-btn-select-all" id="queueSelectAll">
+            <i class="fas fa-check-double"></i> Pilih Semua
+        </button>
+        <button class="queue-btn-action queue-btn-delete-selected" id="queueDeleteSelected" disabled>
+            <i class="fas fa-trash-alt"></i> Hapus <span id="queueDeleteCount"></span>
+        </button>
     </div>
 </div>
 <script type="module">

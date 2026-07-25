@@ -17,7 +17,7 @@ export class QueuePage {
         await this._refreshCsrfToken();
         await this.queue.init();
         this._bindFilterTabs();
-        this._bindBulkActions();
+        this._bindFooterActions();
         await this.loadQueue();
         this._startPolling();
 
@@ -60,21 +60,21 @@ export class QueuePage {
         });
     }
 
-    _bindBulkActions() {
-        document.getElementById('queueDeleteCompleted')?.addEventListener('click', () => this._deleteByStatus('completed'));
-        document.getElementById('queueDeleteFailed')?.addEventListener('click', () => this._deleteByStatus('failed'));
+    _bindFooterActions() {
+        document.getElementById('queueSelectAll')?.addEventListener('click', () => this._selectAll());
         document.getElementById('queueDeleteSelected')?.addEventListener('click', () => this._deleteSelected());
     }
 
-    async _deleteByStatus(status) {
-        const items = this.items.filter(i => i.status === status);
-        if (items.length === 0) return;
+    _selectAll() {
+        const visibleIds = this.filteredItems.map(i => i.id);
+        const allSelected = visibleIds.every(id => this.selectedIds.has(id));
 
-        for (const item of items) {
-            await this.queue.remove(item.id);
+        if (allSelected) {
+            visibleIds.forEach(id => this.selectedIds.delete(id));
+        } else {
+            visibleIds.forEach(id => this.selectedIds.add(id));
         }
-        this.selectedIds.clear();
-        await this.loadQueue();
+        this._updateSelectionUI();
     }
 
     async _deleteSelected() {
@@ -97,19 +97,22 @@ export class QueuePage {
     }
 
     _updateSelectionUI() {
-        const bar = document.getElementById('queueSelectionBar');
-        const bulk = document.getElementById('queueBulkActions');
-        const count = document.getElementById('queueSelectionCount');
         const deleteBtn = document.getElementById('queueDeleteSelected');
+        const selectAllBtn = document.getElementById('queueSelectAll');
+        const deleteCount = document.getElementById('queueDeleteCount');
+        const visibleIds = this.filteredItems.map(i => i.id);
+        const allSelected = visibleIds.length > 0 && visibleIds.every(id => this.selectedIds.has(id));
 
-        if (this.selectedIds.size > 0) {
-            if (bar) bar.style.display = 'flex';
-            if (bulk) bulk.style.display = 'none';
-            if (count) count.textContent = `${this.selectedIds.size} dipilih`;
-            if (deleteBtn) deleteBtn.disabled = false;
-        } else {
-            if (bar) bar.style.display = 'none';
-            if (bulk) bulk.style.display = 'flex';
+        if (deleteBtn) {
+            deleteBtn.disabled = this.selectedIds.size === 0;
+        }
+        if (selectAllBtn) {
+            selectAllBtn.innerHTML = allSelected
+                ? '<i class="fas fa-times-double"></i> Batal Pilih'
+                : '<i class="fas fa-check-double"></i> Pilih Semua';
+        }
+        if (deleteCount) {
+            deleteCount.textContent = this.selectedIds.size > 0 ? `(${this.selectedIds.size})` : '';
         }
 
         document.querySelectorAll('.queue-item').forEach(el => {
