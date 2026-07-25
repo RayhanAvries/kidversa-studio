@@ -29,6 +29,12 @@ class Router {
         $this->middleware[] = $middleware;
     }
 
+    public function addMiddlewareObject(\Kidversa\Middleware\MiddlewareInterface $middleware): void {
+        $this->middleware[] = function (callable $next) use ($middleware) {
+            $middleware->handle($next);
+        };
+    }
+
     public function dispatch(): void {
         $method = $_SERVER['REQUEST_METHOD'];
         $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
