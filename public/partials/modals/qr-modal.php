@@ -13,7 +13,7 @@
         </div>
 
         <div class="modal-actions">
-            <button class="btn-close" onclick="closeQRModal()">Close</button>
+            <button class="btn-close" id="btnCloseQr">Close</button>
         </div>
     </div>
 </div>

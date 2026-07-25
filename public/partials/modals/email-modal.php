@@ -16,8 +16,8 @@
         </div>
 
         <div class="modal-actions">
-            <button class="btn-modal btn-send" id="btnSendEmail" onclick="sendEmail()"><i class="fas fa-paper-plane"></i>Send Now</button>
-            <button class="btn-close" onclick="closeEmailModal()">Cancel</button>
+            <button class="btn-modal btn-send" id="btnSendEmail"><i class="fas fa-paper-plane"></i>Send Now</button>
+            <button class="btn-close" id="btnCloseEmail">Cancel</button>
         </div>
         <div id="emailCountdown" style="font-size:12px; text-align:center; margin-top:4px; color:#64748B;"></div>
     </div>

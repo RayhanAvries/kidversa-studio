@@ -7,6 +7,7 @@ import { Lang } from './modules/Lang.js';
 import { initPermissions } from './modules/InitPermissions.js';
 import { HandDetection } from './modules/HandDetection.js';
 import { HandDetectionUI } from './modules/HandDetectionUI.js';
+import { ModalManager } from './modules/ModalManager.js';
 
 export class Booth {
     constructor() {
@@ -30,6 +31,7 @@ export class Booth {
 
         this.handDetect = null;
         this.handDetectUI = null;
+        this.modalManager = null;
 
         this.counting = false;
         this.csrfToken = null;
@@ -76,6 +78,9 @@ export class Booth {
         }
 
         this._initHandDetection();
+
+        this.modalManager = new ModalManager(this);
+        this.modalManager.init();
       } catch (e) {
         console.error('[Booth] FATAL ERROR during init():', e);
         this.ui.btnCap.onclick = () => window.location.reload();
@@ -603,277 +608,6 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
-window.closeModal = () => {
-    document.getElementById('printModal').classList.remove('on');
-
-    if (window.booth && window.booth.ui && window.booth.ui.qrModal) {
-        window.booth.ui.hideQRModal();
-    }
-};
-
-window.openEmailModal = async () => {
-    const statusCheck = window.checkPhotoStatusBeforeAction('Email');
-    if (!statusCheck.allowed) {
-        const btnEmail = document.querySelector('.btn-email');
-        if (statusCheck.reason === 'pending') {
-            if (btnEmail) window.setActionButtonPending(btnEmail);
-        } else {
-            if (btnEmail) window.setActionButtonError(btnEmail);
-        }
-        return;
-    }
-
-    window.booth.ui.showEmailModal();
-};
-
-window.closeEmailModal = () => {
-    window.booth.ui.hideEmailModal();
-};
-
-window.sendEmail = async () => {
-    const emailInput = document.getElementById('emailInput');
-    const emailError = document.getElementById('emailError');
-    const btnSend = document.getElementById('btnSendEmail');
-    const email = emailInput.value.trim();
-
-    const emailRegex = Config.email().regex;
-    if (!emailRegex.test(email)) {
-        emailError.style.display = 'block';
-        emailInput.style.borderColor = 'red';
-        return;
-    }
-
-    emailError.style.display = 'none';
-    emailInput.style.borderColor = '';
-
-    const booth = window.booth;
-    if (!booth || !booth.savedFilename) {
-        alert(Lang.get('error.prefix') + 'Foto tidak tersedia. Silakan ambil foto terlebih dahulu.');
-        return;
-    }
-
-    const originalBtnText = btnSend.innerHTML;
-    btnSend.disabled = true;
-    btnSend.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-
-    try {
-        const res = await fetch('api/send-email.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                filename: booth.savedFilename,
-                email: email,
-                csrf_token: booth.csrfToken
-            })
-        });
-
-        if (!res.ok) throw new Error(`Server error: ${res.status}`);
-
-        const data = await res.json();
-
-        if (data.success) {
-            btnSend.innerHTML = '<i class="fas fa-check"></i> Success';
-            btnSend.style.background = '#28a745';
-
-            let countdown = Config.email().modal?.countdown ?? 10;
-            const countdownEl = document.getElementById('emailCountdown');
-            const timer = setInterval(() => {
-                if (countdown > 0) {
-                    countdown--;
-                    if (countdownEl) countdownEl.textContent = `Closing in ${countdown}s`;
-                } else {
-                    clearInterval(timer);
-                    if (countdownEl) countdownEl.textContent = '';
-                    window.closeEmailModal();
-                    btnSend.disabled = false;
-                    btnSend.innerHTML = originalBtnText;
-                    btnSend.style.background = '';
-                    emailInput.value = '';
-                }
-            }, 1000);
-        } else {
-            throw new Error(data.message || 'Failed to send email');
-        }
-    } catch (e) {
-        console.error('[Booth] sendEmail Error:', e);
-        alert(Lang.get('error.prefix') + (e.message || 'Failed to send email'));
-        btnSend.disabled = false;
-        btnSend.innerHTML = `<i class="fas fa-redo"></i> ${Lang.get('email.retry')}`;
-        btnSend.style.background = '#dc3545';
-        setTimeout(() => {
-            btnSend.innerHTML = originalBtnText;
-            btnSend.style.background = '';
-        }, 3000);
-    }
-};
-
-window.setActionButtonError = (button, message = 'Foto Tidak tersedia') => {
-    const originalText = button.innerHTML;
-    const originalBg = button.style.background;
-    button.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
-    button.style.background = '#EF4444';
-    button.disabled = true;
-    setTimeout(() => {
-        button.innerHTML = originalText;
-        button.style.background = originalBg;
-        button.disabled = false;
-    }, 3000);
-};
-
-window.setActionButtonPending = (button, message = 'Foto Masih Di Proses') => {
-    const originalText = button.innerHTML;
-    const originalBg = button.style.background;
-    button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${message}`;
-    button.style.background = '#F59E0B';
-    button.disabled = true;
-    setTimeout(() => {
-        button.innerHTML = originalText;
-        button.style.background = originalBg;
-        button.disabled = false;
-    }, 3000);
-};
-
-window.checkPhotoStatusBeforeAction = (actionName = 'aksi') => {
-    const booth = window.booth;
-    if (!booth) {
-        return { allowed: false, reason: 'boothNotReady' };
-    }
-    const photoStatus = booth.getPhotoStatus();
-    if (photoStatus.status === 'pending') {
-        return { allowed: false, reason: 'pending', key: photoStatus.key };
-    }
-    if (photoStatus.status === 'none' || !photoStatus.filename) {
-        return { allowed: false, reason: 'notAvailable' };
-    }
-    return { allowed: true, filename: photoStatus.filename };
-};
-
-window.downloadNow = async () => {
-    const statusCheck = window.checkPhotoStatusBeforeAction('Download');
-    if (!statusCheck.allowed) {
-        const btnDownload = document.querySelector('.btn-download');
-        if (statusCheck.reason === 'pending') {
-            if (btnDownload) window.setActionButtonPending(btnDownload);
-        } else {
-            if (btnDownload) window.setActionButtonError(btnDownload);
-        }
-        return;
-    }
-
-    try {
-        const photoUrl = 'uploads/photos/' + statusCheck.filename;
-        
-        const link = document.createElement('a');
-        link.href = photoUrl;
-        link.download = 'kidversa-photo-' + Date.now() + '.png';
-        link.target = '_blank';
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    } catch (e) {
-        console.error('Download process error:', e);
-        alert(Lang.get('error.prefix') + 'Gagal mengunduh foto');
-    }
-};
-
-window.printNow = async () => {
-    const statusCheck = window.checkPhotoStatusBeforeAction('Print');
-    if (!statusCheck.allowed) {
-        const btnPrint = document.querySelector('.btn-print');
-        if (statusCheck.reason === 'pending') {
-            if (btnPrint) window.setActionButtonPending(btnPrint);
-        } else {
-            if (btnPrint) window.setActionButtonError(btnPrint);
-        }
-        return;
-    }
-
-    try {
-        const photoUrl = 'uploads/photos/' + statusCheck.filename;
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-
-        await new Promise((resolve, reject) => {
-            img.onload = () => resolve();
-            img.onerror = (e) => reject(e);
-            img.src = photoUrl;
-        });
-
-        const printCanvas = document.createElement('canvas');
-        printCanvas.width = img.width || window.booth.cameraConfig.TW;
-        printCanvas.height = img.height || window.booth.cameraConfig.TH;
-        const ctx = printCanvas.getContext('2d');
-        
-        ctx.drawImage(img, 0, 0, printCanvas.width, printCanvas.height);
-
-        const blobUrl = printCanvas.toDataURL('image/png');
-        const blob = await window.booth.dataURLtoBlob(blobUrl);
-        const objectUrl = URL.createObjectURL(blob);
-
-        const iframe = document.createElement('iframe');
-        iframe.style.cssText = `
-            position: fixed;
-            left: -9999px;
-            top: -9999px;
-            width: 100%;
-            height: 100%;
-        `;
-        document.body.appendChild(iframe);
-
-        let printFired = false;
-        const doPrint = () => {
-            if (printFired) return;
-            printFired = true;
-            try {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-            } catch (e) {
-                console.error('Print failed:', e);
-            }
-        };
-
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        iframeDoc.open();
-        iframeDoc.write(`<!DOCTYPE html><html>
-<head><title>Print Photo</title>
-<style>
-    * { margin: 0; padding: 0; }
-    body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; }
-    img { max-width: 100%; height: auto; }
-    @page { margin: 0; size: auto; }
-    @media print { body { margin: 0; padding: 0; } }
-</style>
-</head>
-<body>
-    <img src="${objectUrl}" onload="setTimeout(() => { window.parent.triggerPrint && window.parent.triggerPrint(); }, 200);">
-</body>
-</html>`);
-        iframeDoc.close();
-
-        window.triggerPrint = doPrint;
-        setTimeout(doPrint, 800);
-        setTimeout(() => {
-            try {
-                delete window.triggerPrint;
-                document.body.removeChild(iframe);
-                URL.revokeObjectURL(objectUrl);
-            } catch (e) {}
-        }, 15000);
-    } catch (e) {
-        console.error('Print process error:', e);
-        alert(Lang.get('error.prefix') + 'Gagal menyiapkan foto untuk dicetak');
-    }
-};
-
-document.getElementById('printModal').addEventListener('click', function(e) {
-    if (e.target === this) window.closeModal();
-});
-
-window.closeQRModal = () => {
-    window.booth.ui.hideQRModal();
-};
-
 const startBoothCleanupInterval = () => {
     let cleanupInterval = null;
     let monitorInterval = null;
@@ -896,7 +630,7 @@ const startBoothCleanupInterval = () => {
                 }
             }
         } catch (e) {
-            console.error('Photo cleanup failed:', e);
+            console.error('[Booth] Photo cleanup failed:', e);
         }
     };
 
@@ -930,7 +664,7 @@ const startBoothCleanupInterval = () => {
                 }
             }
         } catch (e) {
-            console.error('Folder monitor failed:', e);
+            console.error('[Booth] Folder monitor failed:', e);
         }
     };
 
@@ -941,46 +675,3 @@ const startBoothCleanupInterval = () => {
 document.addEventListener('DOMContentLoaded', () => {
     startBoothCleanupInterval();
 });
-
-window.openQRModal = async () => {
-    const booth = window.booth;
-    const ui = booth?.ui;
-
-    if (!booth || !ui) return;
-
-    const statusCheck = window.checkPhotoStatusBeforeAction('QR');
-    if (!statusCheck.allowed) {
-        const btnQr = document.querySelector('.btn-qr');
-        if (statusCheck.reason === 'pending') {
-            if (btnQr) window.setActionButtonPending(btnQr);
-        } else {
-            if (btnQr) window.setActionButtonError(btnQr);
-        }
-        return;
-    }
-
-    ui.showQRModal();
-    ui.setQRLoading(true);
-
-    try {
-        const baseUrl = window.location.protocol + '//' + window.location.host;
-        const qrUrl = `${baseUrl}/api/generate-qr.php?filename=${encodeURIComponent(statusCheck.filename)}`;
-
-        const qrImage = document.getElementById('qrImage');
-        qrImage.onload = function() {
-            ui.setQRLoading(false);
-        };
-        qrImage.onerror = function() {
-            console.error('Failed to load QR image');
-            alert('Failed to generate QR code');
-            ui.hideQRModal();
-        };
-        ui.setQRImage(qrUrl);
-
-    } catch (e) {
-        console.error('QR Modal Error:', e);
-        ui.showToastMessage('Error: ' + e.message);
-        alert(Lang.get('error.prefix') + e.message);
-        ui.hideQRModal();
-    }
-};
