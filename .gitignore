@@ -43,3 +43,6 @@ docker-compose.override.yml
 ./AGENTS.md
 .AGENTS.md
 *AGENTS.md
+
+# Design templates
+design_template/
