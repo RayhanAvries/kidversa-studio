@@ -8,6 +8,7 @@ use Kidversa\Helpers\RateLimitHelper;
 use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Helpers\PathHelper;
 use Kidversa\Helpers\FileHelper;
+use Kidversa\Helpers\ResponseHelper;
 use Kidversa\Services\PhotoService;
 use Kidversa\Services\EmailService;
 use Kidversa\Config\AppConfig;
