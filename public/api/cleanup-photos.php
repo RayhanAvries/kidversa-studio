@@ -12,9 +12,16 @@ spl_autoload_register(function ($class) {
 });
 
 use Kidversa\Helpers\FileHelper;
+use Kidversa\Helpers\RateLimitHelper;
 use Kidversa\Services\PhotoService;
 
 header('Content-Type: application/json');
+
+if (!RateLimitHelper::isAllowed('cleanup-photos', 1, 30)) {
+    http_response_code(429);
+    echo json_encode(['success' => false, 'message' => 'Rate limit exceeded. Please try again later.']);
+    exit;
+}
 
 try {
     $uploadDir = FileHelper::getUploadDir();

@@ -4,9 +4,16 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Helpers\CsrfHelper;
+use Kidversa\Helpers\RateLimitHelper;
 use Kidversa\Services\PhotoService;
 
 header('Content-Type: application/json');
+
+if (!RateLimitHelper::isAllowed('save-photo', 10, 60)) {
+    http_response_code(429);
+    echo json_encode(['success' => false, 'message' => 'Rate limit exceeded. Please try again later.']);
+    exit;
+}
 
 if (!CsrfHelper::validateRequest()) {
     http_response_code(403);

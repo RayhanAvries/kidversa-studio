@@ -5,8 +5,15 @@ use Kidversa\Services\EmailService;
 use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Helpers\CsrfHelper;
+use Kidversa\Helpers\RateLimitHelper;
 
 header('Content-Type: application/json');
+
+if (!RateLimitHelper::isAllowed('send-email', 5, 60)) {
+    http_response_code(429);
+    echo json_encode(['success' => false, 'message' => 'Rate limit exceeded. Please try again later.']);
+    exit;
+}
 
 try {
     $input = json_decode(file_get_contents('php://input'), true);

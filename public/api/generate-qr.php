@@ -8,6 +8,13 @@ use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Kidversa\Helpers\ValidationHelper;
+use Kidversa\Helpers\RateLimitHelper;
+
+if (!RateLimitHelper::isAllowed('generate-qr', 20, 60)) {
+    http_response_code(429);
+    echo "Rate limit exceeded. Please try again later.";
+    exit;
+}
 
 try {
     if (!isset($_GET['filename']) || empty($_GET['filename'])) {
