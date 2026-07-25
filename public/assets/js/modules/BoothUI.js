@@ -1,9 +1,12 @@
 import { Lang } from "./Lang.js";
+console.log('[Kidversa] BoothUI.js v4.2.1 loaded — retry/queue controls active');
 export class BoothUI {
   constructor() {
     this.btnCap = document.getElementById("btnCapture");
     this.btnRet = document.getElementById("btnRetake");
     this.btnDone = document.getElementById("btnDone");
+    this.btnRetry = document.getElementById("btnRetry");
+    this.btnQueue = document.getElementById("btnQueue");
     this.modal = document.getElementById("printModal");
     this.qrModal = document.getElementById("qrModal");
     this.cdOverlay = document.getElementById("cdOverlay");
@@ -83,15 +86,37 @@ export class BoothUI {
       this.btnCap.style.display = "flex";
       this.btnRet.style.display = "none";
       this.btnDone.style.display = "none";
+      if (this.btnRetry) this.btnRetry.style.display = "none";
+      if (this.btnQueue) this.btnQueue.style.display = "none";
     } else if (state === "captured") {
       this.btnCap.style.display = "none";
       this.btnRet.style.display = "flex";
       this.btnDone.style.display = "flex";
+      if (this.btnRetry) this.btnRetry.style.display = "none";
+      if (this.btnQueue) this.btnQueue.style.display = "none";
     } else if (state === "done") {
       this.btnCap.style.display = "none";
       this.btnRet.style.display = "none";
       this.btnDone.style.display = "flex";
+      if (this.btnRetry) this.btnRetry.style.display = "none";
+      if (this.btnQueue) this.btnQueue.style.display = "none";
     }
+  }
+
+  setUploadFailedControls() {
+    this.btnCap.style.display = "none";
+    this.btnRet.style.display = "flex";
+    this.btnDone.style.display = "none";
+    if (this.btnRetry) this.btnRetry.style.display = "flex";
+    if (this.btnQueue) this.btnQueue.style.display = "flex";
+  }
+
+  setRetryInProgressControls() {
+    this.btnCap.style.display = "none";
+    this.btnRet.style.display = "none";
+    this.btnDone.style.display = "none";
+    if (this.btnRetry) this.btnRetry.style.display = "none";
+    if (this.btnQueue) this.btnQueue.style.display = "none";
   }
 
   scrollToTop() {
@@ -123,5 +148,21 @@ export class BoothUI {
   hideLoadingOverlay() {
     const overlay = document.getElementById("loadingOverlay");
     if (overlay) overlay.style.display = "none";
+  }
+
+  showToastMessage(message, duration = 3000) {
+    let toast = document.getElementById("boothToast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "boothToast";
+      toast.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:12px 24px;border-radius:12px;font-size:0.9rem;font-weight:600;z-index:100000;box-shadow:0 8px 24px rgba(0,0,0,0.3);transition:opacity 0.3s ease;font-family:'Plus Jakarta Sans',sans-serif;max-width:90%;text-align:center;";
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.style.opacity = "1";
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => {
+      toast.style.opacity = "0";
+    }, duration);
   }
 }

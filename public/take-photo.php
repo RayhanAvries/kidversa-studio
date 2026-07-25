@@ -12,39 +12,45 @@
 </head>
 <body>
 <div class="app">
-    <div class="top-bar">
-        <div class="brand"><i class="fas fa-star" style="color:#EAB308;"></i>Kidversa <span>Studio</span></div>
-        <div class="top-actions">
-            <div class="timer-config-wrap">
-                <i class="fas fa-clock"></i>
-                <select class="timer-select" id="captureTimerSelect">
-                    <option value="3">3s</option>
-                    <option value="5" selected>5s</option>
-                    <option value="10">10s</option>
-                    <option value="30">30s</option>
-                </select>
+    <?php $activePage = 'take-photo'; include __DIR__ . '/partials/app-header.php'; ?>
+    <div class="main-content">
+        <div class="main-area" id="mainArea">
+            <div class="photo-wrap">
+                <div class="photo-box" id="photoBox">
+                    <video id="camVideo" class="layer" autoplay playsinline muted></video>
+                    <canvas id="camCanvas" class="layer"></canvas>
+                    <div id="filterFx"></div>
+                    <img id="frameImg" src="" alt="Frame">
+                    <div class="flash" id="flashFx"></div>
+                    <div class="countdown" id="cdOverlay"><span id="cdNumber">3</span></div>
+                </div>
             </div>
-            <div id="handDetectBadgeWrap"></div>
-            <button class="btn-back" id="btnBack"><i class="fas fa-arrow-left"></i>Back</button>
-        </div>
-    </div>
-    <div class="main-area" id="mainArea">
-        <div class="photo-wrap">
-            <div class="photo-box" id="photoBox">
-                <video id="camVideo" class="layer" autoplay playsinline muted></video>
-                <canvas id="camCanvas" class="layer"></canvas>
-                <div id="filterFx"></div>
-                <img id="frameImg" src="" alt="Frame">
-                <div class="flash" id="flashFx"></div>
-                <div class="countdown" id="cdOverlay"><span id="cdNumber">3</span></div>
+            <div class="btn-row">
+                <button class="btn-capture" id="btnCapture" disabled><i class="fas fa-camera"></i>Capture</button>
+                <button class="btn-retake" id="btnRetake" style="display:none"><i class="fas fa-redo"></i>Retake</button>
+                <button class="btn-done" id="btnDone" style="display:none"><i class="fas fa-check"></i>Done</button>
+                <button class="btn-retry" id="btnRetry" style="display:none"><i class="fas fa-sync-alt"></i>Retry</button>
+                <button class="btn-queue" id="btnQueue" style="display:none"><i class="fas fa-list"></i>Queue</button>
             </div>
         </div>
-        <div class="btn-row">
-            <button class="btn-capture" id="btnCapture" disabled><i class="fas fa-camera"></i>Capture</button>
-            <button class="btn-retake" id="btnRetake" style="display:none"><i class="fas fa-redo"></i>Retake</button>
-            <button class="btn-done" id="btnDone" style="display:none"><i class="fas fa-check"></i>Done</button>
-        </div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-inner" id="sidebarContent">
+                <div class="timer-config-wrap">
+                    <i class="fas fa-clock"></i>
+                    <select class="timer-select" id="captureTimerSelect">
+                        <option value="3">3s</option>
+                        <option value="5" selected>5s</option>
+                        <option value="10">10s</option>
+                        <option value="30">30s</option>
+                    </select>
+                </div>
+                <div id="handDetectBadgeWrap"></div>
+                <button class="btn-back" id="btnBack"><i class="fas fa-arrow-left"></i>Back</button>
+            </div>
+        </aside>
     </div>
+    <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-cog"></i></button>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <div class="controls">
         <div class="section-title">Filters</div>
         <div class="filter-scroll-container">
@@ -68,10 +74,49 @@
 <?php include 'partials/footer.php'; ?>
 <script>
 if ('serviceWorker' in navigator) {
+    const SW_VERSION = '4.2.1';
+
+    // If stored version differs, force-clear all caches and reload
+    const storedVersion = localStorage.getItem('kidversa_sw_version');
+    if (storedVersion && storedVersion !== SW_VERSION) {
+        console.log('[Kidversa] Version changed (' + storedVersion + ' -> ' + SW_VERSION + '), clearing caches...');
+        caches.keys().then(names => Promise.all(names.map(n => caches.delete(n)))).then(() => {
+            localStorage.setItem('kidversa_sw_version', SW_VERSION);
+            window.location.reload();
+        });
+    } else {
+        localStorage.setItem('kidversa_sw_version', SW_VERSION);
+    }
+
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('SW registered:', reg.scope))
+            .then(reg => {
+                console.log('SW registered:', reg.scope);
+                // If a new SW is waiting, tell it to activate immediately
+                if (reg.waiting) {
+                    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                }
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'activated') {
+                                console.log('SW updated — reloading');
+                                window.location.reload();
+                            }
+                        });
+                    }
+                });
+            })
             .catch(err => console.error('SW registration failed:', err));
+
+        // Listen for SW version update messages
+        navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'SW_UPDATED') {
+                console.log('SW updated to v' + event.data.version + ' — reloading');
+                window.location.reload();
+            }
+        });
     });
 }
 </script>

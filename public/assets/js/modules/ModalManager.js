@@ -30,6 +30,27 @@ export class ModalManager {
     closeModal() {
         this.printModal?.classList.remove('on');
         this.qrModal && (this.qrModal.style.display = 'none');
+
+        const btnDownload = document.getElementById('btnDownload');
+        if (btnDownload) btnDownload.style.display = '';
+
+        const btnHome = document.getElementById('btnHome');
+        if (btnHome) btnHome.style.display = '';
+    }
+
+    openForGalleryPhoto(filename) {
+        if (!this.booth) return;
+        this.booth.savedFilename = filename;
+        this.booth.pendingUpload = null;
+        this.booth.uploadKey = null;
+
+        const btnDownload = document.getElementById('btnDownload');
+        if (btnDownload) btnDownload.style.display = 'none';
+
+        const btnHome = document.getElementById('btnHome');
+        if (btnHome) btnHome.style.display = 'none';
+
+        this.printModal?.classList.add('on');
     }
 
     openEmailModal() {

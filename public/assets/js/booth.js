@@ -12,6 +12,8 @@ import { ChunkUploader } from './modules/ChunkUploader.js';
 import { OperationQueue } from './modules/OperationQueue.js';
 import { RetryManager } from './modules/RetryManager.js';
 
+console.log('[Kidversa] booth.js v4.2.1 loaded — retry/queue support active');
+
 export class Booth {
     constructor() {
         this.cameraConfig = {
@@ -31,6 +33,7 @@ export class Booth {
         this.savedFilename = null;
         this.pendingUpload = null;
         this.uploadKey = null;
+        this.currentUploadFilename = null;
 
         this.handDetect = null;
         this.handDetectUI = null;
@@ -90,6 +93,8 @@ export class Booth {
 
         this.modalManager = new ModalManager(this);
         this.modalManager.init();
+
+        this._initSidebarToggle();
 
         this._startRetryProcessor();
 
@@ -162,6 +167,16 @@ export class Booth {
                 }
             });
         }
+
+        const btnRetry = document.getElementById('btnRetry');
+        if (btnRetry) {
+            btnRetry.addEventListener('click', () => this._handleUploadRetry());
+        }
+
+        const btnQueue = document.getElementById('btnQueue');
+        if (btnQueue) {
+            btnQueue.addEventListener('click', () => this._handleGoToQueue());
+        }
     }
 
     confirmNavigation() {
@@ -216,7 +231,7 @@ export class Booth {
         document.getElementById('camCanvas').style.display = 'block';
         this.ui.setCaptureControls('captured');
         this.ui.scrollToTop();
-        await this.savePhotoToBackend();
+        this.savePhotoToBackend();
     }
 
     async composeFinalImage(imageDataUrl, targetWidth, targetHeight) {
@@ -325,6 +340,18 @@ export class Booth {
         });
     }
 
+    _getUploadLocation() {
+        return window.__appPermissions?.position ? {
+            lat: window.__appPermissions.position.coords.latitude,
+            lng: window.__appPermissions.position.coords.longitude,
+            name: window.__appPermissions.position.name || "Kidversa Studio, Bandung"
+        } : { lat: -6.9175, lng: 107.6191, name: "Bandung" };
+    }
+
+    async _uploadPhoto(blob, filename, csrfToken, location, onProgress) {
+        return await this.chunkUploader.upload(blob, filename, csrfToken, location, onProgress);
+    }
+
     async savePhotoToBackend(isReplacement = false) {
         this.ui.showLoadingOverlay("Memproses...");
         let percent = 0;
@@ -350,11 +377,7 @@ export class Booth {
             }
         }, 200);
 
-        const location = window.__appPermissions?.position ? {
-            lat: window.__appPermissions.position.coords.latitude,
-            lng: window.__appPermissions.position.coords.longitude,
-            name: window.__appPermissions.position.name || "Kidversa Studio, Bandung"
-        } : { lat: -6.9175, lng: 107.6191, name: "Bandung" };
+        const location = this._getUploadLocation();
 
         try {
             if (isReplacement && this.savedFilename) {
@@ -368,8 +391,6 @@ export class Booth {
                 });
             }
 
-            const compositeCanvas = await this.composeFinalImage(this.rawData, this.cameraConfig.TW, this.cameraConfig.TH);
-            this.captured = compositeCanvas.toDataURL("image/png");
             const blob = await this.dataURLtoBlob(this.captured);
 
             const uploadKey = "upload_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
@@ -384,42 +405,32 @@ export class Booth {
                 String(dt.getMinutes()).padStart(2, '0') +
                 String(dt.getSeconds()).padStart(2, '0');
             const generatedFilename = `kidversa_${ts}.png`;
+            this.currentUploadFilename = generatedFilename;
 
-            const operation = {
-                type: 'save_photo',
-                data: {
-                    filename: generatedFilename,
-                    location: location,
-                    csrfToken: this.csrfToken,
-                    blobBase64: this.captured
-                },
-                maxRetries: 5
-            };
-
-            const result = await this.retryManager.execute(operation, async () => {
-                return await this.chunkUploader.upload(
-                    blob,
-                    operation.data.filename,
-                    this.csrfToken,
-                    location,
-                    (progress) => {
-                        const uploadPercent = Math.round(progress.percent * 0.8);
-                        this.ui.updateLoadingProgress(
-                            Math.min(uploadPercent, 80),
-                            `Mengunggah foto... (${progress.chunk}/${progress.totalChunks})`
-                        );
-                    }
-                );
-            });
+            const result = await this._uploadPhoto(
+                blob,
+                generatedFilename,
+                this.csrfToken,
+                location,
+                (progress) => {
+                    const uploadPercent = Math.round(progress.percent * 0.8);
+                    this.ui.updateLoadingProgress(
+                        Math.min(uploadPercent, 80),
+                        `Mengunggah foto... (${progress.chunk}/${progress.totalChunks})`
+                    );
+                }
+            );
 
             clearInterval(progressInterval);
 
             if (result && result.success) {
                 this.savedFilename = result.filename;
                 this.pendingUpload = null;
+                this.currentUploadFilename = null;
                 this.ui.updateLoadingProgress(100, "Selesai!");
                 setTimeout(() => {
                     this.ui.hideLoadingOverlay();
+                    this._handleUploadSuccess();
                 }, 500);
             } else {
                 throw new Error(result?.message || "Gagal menyimpan foto");
@@ -429,8 +440,7 @@ export class Booth {
             this.ui.hideLoadingOverlay();
             console.error(e);
             this.pendingUpload = null;
-
-            alert("Gagal mengunggah foto. Foto akan dicoba lagi secara otomatis saat jaringan membaik.");
+            this._handleUploadFailure();
         }
     }
 
@@ -445,6 +455,21 @@ export class Booth {
     }
 
     async retake() {
+        if (this.captured && !this.savedFilename && this.currentUploadFilename) {
+            const operation = {
+                type: 'save_photo',
+                data: {
+                    filename: this.currentUploadFilename,
+                    blobBase64: this.captured,
+                    location: this._getUploadLocation(),
+                    csrfToken: this.csrfToken
+                },
+                maxRetries: 5
+            };
+            await this.operationQueue.enqueue(operation);
+            this.ui.showToastMessage('Foto masuk antrian. Akan dicoba otomatis.', 3000);
+        }
+        this.currentUploadFilename = null;
         this.rawData = null;
         this.captured = null;
         this.savedFilename = null;
@@ -537,12 +562,100 @@ export class Booth {
 
     async finish() {
         try {
+            if (!this.savedFilename) {
+                return;
+            }
             this.ui.showPrintModal();
         } catch (e) {
             console.error('[Booth] Finish error:', e);
             this.ui.showToastMessage('Error: ' + e.message);
-            alert(Lang.get('error.prefix') + e.message);
         }
+    }
+
+    _handleUploadSuccess() {
+        if (this.captured) {
+            this.ui.setCaptureControls('captured');
+            this.ui.showPrintModal();
+        }
+    }
+
+    _handleUploadFailure() {
+        this.ui.showToastMessage('Upload gagal. Periksa jaringan Anda.', 4000);
+        this.ui.setUploadFailedControls();
+    }
+
+    async _handleUploadRetry() {
+        if (!this.captured || !this.currentUploadFilename) return;
+
+        this.ui.setRetryInProgressControls();
+        this.ui.showLoadingOverlay("Mengunggah ulang...");
+
+        let percent = 0;
+        const progressInterval = setInterval(() => {
+            if (percent < 90) {
+                percent += Math.floor(Math.random() * 5) + 2;
+                if (percent > 90) percent = 90;
+                this.ui.updateLoadingProgress(percent, "Mengunggah ulang...");
+            }
+        }, 200);
+
+        try {
+            const blob = await this.dataURLtoBlob(this.captured);
+
+            const location = this._getUploadLocation();
+
+            const result = await this._uploadPhoto(
+                blob,
+                this.currentUploadFilename,
+                this.csrfToken,
+                location,
+                (progress) => {
+                    const uploadPercent = Math.round(progress.percent * 0.8);
+                    this.ui.updateLoadingProgress(
+                        Math.min(uploadPercent, 80),
+                        `Mengunggah ulang... (${progress.chunk}/${progress.totalChunks})`
+                    );
+                }
+            );
+
+            clearInterval(progressInterval);
+
+            if (result && result.success) {
+                this.savedFilename = result.filename;
+                this.pendingUpload = null;
+                this.currentUploadFilename = null;
+                this.ui.updateLoadingProgress(100, "Selesai!");
+                setTimeout(() => {
+                    this.ui.hideLoadingOverlay();
+                    this._handleUploadSuccess();
+                }, 500);
+            } else {
+                throw new Error(result?.message || "Gagal mengunggah ulang");
+            }
+        } catch (e) {
+            clearInterval(progressInterval);
+            this.ui.hideLoadingOverlay();
+            console.error('[Booth] Retry upload failed:', e);
+            this.pendingUpload = null;
+            this._handleUploadFailure();
+        }
+    }
+
+    _handleGoToQueue() {
+        if (this.currentUploadFilename && this.captured) {
+            const operation = {
+                type: 'save_photo',
+                data: {
+                    filename: this.currentUploadFilename,
+                    blobBase64: this.captured,
+                    location: this._getUploadLocation(),
+                    csrfToken: this.csrfToken
+                },
+                maxRetries: 5
+            };
+            this.operationQueue.enqueue(operation);
+        }
+        window.location.href = 'queue.php?autoretry=1';
     }
 
     destroy() {
@@ -620,6 +733,41 @@ export class Booth {
         if (this.handDetect && this.handDetect.isEnabled()) {
             this.handDetect.start();
         }
+    }
+
+    _initSidebarToggle() {
+        const toggle = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        if (!toggle || !sidebar) return;
+
+        const open = () => {
+            sidebar.classList.add('open');
+            overlay.classList.add('on');
+        };
+
+        const close = () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('on');
+        };
+
+        toggle.addEventListener('click', () => {
+            if (sidebar.classList.contains('open')) {
+                close();
+            } else {
+                open();
+            }
+        });
+
+        if (overlay) {
+            overlay.addEventListener('click', close);
+        }
+    }
+
+    openPrintModalForPhoto(filename) {
+        this.savedFilename = filename;
+        this.ui.showPrintModal();
     }
 
     _startRetryProcessor() {

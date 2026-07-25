@@ -1,4 +1,5 @@
-const CACHE_NAME = 'kidversa-v1';
+const CACHE_NAME = 'kidversa-v2';
+const APP_VERSION = '4.2.1';
 const STATIC_ASSETS = [
     '/assets/css/main.css',
     '/assets/css/capture.css',
@@ -43,6 +44,21 @@ self.addEventListener('activate', (event) => {
         })
     );
     self.clients.claim();
+
+    // Notify all clients that a new version is available
+    event.waitUntil(
+        self.clients.matchAll().then((clients) => {
+            clients.forEach((client) => {
+                client.postMessage({ type: 'SW_UPDATED', version: APP_VERSION });
+            });
+        })
+    );
+});
+
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
 
 self.addEventListener('fetch', (event) => {
@@ -63,6 +79,25 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Network-first for JS files to ensure fresh code is served
+    if (url.pathname.endsWith('.js')) {
+        event.respondWith(
+            fetch(event.request).then((networkResponse) => {
+                if (networkResponse.ok) {
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseClone);
+                    });
+                }
+                return networkResponse;
+            }).catch(() => {
+                return caches.match(event.request);
+            })
+        );
+        return;
+    }
+
+    // Cache-first for everything else (CSS, images, fonts)
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
             if (cachedResponse) {
