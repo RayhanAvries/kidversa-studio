@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../src/bootstrap.php';
 use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\RateLimitHelper;
 use Kidversa\Helpers\SecurityHelper;
+use Kidversa\Helpers\CsrfHelper;
 use Kidversa\Services\PhotoService;
 
 SecurityHelper::sendApiSecurityHeaders();
@@ -12,6 +13,13 @@ header('Content-Type: application/json');
 if (!RateLimitHelper::isAllowed('cleanup-photos', 1, 30)) {
     http_response_code(429);
     echo json_encode(['success' => false, 'message' => 'Rate limit exceeded. Please try again later.']);
+    exit;
+}
+
+$csrfToken = $_GET['csrf_token'] ?? null;
+if (!CsrfHelper::validateToken($csrfToken)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
     exit;
 }
 

@@ -616,7 +616,8 @@ const startBoothCleanupInterval = () => {
 
     const runCleanup = async () => {
         try {
-            const res = await fetch('api/cleanup-photos.php');
+            const csrfToken = window.booth?.csrfToken || '';
+            const res = await fetch('api/cleanup-photos.php?csrf_token=' + encodeURIComponent(csrfToken));
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const contentType = res.headers.get("content-type");
             if (!contentType || !contentType.includes("application/json")) {
@@ -649,7 +650,8 @@ const startBoothCleanupInterval = () => {
 
     const monitorFolder = async () => {
         try {
-            const res = await fetch('api/cleanup-photos.php');
+            const csrfToken = window.booth?.csrfToken || '';
+            const res = await fetch('api/cleanup-photos.php?csrf_token=' + encodeURIComponent(csrfToken));
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const contentType = res.headers.get("content-type");
             if (!contentType || !contentType.includes("application/json")) {

@@ -9,6 +9,9 @@ use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Helpers\RateLimitHelper;
+use Kidversa\Helpers\SecurityHelper;
+
+SecurityHelper::sendApiSecurityHeaders();
 
 if (!RateLimitHelper::isAllowed('generate-qr', 20, 60)) {
     http_response_code(429);

@@ -4,6 +4,9 @@ require_once __DIR__ . '/../../src/bootstrap.php';
 use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\ValidationHelper;
 use Kidversa\Helpers\PathHelper;
+use Kidversa\Helpers\SecurityHelper;
+
+SecurityHelper::sendApiSecurityHeaders();
 
 try {
     if (!isset($_GET['file']) || empty($_GET['file'])) {
