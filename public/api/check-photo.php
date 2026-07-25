@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-use Kidversa\Config\AppConfig;
+use Kidversa\Helpers\FileHelper;
 
 header('Content-Type: application/json');
 
@@ -18,7 +18,7 @@ try {
         exit;
     }
 
-    $photoPath = AppConfig::PHOTO_UPLOAD_PATH . '/' . $filename;
+    $photoPath = FileHelper::getUploadDir() . '/' . $filename;
     $exists = file_exists($photoPath);
 
     echo json_encode(['exists' => $exists]);

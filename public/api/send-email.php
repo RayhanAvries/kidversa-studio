@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Kidversa\Services\EmailService;
-use Kidversa\Config\AppConfig;
+use Kidversa\Helpers\FileHelper;
 
 header('Content-Type: application/json');
 
@@ -24,7 +24,7 @@ try {
         throw new Exception('Invalid filename format');
     }
 
-    $photoPath = AppConfig::PHOTO_UPLOAD_PATH . '/' . $filename;
+    $photoPath = FileHelper::getUploadDir() . '/' . $filename;
     if (!file_exists($photoPath)) {
         throw new Exception('Photo file not found');
     }
