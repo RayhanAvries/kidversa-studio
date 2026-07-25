@@ -46,7 +46,7 @@ class ChunkAssemblyHelper
             return false;
         }
 
-        $chunkPath = $sessionDir . '/chunk_' . str_pad($chunkIndex, 6, '0', STR_PAD_LEFT);
+        $chunkPath = $sessionDir . '/chunk_' . str_pad((string) $chunkIndex, 6, '0', STR_PAD_LEFT);
         file_put_contents($chunkPath, $chunkData);
 
         $meta['received_chunks']++;
@@ -83,7 +83,7 @@ class ChunkAssemblyHelper
         $handle = fopen($finalPath, 'w');
 
         for ($i = 0; $i < $meta['total_chunks']; $i++) {
-            $chunkPath = $sessionDir . '/chunk_' . str_pad($i, 6, '0', STR_PAD_LEFT);
+            $chunkPath = $sessionDir . '/chunk_' . str_pad((string) $i, 6, '0', STR_PAD_LEFT);
             if (!file_exists($chunkPath)) {
                 fclose($handle);
 
