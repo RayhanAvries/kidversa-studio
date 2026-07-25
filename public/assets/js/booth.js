@@ -91,6 +91,8 @@ export class Booth {
         this.modalManager = new ModalManager(this);
         this.modalManager.init();
 
+        this._startRetryProcessor();
+
         startBoothCleanupInterval();
       } catch (e) {
         console.error('[Booth] FATAL ERROR during init():', e);
@@ -388,7 +390,8 @@ export class Booth {
                 data: {
                     filename: generatedFilename,
                     location: location,
-                    csrfToken: this.csrfToken
+                    csrfToken: this.csrfToken,
+                    blobBase64: this.captured
                 },
                 maxRetries: 5
             };
@@ -426,16 +429,6 @@ export class Booth {
             this.ui.hideLoadingOverlay();
             console.error(e);
             this.pendingUpload = null;
-
-            const failedOp = {
-                type: 'save_photo',
-                data: {
-                    captured: this.captured,
-                    csrfToken: this.csrfToken
-                },
-                maxRetries: 5
-            };
-            await this.operationQueue.enqueue(failedOp);
 
             alert("Gagal mengunggah foto. Foto akan dicoba lagi secara otomatis saat jaringan membaik.");
         }
@@ -627,6 +620,34 @@ export class Booth {
         if (this.handDetect && this.handDetect.isEnabled()) {
             this.handDetect.start();
         }
+    }
+
+    _startRetryProcessor() {
+        this.retryManager.startBackgroundProcessor(async (op) => {
+            if (op.type === 'save_photo' && op.data?.blobBase64) {
+                const blob = await this.dataURLtoBlob(op.data.blobBase64);
+                const location = op.data.location || { lat: -6.9175, lng: 107.6191, name: "Bandung" };
+                const result = await this.chunkUploader.upload(
+                    blob,
+                    op.data.filename,
+                    this.csrfToken,
+                    location,
+                    () => {}
+                );
+                return result;
+            }
+            if (op.type === 'send_email') {
+                const res = await fetch('api/send-email.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(op.data)
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Email send failed');
+                return data;
+            }
+            throw new Error('Unknown operation type: ' + op.type);
+        });
     }
 }
 

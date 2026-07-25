@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../src/bootstrap.php';
 
 use Kidversa\Helpers\ChunkAssemblyHelper;
+use Kidversa\Helpers\CsrfHelper;
 use Kidversa\Helpers\RateLimitHelper;
 use Kidversa\Helpers\SecurityHelper;
 
@@ -20,6 +21,11 @@ if (!RateLimitHelper::isAllowed('chunk-upload', 50, 60)) {
 try {
     if (!isset($_POST['upload_id']) || !isset($_POST['chunk_index'])) {
         throw new Exception('Missing upload_id or chunk_index');
+    }
+
+    $csrfToken = $_POST['csrf_token'] ?? null;
+    if (!CsrfHelper::validateToken($csrfToken)) {
+        throw new Exception('Invalid CSRF token');
     }
 
     $uploadId = $_POST['upload_id'];

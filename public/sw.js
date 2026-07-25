@@ -84,6 +84,7 @@ self.addEventListener('fetch', (event) => {
                         { headers: { 'Content-Type': 'image/svg+xml' } }
                     );
                 }
+                return new Response('Offline', { status: 503, statusText: 'Offline' });
             });
         })
     );

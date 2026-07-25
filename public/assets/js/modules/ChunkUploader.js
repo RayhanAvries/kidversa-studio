@@ -18,7 +18,7 @@ export class ChunkUploader {
             const end = Math.min(start + this.chunkSize, blob.size);
             const chunkBlob = blob.slice(start, end);
 
-            await this.uploadChunkWithRetry(uploadId, i, chunkBlob, this.maxRetries);
+            await this.uploadChunkWithRetry(uploadId, i, chunkBlob, this.maxRetries, csrfToken);
 
             uploadedChunks++;
             if (onProgress) {
@@ -60,12 +60,12 @@ export class ChunkUploader {
         return data;
     }
 
-    async uploadChunkWithRetry(uploadId, chunkIndex, chunkBlob, retries) {
+    async uploadChunkWithRetry(uploadId, chunkIndex, chunkBlob, retries, csrfToken) {
         let lastError;
 
         for (let attempt = 0; attempt <= retries; attempt++) {
             try {
-                await this.uploadChunk(uploadId, chunkIndex, chunkBlob);
+                await this.uploadChunk(uploadId, chunkIndex, chunkBlob, csrfToken);
                 return;
             } catch (e) {
                 lastError = e;
@@ -78,12 +78,13 @@ export class ChunkUploader {
         throw lastError;
     }
 
-    async uploadChunk(uploadId, chunkIndex, chunkBlob) {
+    async uploadChunk(uploadId, chunkIndex, chunkBlob, csrfToken) {
         return new Promise((resolve, reject) => {
             const formData = new FormData();
             formData.append('upload_id', uploadId);
             formData.append('chunk_index', chunkIndex);
             formData.append('chunk', chunkBlob, `chunk_${chunkIndex}`);
+            formData.append('csrf_token', csrfToken);
 
             const xhr = new XMLHttpRequest();
             xhr.open('POST', 'api/chunk-upload.php', true);

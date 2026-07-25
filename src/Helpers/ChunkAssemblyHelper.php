@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Kidversa\Helpers;
 
+use Kidversa\Helpers\ValidationHelper;
+
 class ChunkAssemblyHelper
 {
     private const CHUNK_DIR = __DIR__ . '/../../storage/chunks';
@@ -65,6 +67,10 @@ class ChunkAssemblyHelper
         $meta = json_decode(file_get_contents($metaPath), true);
 
         if ($meta['received_chunks'] !== $meta['total_chunks']) {
+            return null;
+        }
+
+        if (!ValidationHelper::validateFilename($meta['filename'])) {
             return null;
         }
 

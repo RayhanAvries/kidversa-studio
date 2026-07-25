@@ -8,6 +8,7 @@ use Kidversa\Helpers\ChunkAssemblyHelper;
 use Kidversa\Helpers\CsrfHelper;
 use Kidversa\Helpers\RateLimitHelper;
 use Kidversa\Helpers\SecurityHelper;
+use Kidversa\Helpers\ValidationHelper;
 
 SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
@@ -37,6 +38,18 @@ try {
 
     if (empty($filename) || $totalChunks <= 0 || $totalSize <= 0 || empty($uploadId)) {
         throw new Exception('Missing required fields: filename, total_chunks, total_size, upload_id');
+    }
+
+    if (!ValidationHelper::validateFilename($filename)) {
+        throw new Exception('Invalid filename format');
+    }
+
+    if ($totalChunks > 100) {
+        throw new Exception('Too many chunks. Maximum is 100.');
+    }
+
+    if ($totalSize > 50 * 1024 * 1024) {
+        throw new Exception('File too large. Maximum upload size is 50MB.');
     }
 
     $meta = ChunkAssemblyHelper::initSession($uploadId, $filename, $totalChunks, $totalSize);
