@@ -158,7 +158,7 @@ export class OperationQueue {
                 if (entry) {
                     entry.status = status;
                     entry.lastAttemptAt = Date.now();
-                    if (error) entry.error = error;
+                    entry.error = error;
                     store.put(entry);
                 }
                 resolve();
