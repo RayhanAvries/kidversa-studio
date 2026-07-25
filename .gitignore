@@ -1,0 +1,40 @@
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# PHP / Composer
+vendor/
+composer.lock
+
+# Environment variables
+.env
+.env.production
+
+# Code analysis tools
+.codegraph/
+.serena/
+.php-cs-fixer.cache
+
+# Application uploads
+/public/uploads/photos/*
+!/public/uploads/photos/.gitkeep
+
+# Storage
+/storage/ratelimit/
+
+# Project management
+plans/
+tests/
+.kilo/plans/
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log
