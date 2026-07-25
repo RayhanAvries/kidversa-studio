@@ -4,14 +4,14 @@
     Header set X-Frame-Options "DENY"
     Header set X-XSS-Protection "1; mode=block"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
-    Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    Header set Permissions-Policy "camera=(self), microphone=(self), geolocation=(self)"
 </IfModule>
 
 # Enable mod_rewrite
 RewriteEngine On
 
-# Redirect to public directory
-RewriteRule ^$ public/ [L]
+# Serve favicon.png as favicon.ico
+RewriteRule ^favicon\.ico$ favicon.png [L]
 
 # Prevent directory listing
 Options -Indexes

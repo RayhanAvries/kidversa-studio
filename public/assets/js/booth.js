@@ -81,6 +81,8 @@ export class Booth {
 
         this.modalManager = new ModalManager(this);
         this.modalManager.init();
+
+        startBoothCleanupInterval();
       } catch (e) {
         console.error('[Booth] FATAL ERROR during init():', e);
         this.ui.btnCap.onclick = () => window.location.reload();
@@ -608,7 +610,10 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
+let boothCleanupStarted = false;
 const startBoothCleanupInterval = () => {
+    if (boothCleanupStarted) return;
+    boothCleanupStarted = true;
     let cleanupInterval = null;
     let monitorInterval = null;
     const cleanupIntervalMs = Config.get('session.cleanupInterval', 900000);
@@ -616,7 +621,8 @@ const startBoothCleanupInterval = () => {
 
     const runCleanup = async () => {
         try {
-            const csrfToken = window.booth?.csrfToken || '';
+            const csrfToken = window.booth?.csrfToken;
+            if (!csrfToken) return;
             const res = await fetch('api/cleanup-photos.php?csrf_token=' + encodeURIComponent(csrfToken));
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const contentType = res.headers.get("content-type");
@@ -637,7 +643,6 @@ const startBoothCleanupInterval = () => {
 
     const startCleanupLoop = () => {
         if (cleanupInterval) return;
-        runCleanup();
         cleanupInterval = setInterval(runCleanup, cleanupIntervalMs);
     };
 
@@ -650,7 +655,8 @@ const startBoothCleanupInterval = () => {
 
     const monitorFolder = async () => {
         try {
-            const csrfToken = window.booth?.csrfToken || '';
+            const csrfToken = window.booth?.csrfToken;
+            if (!csrfToken) return;
             const res = await fetch('api/cleanup-photos.php?csrf_token=' + encodeURIComponent(csrfToken));
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const contentType = res.headers.get("content-type");
@@ -673,7 +679,3 @@ const startBoothCleanupInterval = () => {
     monitorInterval = setInterval(monitorFolder, monitorIntervalMs);
     monitorFolder();
 };
-
-document.addEventListener('DOMContentLoaded', () => {
-    startBoothCleanupInterval();
-});
