@@ -3,9 +3,16 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\ValidationHelper;
+use Kidversa\Helpers\CsrfHelper;
 use Kidversa\Services\PhotoService;
 
 header('Content-Type: application/json');
+
+if (!CsrfHelper::validateRequest()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
+    exit;
+}
 
 try {
     if (!isset($_FILES['image'])) {

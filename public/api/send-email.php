@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 use Kidversa\Services\EmailService;
 use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\ValidationHelper;
+use Kidversa\Helpers\CsrfHelper;
 
 header('Content-Type: application/json');
 
@@ -12,6 +13,11 @@ try {
 
     if (!$input) {
         throw new Exception('Invalid input data');
+    }
+
+    $csrfToken = $input['csrf_token'] ?? null;
+    if (!CsrfHelper::validateToken($csrfToken)) {
+        throw new Exception('Invalid CSRF token');
     }
 
     $email = $input['email'] ?? '';

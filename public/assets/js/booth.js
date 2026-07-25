@@ -32,6 +32,7 @@ export class Booth {
         this.handDetectUI = null;
 
         this.counting = false;
+        this.csrfToken = null;
 
         this.init();
     }
@@ -39,6 +40,12 @@ export class Booth {
     async init() {
       try {
         await Config.load();
+
+        const csrfRes = await fetch('api/csrf-token.php');
+        if (csrfRes.ok) {
+            const csrfData = await csrfRes.json();
+            this.csrfToken = csrfData.token;
+        }
 
         const filterRes = await fetch('assets/config/filters.json');
         if (!filterRes.ok) throw new Error(`Filters fetch failed: ${filterRes.status}`);
@@ -334,6 +341,7 @@ export class Booth {
                 this.ui.updateLoadingProgress(percent, "Menghapus berkas foto lama di server...");
                 const deleteFormData = new FormData();
                 deleteFormData.append("filename", this.savedFilename);
+                deleteFormData.append("csrf_token", this.csrfToken);
                 await fetch("api/delete-photo.php", {
                     method: "POST",
                     body: deleteFormData
@@ -352,6 +360,7 @@ export class Booth {
             formData.append("location_lat", location.lat);
             formData.append("location_lng", location.lng);
             formData.append("location_name", location.name);
+            formData.append("csrf_token", this.csrfToken);
             const uploadKey = "upload_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
             this.uploadKey = uploadKey;
             this.pendingUpload = { key: uploadKey, startTime: Date.now() };
@@ -653,7 +662,8 @@ window.sendEmail = async () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 filename: booth.savedFilename,
-                email: email
+                email: email,
+                csrf_token: booth.csrfToken
             })
         });
 
