@@ -39,6 +39,11 @@ export class FilterEngine {
     document.body.appendChild(this.masterVideo);
     await this.masterVideo.play().catch(() => {});
 
+    this._tempCanvas = document.createElement("canvas");
+    this._tempCanvas.width = 52;
+    this._tempCanvas.height = 29;
+    this._tempCtx = this._tempCanvas.getContext("2d");
+
     this.previewCanvases = this.filters.map((f) => ({
       canvas: document.getElementById(`fc${f.id}`),
       filter: f.filter,
@@ -64,26 +69,27 @@ export class FilterEngine {
             item.canvas.width = 52;
             item.canvas.height = 29;
             const ctx = item.canvas.getContext("2d");
-            ctx.filter = item.filter;
-            ctx.save();
             const mirror = this.getMirrorState();
+
+            this._tempCtx.clearRect(0, 0, 52, 29);
+            this._tempCtx.save();
             if (mirror.mirrorH) {
-              ctx.translate(52, 0);
-              ctx.scale(-1, 1);
+              this._tempCtx.translate(52, 0);
+              this._tempCtx.scale(-1, 1);
             }
             if (mirror.mirrorV) {
-              ctx.translate(0, 29);
-              ctx.scale(1, -1);
+              this._tempCtx.translate(0, 29);
+              this._tempCtx.scale(1, -1);
             }
             try {
-              if (mirror.mirrorH) {
-                ctx.drawImage(this.masterVideo, 0, 0, 52, 29);
-              } else {
-                ctx.drawImage(this.masterVideo, -52, 0, 52, 29);
-              }
+              this._tempCtx.drawImage(this.masterVideo, 0, 0, 52, 29);
             } catch (e) {}
-            ctx.restore();
+            this._tempCtx.restore();
+
+            ctx.filter = item.filter;
+            ctx.drawImage(this._tempCanvas, 0, 0, 52, 29);
             ctx.filter = "none";
+
             if (item.overlay) {
               ctx.fillStyle = item.overlay;
               ctx.fillRect(0, 0, 52, 29);
@@ -104,6 +110,8 @@ export class FilterEngine {
         this.masterVideo.parentNode.removeChild(this.masterVideo);
     }
     this.masterVideo = null;
+    this._tempCanvas = null;
+    this._tempCtx = null;
     this.previewCanvases = [];
   }
 }
