@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../src/bootstrap.php';
 
 use Kidversa\Helpers\CsrfHelper;
+use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\PathHelper;
 use Kidversa\Helpers\SecurityHelper;
 use Kidversa\Helpers\ValidationHelper;
@@ -61,6 +62,10 @@ try {
         );
         if (file_exists($oldMetaPath)) {
             rename($oldMetaPath, $newMetaPath);
+        }
+        $cacheFile = sys_get_temp_dir() . '/kidversa_list_photos_' . md5(FileHelper::getUploadDir()) . '.json';
+        if (file_exists($cacheFile)) {
+            unlink($cacheFile);
         }
         echo json_encode([
             'success' => true,

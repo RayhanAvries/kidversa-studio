@@ -75,7 +75,20 @@ export class ModalManager {
         const currentFilename = this.booth?.savedFilename;
         const token = this.booth?.csrfToken;
         if (!currentFilename || !token) return { success: false, error: 'missing context' };
-        return SharedActions.sendEmail(currentFilename, token);
+
+        const result = await SharedActions.sendEmail(currentFilename, token);
+
+        if (result.success) {
+            setTimeout(() => this.closeEmailModal(), 1500);
+        } else if (result.error !== 'validation' && this.booth?.operationQueue) {
+            await this.booth.operationQueue.enqueue({
+                type: 'email',
+                filename: currentFilename,
+                email: document.getElementById('emailInput')?.value?.trim() || '',
+            });
+        }
+
+        return result;
     }
 
     setActionButtonError(button, message = 'Foto Tidak tersedia') {

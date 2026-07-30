@@ -17,7 +17,8 @@ SecurityHelper::sendApiSecurityHeaders();
 
 if (!RateLimitHelper::isAllowed('generate-qr', 20, 60)) {
     http_response_code(429);
-    echo 'Rate limit exceeded. Please try again later.';
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'message' => 'Rate limit exceeded. Please try again later.']);
     exit;
 }
 
