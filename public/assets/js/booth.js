@@ -748,7 +748,11 @@ export class Booth {
         this.retryManager.startBackgroundProcessor(async (op) => {
             if (op.type === 'save_photo' && op.data?.blobBase64) {
                 const blob = await this.dataURLtoBlob(op.data.blobBase64);
-                const location = op.data.location || { lat: -6.9175, lng: 107.6191, name: "Bandung" };
+                const location = op.data.location || {
+                    lat: Config.get('geolocation.defaultLat', -6.9175),
+                    lng: Config.get('geolocation.defaultLng', 107.6191),
+                    name: Config.get('geolocation.defaultName', 'Bandung')
+                };
                 const result = await this.chunkUploader.upload(
                     blob,
                     op.data.filename,
