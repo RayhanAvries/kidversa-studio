@@ -742,6 +742,7 @@ button:disabled {
 .camera-config-wrap,
 .timer-config-wrap {
   position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -908,12 +909,12 @@ button:disabled {
 /* Hand detect: detected state */
 .hand-detect-badge.detected {
   background: rgba(16, 185, 129, 0.08);
-  border-color: #10b981;
-  color: #10b981;
+  border-color: var(--detected, #10b981);
+  color: var(--detected, #10b981);
 }
 .hand-detect-badge.detected .hand-indicator {
-  background: #10b981;
-  border-color: #10b981;
+  background: var(--detected, #10b981);
+  border-color: var(--detected, #10b981);
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
 }
 .hand-detect-badge.detected .hand-indicator::after {
@@ -922,7 +923,7 @@ button:disabled {
 }
 .hand-detect-badge.detected i,
 .hand-detect-badge.detected .hand-status-text {
-  color: #10b981;
+  color: var(--detected, #10b981);
 }
 
 /* Hand detect: loading state */
@@ -932,8 +933,8 @@ button:disabled {
   pointer-events: none;
 }
 .hand-detect-badge.loading .hand-indicator {
-  background: #f59e0b;
-  border-color: #f59e0b;
+  background: var(--warning, #f59e0b);
+  border-color: var(--warning, #f59e0b);
   animation: handPulse 1s ease-in-out infinite;
 }
 .hand-detect-badge.loading .hand-indicator::after {
