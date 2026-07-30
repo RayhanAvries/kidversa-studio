@@ -17,9 +17,13 @@ export class FABWidget {
     this._onPointerMove = this._onPointerMove.bind(this);
     this._onPointerUp = this._onPointerUp.bind(this);
     this._onResize = this._onResize.bind(this);
+
+    this._initialized = false;
   }
 
   init() {
+    if (this._initialized) return;
+
     this.widget = document.getElementById('fabWidget');
     this.fabBtn = document.getElementById('fabBtn');
     this.fabIcon = document.getElementById('fabIcon');
@@ -32,13 +36,22 @@ export class FABWidget {
 
     this._initPosition();
     this.fabBtn.addEventListener('pointerdown', this._onPointerDown);
+    document.addEventListener('pointermove', this._onPointerMove);
+    document.addEventListener('pointerup', this._onPointerUp);
     window.addEventListener('resize', this._onResize);
+
+    this._initialized = true;
   }
 
   destroy() {
+    if (this.widget) {
+      this.widget.classList.remove('dragging');
+    }
     if (this.fabBtn) {
       this.fabBtn.removeEventListener('pointerdown', this._onPointerDown);
     }
+    document.removeEventListener('pointermove', this._onPointerMove);
+    document.removeEventListener('pointerup', this._onPointerUp);
     window.removeEventListener('resize', this._onResize);
   }
 
