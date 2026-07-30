@@ -29,7 +29,7 @@ export class FABWidget {
     this.fabIcon = document.getElementById('fabIcon');
     this.panel = document.getElementById('sidebar');
 
-    if (!this.widget || !this.fabBtn || !this.panel) {
+    if (!this.widget || !this.fabBtn || !this.fabIcon || !this.panel) {
       console.warn('[FABWidget] Required DOM elements not found');
       return;
     }
@@ -189,14 +189,16 @@ export class FABWidget {
     this.widget.style.transition = '';
     this.widget.classList.add('dragging');
     this.fabBtn.setPointerCapture(e.pointerId);
-    if (this._isOpen) this.close();
   }
 
   _onPointerMove(e) {
     if (!this._dragging) return;
     const dx = e.clientX - this._startX;
     const dy = e.clientY - this._startY;
-    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) this._moved = true;
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+      if (!this._moved && this._isOpen) this.close();
+      this._moved = true;
+    }
 
     const nx = this._clamp(
       this._originX + dx,
