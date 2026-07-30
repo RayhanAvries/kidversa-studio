@@ -11,6 +11,7 @@ import { ModalManager } from './modules/ModalManager.js';
 import { ChunkUploader } from './modules/ChunkUploader.js';
 import { OperationQueue } from './modules/OperationQueue.js';
 import { RetryManager } from './modules/RetryManager.js';
+import { ImageComposer } from './modules/ImageComposer.js';
 
 console.log('[Kidversa] booth.js v4.2.1 loaded — retry/queue support active');
 
@@ -244,43 +245,8 @@ export class Booth {
                     canvas.height = targetHeight || this.camera.cnv.height;
                     const ctx = canvas.getContext('2d');
                     
-                    ctx.fillStyle = '#000000';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    
                     const filterObj = this.filters.applyFilter(this.selFilter);
-                    
-                    ctx.save();
-                    ctx.filter = filterObj.filter || 'none';
-                    
-                    const imgWidth = img.width;
-                    const imgHeight = img.height;
-                    const canvasWidth = canvas.width;
-                    const canvasHeight = canvas.height;
-                    
-                    const imgRatio = imgWidth / imgHeight;
-                    const canvasRatio = canvasWidth / canvasHeight;
-                    
-                    let drawWidth, drawHeight, offsetX, offsetY;
-                    
-                    if (imgRatio > canvasRatio) {
-                        drawHeight = imgHeight;
-                        drawWidth = imgHeight * canvasRatio;
-                        offsetX = (imgWidth - drawWidth) / 2;
-                        offsetY = 0;
-                    } else {
-                        drawWidth = imgWidth;
-                        drawHeight = imgWidth / canvasRatio;
-                        offsetX = 0;
-                        offsetY = (imgHeight - drawHeight) / 2;
-                    }
-                    
-                    ctx.drawImage(
-                        img,
-                        offsetX, offsetY, drawWidth, drawHeight,
-                        0, 0, canvasWidth, canvasHeight
-                    );
-                    
-                    ctx.restore();
+                    ImageComposer.fitAndDraw(ctx, img, canvas.width, canvas.height, filterObj.filter);
                     
                     if (filterObj.overlay) {
                         ctx.fillStyle = filterObj.overlay;

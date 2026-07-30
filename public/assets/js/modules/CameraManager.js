@@ -1,3 +1,5 @@
+import { ImageComposer } from './ImageComposer.js';
+
 export class CameraManager {
   constructor(config) {
     this.TW = config.TW;
@@ -111,41 +113,11 @@ export class CameraManager {
         this.updateCanvas();
         if (this.cnv.width > 0) {
           this.ctx.save();
+          this.ctx.translate(this.cnv.width, 0);
           this.ctx.scale(-1, 1);
 
-          const videoWidth = this.vid.videoWidth;
-          const videoHeight = this.vid.videoHeight;
-          const canvasWidth = this.cnv.width;
-          const canvasHeight = this.cnv.height;
+          ImageComposer.fitAndDraw(this.ctx, this.vid, this.cnv.width, this.cnv.height, null);
 
-          const videoRatio = videoWidth / videoHeight;
-          const canvasRatio = canvasWidth / canvasHeight;
-
-          let drawWidth, drawHeight, offsetX, offsetY;
-
-          if (videoRatio > canvasRatio) {
-            drawHeight = videoHeight;
-            drawWidth = videoHeight * canvasRatio;
-            offsetX = (videoWidth - drawWidth) / 2;
-            offsetY = 0;
-          } else {
-            drawWidth = videoWidth;
-            drawHeight = videoWidth / canvasRatio;
-            offsetX = 0;
-            offsetY = (videoHeight - drawHeight) / 2;
-          }
-
-          this.ctx.drawImage(
-            this.vid,
-            offsetX,
-            offsetY,
-            drawWidth,
-            drawHeight,
-            -this.cnv.width,
-            0,
-            this.cnv.width,
-            this.cnv.height,
-          );
           this.ctx.restore();
         }
       }
