@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kidversa\Services;
 
 use Kidversa\Config\AppConfig;
+use Kidversa\Helpers\EnvHelper;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 
