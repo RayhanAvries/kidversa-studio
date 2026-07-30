@@ -10,6 +10,17 @@ use Kidversa\Helpers\SecurityHelper;
 SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
 
+$cacheFile = sys_get_temp_dir() . '/kidversa_config.json';
+$cacheTTL = 300;
+
+if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < $cacheTTL) {
+    $cached = file_get_contents($cacheFile);
+    if ($cached !== false) {
+        echo $cached;
+        exit;
+    }
+}
+
 $envErrors = EnvValidator::validate();
 if (!empty($envErrors)) {
     http_response_code(500);
@@ -21,7 +32,7 @@ if (!empty($envErrors)) {
     exit;
 }
 
-echo json_encode([
+$response = json_encode([
     'photo' => [
         'width' => AppConfig::PHOTO_WIDTH,
         'height' => AppConfig::PHOTO_HEIGHT,
@@ -64,3 +75,6 @@ echo json_encode([
         'uploads' => '/uploads/photos/',
     ],
 ]);
+
+file_put_contents($cacheFile, $response);
+echo $response;
