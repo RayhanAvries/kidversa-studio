@@ -12,6 +12,11 @@ SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
 
 $input = json_decode(file_get_contents('php://input'), true);
+if (!is_array($input)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Invalid JSON body']);
+    exit;
+}
 $csrfToken = $input['csrf_token'] ?? null;
 if (!CsrfHelper::validateToken($csrfToken)) {
     http_response_code(403);
