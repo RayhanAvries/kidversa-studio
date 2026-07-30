@@ -1,10 +1,30 @@
 <?php
-// Add to crontab: 0 * * * * php /path/to/kidversa-studio/cron/cleanup-chunks.php
-
 require_once __DIR__ . '/../src/bootstrap.php';
 
 use Kidversa\Helpers\ChunkAssemblyHelper;
+use Kidversa\Helpers\FileHelper;
+use Kidversa\Services\PhotoService;
 
+// Clean stale chunks
 ChunkAssemblyHelper::cleanupStale(3600);
 
-echo "Stale chunks cleaned up at " . date('Y-m-d H:i:s') . "\n";
+// Clean expired photos
+$uploadDir = FileHelper::getUploadDir();
+if (is_dir($uploadDir)) {
+    $files = scandir($uploadDir);
+    foreach ($files as $file) {
+        if ($file === '.' || $file === '..' || $file === '.gitkeep') {
+            continue;
+        }
+        $filePath = $uploadDir . '/' . $file;
+        if (is_file($filePath) && PhotoService::isExpired($file, $filePath)) {
+            unlink($filePath);
+            $metaPath = $uploadDir . '/' . pathinfo($file, PATHINFO_FILENAME) . '.json';
+            if (file_exists($metaPath)) {
+                unlink($metaPath);
+            }
+        }
+    }
+}
+
+echo "Cleanup complete at " . date('Y-m-d H:i:s') . "\n";

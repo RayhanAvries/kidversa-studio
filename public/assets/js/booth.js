@@ -99,7 +99,7 @@ export class Booth {
 
         this._startRetryProcessor();
 
-        startBoothCleanupInterval();
+        // Cleanup is handled server-side via cron (cron/cleanup-chunks.php)
       } catch (e) {
         console.error('[Booth] FATAL ERROR during init():', e);
         this.ui.btnCap.onclick = () => window.location.reload();
@@ -801,27 +801,3 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
-let boothCleanupStarted = false;
-const startBoothCleanupInterval = () => {
-    if (boothCleanupStarted) return;
-    boothCleanupStarted = true;
-
-    const cleanupIntervalMs = Config.get('session.cleanupInterval', 900000);
-
-    const runCleanup = async () => {
-        try {
-            const csrfToken = window.booth?.csrfToken;
-            if (!csrfToken) return;
-            const res = await fetch('api/cleanup-photos.php?csrf_token=' + encodeURIComponent(csrfToken));
-            if (!res.ok) return;
-            const contentType = res.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) return;
-            await res.json();
-        } catch (e) {
-            console.error('[Booth] Photo cleanup failed:', e);
-        }
-    };
-
-    runCleanup();
-    setInterval(runCleanup, cleanupIntervalMs);
-};
