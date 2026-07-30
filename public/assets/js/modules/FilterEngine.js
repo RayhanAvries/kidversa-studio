@@ -47,7 +47,16 @@ export class FilterEngine {
   }
   startPreviewLoop() {
     if (this.previewRaf) cancelAnimationFrame(this.previewRaf);
-    const loop = () => {
+    let lastFrame = 0;
+    const targetFPS = 15;
+    const frameInterval = 1000 / targetFPS;
+
+    const loop = (timestamp) => {
+      this.previewRaf = requestAnimationFrame(loop);
+
+      if (timestamp - lastFrame < frameInterval) return;
+      lastFrame = timestamp;
+
       if (this.masterVideo.readyState >= 2 && this.masterVideo.videoWidth > 0) {
         this.previewCanvases.forEach((item) => {
           if (item.canvas) {
@@ -69,9 +78,9 @@ export class FilterEngine {
           }
         });
       }
-      this.previewRaf = requestAnimationFrame(loop);
     };
-    loop();
+
+    this.previewRaf = requestAnimationFrame(loop);
   }
   stopPreviews() {
     if (this.previewRaf) cancelAnimationFrame(this.previewRaf);
