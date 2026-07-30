@@ -48,7 +48,7 @@
 <?php include 'partials/footer.php'; ?>
 <script>
 if ('serviceWorker' in navigator) {
-    const SW_VERSION = '4.2.1';
+    const SW_VERSION = '4.3.0';
     const storedVersion = localStorage.getItem('kidversa_sw_version');
     if (storedVersion && storedVersion !== SW_VERSION) {
         caches.keys().then(names => Promise.all(names.map(n => caches.delete(n)))).then(() => {
