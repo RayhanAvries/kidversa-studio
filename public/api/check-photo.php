@@ -26,7 +26,7 @@ try {
     $photoPath = FileHelper::getUploadDir() . '/' . $filename;
     $exists = file_exists($photoPath);
 
-    echo json_encode(['exists' => $exists]);
+    echo json_encode(['success' => true, 'exists' => $exists]);
 } catch (Exception $e) {
-    echo json_encode(['exists' => false]);
+    echo json_encode(['success' => false, 'exists' => false]);
 }

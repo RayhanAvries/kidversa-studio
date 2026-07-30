@@ -64,6 +64,7 @@ try {
     echo $result->getString();
     exit;
 } catch (Exception $e) {
-    http_response_code(400);
-    echo 'Error generating QR: ' . $e->getMessage();
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'message' => 'Error generating QR code.']);
 }
