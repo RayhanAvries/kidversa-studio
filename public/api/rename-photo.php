@@ -11,15 +11,15 @@ use Kidversa\Helpers\ValidationHelper;
 SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
 
-if (!CsrfHelper::validateRequest()) {
+$input = json_decode(file_get_contents('php://input'), true);
+$csrfToken = $input['csrf_token'] ?? null;
+if (!CsrfHelper::validateToken($csrfToken)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
     exit;
 }
 
 try {
-    $input = json_decode(file_get_contents('php://input'), true);
-
     if (!isset($input['old_filename']) || empty($input['old_filename'])) {
         throw new Exception('Old filename is required');
     }
