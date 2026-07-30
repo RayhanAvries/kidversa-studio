@@ -99,11 +99,17 @@ export class FilterEngine {
                 sy = (srcH - sh) / 2;
               }
               this._tempCtx.drawImage(this.masterVideo, sx, sy, sw, sh, 0, 0, 52, 29);
-            } catch (e) {}
+            } catch (e) {
+              console.warn("[FilterEngine] Preview drawImage failed:", e.message);
+            }
             this._tempCtx.restore();
 
             ctx.filter = item.filter;
-            ctx.drawImage(this._tempCanvas, 0, 0, 52, 29);
+            try {
+              ctx.drawImage(this._tempCanvas, 0, 0, 52, 29);
+            } catch (e) {
+              console.warn("[FilterEngine] Thumbnail drawImage failed:", e.message);
+            }
             ctx.filter = "none";
 
             if (item.overlay) {
