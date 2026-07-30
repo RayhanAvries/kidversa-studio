@@ -1,7 +1,6 @@
 import { Config } from './Config.js';
 import { Lang } from './Lang.js';
 import { BlobDownloader } from './BlobDownloader.js';
-import { ClientQR } from './ClientQR.js';
 import { SharedActions } from './SharedActions.js';
 
 export class ModalManager {
@@ -73,7 +72,10 @@ export class ModalManager {
     }
 
     async sendEmail() {
-        return SharedActions.sendEmail(this.booth.savedFilename, this.booth.csrfToken);
+        const currentFilename = this.booth?.savedFilename;
+        const token = this.booth?.csrfToken;
+        if (!currentFilename || !token) return { success: false, error: 'missing context' };
+        return SharedActions.sendEmail(currentFilename, token);
     }
 
     setActionButtonError(button, message = 'Foto Tidak tersedia') {
@@ -208,13 +210,14 @@ export class ModalManager {
             const baseUrl = window.location.protocol + '//' + window.location.host;
             const viewUrl = `${baseUrl}/view-photo.php?file=${encodeURIComponent(statusCheck.filename)}`;
 
-            SharedActions.generateQR(viewUrl, 'qrImage');
-            this.booth.ui.setQRLoading(false);
+            await SharedActions.generateQR(viewUrl, 'qrImage');
         } catch (e) {
             console.error('[ModalManager] QR Modal Error:', e);
             this.booth.ui.showToastMessage('Error: ' + e.message);
             alert(Lang.get('error.prefix') + e.message);
             this.booth.ui.hideQRModal();
+        } finally {
+            this.booth.ui.setQRLoading(false);
         }
     }
 }

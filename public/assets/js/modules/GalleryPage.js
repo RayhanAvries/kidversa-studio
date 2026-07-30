@@ -1,4 +1,3 @@
-import { ClientQR } from './ClientQR.js';
 import { SharedActions } from './SharedActions.js';
 
 export class GalleryPage {
@@ -411,23 +410,23 @@ export class GalleryPage {
     }
 
     async _sendEmail() {
-        try {
-            await SharedActions.sendEmail(this.selectedFilename, this.csrfToken);
-        } catch (e) {
-            alert('Gagal mengirim email. Silakan coba lagi.');
-            if (this.operationQueue) {
+        const result = await SharedActions.sendEmail(this.selectedFilename, this.csrfToken);
+        if (!result.success) {
+            if (result.error !== 'validation') {
+                alert('Gagal mengirim email. Silakan coba lagi.');
+            }
+            if (this.operationQueue && result.error !== 'validation') {
                 const emailInput = document.getElementById('emailInput');
-                const email = emailInput?.value?.trim() || '';
                 await this.operationQueue.enqueue({
                     type: 'email',
                     filename: this.selectedFilename,
-                    email: email,
+                    email: emailInput?.value?.trim() || '',
                 });
             }
         }
     }
 
-    _openQRModal() {
+    async _openQRModal() {
         if (!this.selectedFilename) return;
 
         this.qrModal.style.display = 'flex';
@@ -439,9 +438,14 @@ export class GalleryPage {
         const baseUrl = window.location.protocol + '//' + window.location.host;
         const viewUrl = `${baseUrl}/view-photo.php?file=${encodeURIComponent(this.selectedFilename)}`;
 
-        SharedActions.generateQR(viewUrl, 'galleryQrImage');
-        if (loading) loading.style.display = 'none';
-        if (image) image.style.display = 'block';
+        try {
+            await SharedActions.generateQR(viewUrl, 'galleryQrImage');
+        } catch (e) {
+            console.error('QR generation failed:', e);
+        } finally {
+            if (loading) loading.style.display = 'none';
+            if (image) image.style.display = 'block';
+        }
     }
 
     _closeQRModal() {

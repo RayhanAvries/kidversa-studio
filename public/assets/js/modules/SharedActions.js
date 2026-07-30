@@ -38,12 +38,13 @@ export class SharedActions {
                 }, 3000);
                 return { success: true };
             } else {
-                throw new Error(data.message || 'Failed to send email');
+                btnSend.innerHTML = originalBtnText;
+                btnSend.disabled = false;
+                return { success: false, error: data.message || 'Failed to send email' };
             }
         } catch (err) {
             btnSend.innerHTML = originalBtnText;
             btnSend.disabled = false;
-            alert('Gagal mengirim email: ' + err.message);
             return { success: false, error: err.message };
         }
     }
@@ -88,14 +89,19 @@ export class SharedActions {
         });
     }
 
-    static generateQR(viewUrl, containerId) {
-        const qrContainer = document.getElementById(containerId);
-        if (!qrContainer) return;
+    static async generateQR(viewUrl, imageId) {
+        const qrImage = document.getElementById(imageId);
+        if (!qrImage) return;
 
-        qrContainer.innerHTML = '';
-        ClientQR.generate(viewUrl, qrContainer, {
-            size: Config.qr().size || 300,
-            margin: Config.qr().margin || 10,
-        });
+        try {
+            const qrDataUrl = await ClientQR.generate(viewUrl, {
+                size: Config.qr().size || 300,
+                darkColor: '#000000',
+                lightColor: '#ffffff'
+            });
+            qrImage.src = qrDataUrl;
+        } catch (e) {
+            console.error('[SharedActions] QR generation failed:', e);
+        }
     }
 }
