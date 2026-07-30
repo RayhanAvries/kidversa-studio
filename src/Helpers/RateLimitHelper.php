@@ -18,23 +18,37 @@ class RateLimitHelper
         $file = $rateLimitDir . '/' . md5($key) . '.json';
         $now = time();
 
-        if (file_exists($file)) {
-            $data = json_decode(file_get_contents($file), true);
-            if ($data && ($now - $data['window_start']) < $windowSeconds) {
-                if ($data['count'] >= $maxRequests) {
-                    return false;
-                }
-                $data['count']++;
-                file_put_contents($file, json_encode($data));
-                return true;
-            }
+        $fp = fopen($file, 'c+');
+        if (!$fp) {
+            return true;
         }
 
-        $data = [
-            'window_start' => $now,
-            'count' => 1,
-        ];
-        file_put_contents($file, json_encode($data));
+        flock($fp, LOCK_EX);
+
+        $raw = stream_get_contents($fp);
+        $data = json_decode($raw ?: '{}', true);
+
+        if ($data && ($now - ($data['window_start'] ?? 0)) < $windowSeconds) {
+            if (($data['count'] ?? 0) >= $maxRequests) {
+                flock($fp, LOCK_UN);
+                fclose($fp);
+                return false;
+            }
+            $data['count'] = ($data['count'] ?? 0) + 1;
+        } else {
+            $data = [
+                'window_start' => $now,
+                'count' => 1,
+            ];
+        }
+
+        ftruncate($fp, 0);
+        rewind($fp);
+        fwrite($fp, json_encode($data));
+        fflush($fp);
+        flock($fp, LOCK_UN);
+        fclose($fp);
+
         return true;
     }
 
