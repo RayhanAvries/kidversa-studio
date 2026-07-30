@@ -1,4 +1,5 @@
 import { ClientQR } from './ClientQR.js';
+import { SharedActions } from './SharedActions.js';
 
 export class GalleryPage {
     constructor() {
@@ -410,60 +411,19 @@ export class GalleryPage {
     }
 
     async _sendEmail() {
-        const emailInput = document.getElementById('emailInput');
-        const emailError = document.getElementById('emailError');
-        const btnSend = document.getElementById('btnSendEmail');
-        const email = emailInput.value.trim();
-
-        const emailRegex = /^[a-z0-9._%+-]+@gmail\.com$/i;
-        if (!emailRegex.test(email)) {
-            emailError.style.display = 'block';
-            emailInput.style.borderColor = 'red';
-            return;
-        }
-
-        emailError.style.display = 'none';
-        emailInput.style.borderColor = '';
-
-        if (!this.selectedFilename) return;
-
-        const originalBtnText = btnSend.innerHTML;
-        btnSend.disabled = true;
-        btnSend.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-
         try {
-            const res = await fetch('api/send-email.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+            await SharedActions.sendEmail(this.selectedFilename, this.csrfToken);
+        } catch (e) {
+            alert('Gagal mengirim email. Silakan coba lagi.');
+            if (this.operationQueue) {
+                const emailInput = document.getElementById('emailInput');
+                const email = emailInput?.value?.trim() || '';
+                await this.operationQueue.enqueue({
+                    type: 'email',
                     filename: this.selectedFilename,
                     email: email,
-                    csrf_token: this.csrfToken
-                })
-            });
-
-            if (!res.ok) throw new Error(`Server error: ${res.status}`);
-
-            const data = await res.json();
-
-            if (data.success) {
-                btnSend.innerHTML = '<i class="fas fa-check"></i> Sent!';
-                btnSend.style.background = '#28a745';
-                setTimeout(() => {
-                    this._closeEmailModal();
-                    btnSend.disabled = false;
-                    btnSend.innerHTML = originalBtnText;
-                    btnSend.style.background = '';
-                    emailInput.value = '';
-                }, 3000);
-            } else {
-                throw new Error(data.message || 'Failed to send email');
+                });
             }
-        } catch (e) {
-            console.error('[Gallery] Email error:', e);
-            btnSend.disabled = false;
-            btnSend.innerHTML = originalBtnText;
-            alert('Gagal mengirim email. Silakan coba lagi.');
         }
     }
 
@@ -479,19 +439,9 @@ export class GalleryPage {
         const baseUrl = window.location.protocol + '//' + window.location.host;
         const viewUrl = `${baseUrl}/view-photo.php?file=${encodeURIComponent(this.selectedFilename)}`;
 
-        ClientQR.generate(viewUrl, { size: 300, darkColor: '#000000', lightColor: '#ffffff' })
-            .then(qrDataUrl => {
-                const qrImage = document.getElementById('qrImage');
-                qrImage.src = qrDataUrl;
-                qrImage.onload = () => {
-                    if (loading) loading.style.display = 'none';
-                    if (image) image.style.display = 'block';
-                };
-            })
-            .catch(e => {
-                console.error('[Gallery] QR error:', e);
-                this._closeQRModal();
-            });
+        SharedActions.generateQR(viewUrl, 'galleryQrImage');
+        if (loading) loading.style.display = 'none';
+        if (image) image.style.display = 'block';
     }
 
     _closeQRModal() {
@@ -500,79 +450,7 @@ export class GalleryPage {
 
     async _printPhoto() {
         if (!this.selectedFilename) return;
-
-        try {
-            const photoUrl = 'uploads/photos/' + this.selectedFilename;
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-
-            await new Promise((resolve, reject) => {
-                img.onload = () => resolve();
-                img.onerror = reject;
-                img.src = photoUrl;
-            });
-
-            const printCanvas = document.createElement('canvas');
-            printCanvas.width = img.width;
-            printCanvas.height = img.height;
-            const ctx = printCanvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-
-            const blobUrl = printCanvas.toDataURL('image/png');
-            const blob = await (await fetch(blobUrl)).blob();
-            const objectUrl = URL.createObjectURL(blob);
-
-            const iframe = document.createElement('iframe');
-            iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:100%;height:100%;';
-            document.body.appendChild(iframe);
-
-            let printFired = false;
-            const doPrint = () => {
-                if (printFired) return;
-                printFired = true;
-                try {
-                    iframe.contentWindow.focus();
-                    iframe.contentWindow.print();
-                } catch (e) {
-                    console.error('[Gallery] Print failed:', e);
-                }
-            };
-
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            iframeDoc.open();
-            iframeDoc.write(`<!DOCTYPE html><html>
-<head><title>Print Photo</title>
-<style>
-    * { margin: 0; padding: 0; }
-    body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; }
-    img { max-width: 100%; height: auto; }
-    @page { margin: 0; size: auto; }
-    @media print { body { margin: 0; padding: 0; } }
-</style>
-</head>
-<body>
-    <img src="${objectUrl}" onload="setTimeout(() => window.parent.postMessage('print-ready', '*'), 200);">
-</body>
-</html>`);
-            iframeDoc.close();
-
-            window.addEventListener('message', function handler(e) {
-                if (e.data === 'print-ready') {
-                    window.removeEventListener('message', handler);
-                    doPrint();
-                }
-            });
-
-            setTimeout(doPrint, 800);
-            setTimeout(() => {
-                try {
-                    document.body.removeChild(iframe);
-                    URL.revokeObjectURL(objectUrl);
-                } catch (e) {}
-            }, 15000);
-        } catch (e) {
-            console.error('[Gallery] Print error:', e);
-            alert('Gagal menyiapkan foto untuk dicetak.');
-        }
+        const imageUrl = 'uploads/photos/' + this.selectedFilename;
+        await SharedActions.printPhoto(imageUrl);
     }
 }

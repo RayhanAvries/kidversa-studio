@@ -2,6 +2,7 @@ import { Config } from './Config.js';
 import { Lang } from './Lang.js';
 import { BlobDownloader } from './BlobDownloader.js';
 import { ClientQR } from './ClientQR.js';
+import { SharedActions } from './SharedActions.js';
 
 export class ModalManager {
     constructor(booth) {
@@ -72,88 +73,7 @@ export class ModalManager {
     }
 
     async sendEmail() {
-        const emailInput = document.getElementById('emailInput');
-        const emailError = document.getElementById('emailError');
-        const btnSend = document.getElementById('btnSendEmail');
-        const email = emailInput.value.trim();
-
-        const emailRegex = Config.email().regex;
-        if (!emailRegex.test(email)) {
-            emailError.style.display = 'block';
-            emailInput.style.borderColor = 'red';
-            return;
-        }
-
-        emailError.style.display = 'none';
-        emailInput.style.borderColor = '';
-
-        if (!this.booth || !this.booth.savedFilename) {
-            alert(Lang.get('error.prefix') + 'Foto tidak tersedia. Silakan ambil foto terlebih dahulu.');
-            return;
-        }
-
-        const originalBtnText = btnSend.innerHTML;
-        btnSend.disabled = true;
-        btnSend.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-
-        const operation = {
-            type: 'send_email',
-            data: {
-                filename: this.booth.savedFilename,
-                email: email,
-                csrf_token: this.booth.csrfToken
-            },
-            maxRetries: 3
-        };
-
-        try {
-            const res = await fetch('api/send-email.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(operation.data)
-            });
-
-            if (!res.ok) throw new Error(`Server error: ${res.status}`);
-
-            const data = await res.json();
-
-            if (data.success) {
-                btnSend.innerHTML = '<i class="fas fa-check"></i> Success';
-                btnSend.style.background = '#28a745';
-
-                let countdown = Config.email().modal?.countdown ?? 10;
-                const countdownEl = document.getElementById('emailCountdown');
-                const timer = setInterval(() => {
-                    if (countdown > 0) {
-                        countdown--;
-                        if (countdownEl) countdownEl.textContent = `Closing in ${countdown}s`;
-                    } else {
-                        clearInterval(timer);
-                        if (countdownEl) countdownEl.textContent = '';
-                        this.closeEmailModal();
-                        btnSend.disabled = false;
-                        btnSend.innerHTML = originalBtnText;
-                        btnSend.style.background = '';
-                        emailInput.value = '';
-                    }
-                }, 1000);
-            } else {
-                throw new Error(data.message || 'Failed to send email');
-            }
-        } catch (e) {
-            console.error('[ModalManager] sendEmail Error:', e);
-
-            await this.booth.operationQueue.enqueue(operation);
-
-            alert(Lang.get('error.prefix') + 'Gagal mengirim email. Email akan dikirim ulang secara otomatis.');
-            btnSend.disabled = false;
-            btnSend.innerHTML = `<i class="fas fa-clock"></i> Queued`;
-            btnSend.style.background = '#F59E0B';
-            setTimeout(() => {
-                btnSend.innerHTML = originalBtnText;
-                btnSend.style.background = '';
-            }, 5000);
-        }
+        return SharedActions.sendEmail(this.booth.savedFilename, this.booth.csrfToken);
     }
 
     setActionButtonError(button, message = 'Foto Tidak tersedia') {
@@ -260,74 +180,7 @@ export class ModalManager {
             return;
         }
 
-        try {
-            const photoUrl = 'uploads/photos/' + statusCheck.filename;
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-
-            await new Promise((resolve, reject) => {
-                img.onload = () => resolve();
-                img.onerror = (e) => reject(e);
-                img.src = photoUrl;
-            });
-
-            const printCanvas = document.createElement('canvas');
-            printCanvas.width = img.width || this.booth.cameraConfig.TW;
-            printCanvas.height = img.height || this.booth.cameraConfig.TH;
-            const ctx = printCanvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, printCanvas.width, printCanvas.height);
-
-            const blobUrl = printCanvas.toDataURL('image/png');
-            const blob = await this.booth.dataURLtoBlob(blobUrl);
-            const objectUrl = URL.createObjectURL(blob);
-
-            const iframe = document.createElement('iframe');
-            iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:100%;height:100%;';
-            document.body.appendChild(iframe);
-
-            let printFired = false;
-            const doPrint = () => {
-                if (printFired) return;
-                printFired = true;
-                try {
-                    iframe.contentWindow.focus();
-                    iframe.contentWindow.print();
-                } catch (e) {
-                    console.error('[ModalManager] Print failed:', e);
-                }
-            };
-
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            iframeDoc.open();
-            iframeDoc.write(`<!DOCTYPE html><html>
-<head><title>Print Photo</title>
-<style>
-    * { margin: 0; padding: 0; }
-    body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; }
-    img { max-width: 100%; height: auto; }
-    @page { margin: 0; size: auto; }
-    @media print { body { margin: 0; padding: 0; } }
-</style>
-</head>
-<body>
-    <img src="${objectUrl}" onload="setTimeout(() => { window.parent.triggerPrint && window.parent.triggerPrint(); }, 200);">
-</body>
-</html>`);
-            iframeDoc.close();
-
-            window.triggerPrint = doPrint;
-            setTimeout(doPrint, 800);
-            setTimeout(() => {
-                try {
-                    delete window.triggerPrint;
-                    document.body.removeChild(iframe);
-                    URL.revokeObjectURL(objectUrl);
-                } catch (e) {}
-            }, 15000);
-        } catch (e) {
-            console.error('[ModalManager] Print error:', e);
-            alert(Lang.get('error.prefix') + 'Gagal menyiapkan foto untuk dicetak');
-        }
+        await SharedActions.printPhoto('uploads/photos/' + statusCheck.filename);
     }
 
     closeQRModal() {
@@ -355,15 +208,8 @@ export class ModalManager {
             const baseUrl = window.location.protocol + '//' + window.location.host;
             const viewUrl = `${baseUrl}/view-photo.php?file=${encodeURIComponent(statusCheck.filename)}`;
 
-            const qrDataUrl = await ClientQR.generate(viewUrl, {
-                size: 300,
-                darkColor: '#000000',
-                lightColor: '#ffffff'
-            });
-
-            const qrImage = document.getElementById('qrImage');
-            qrImage.src = qrDataUrl;
-            qrImage.onload = () => this.booth.ui.setQRLoading(false);
+            SharedActions.generateQR(viewUrl, 'qrImage');
+            this.booth.ui.setQRLoading(false);
         } catch (e) {
             console.error('[ModalManager] QR Modal Error:', e);
             this.booth.ui.showToastMessage('Error: ' + e.message);
