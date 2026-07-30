@@ -63,13 +63,15 @@ export class FilterEngine {
       if (timestamp - lastFrame < frameInterval) return;
       lastFrame = timestamp;
 
+      if (!this._tempCtx) return;
+
       if (this.masterVideo.readyState >= 2 && this.masterVideo.videoWidth > 0) {
+        const mirror = this.getMirrorState();
         this.previewCanvases.forEach((item) => {
           if (item.canvas) {
             item.canvas.width = 52;
             item.canvas.height = 29;
             const ctx = item.canvas.getContext("2d");
-            const mirror = this.getMirrorState();
 
             this._tempCtx.clearRect(0, 0, 52, 29);
             this._tempCtx.save();
@@ -81,9 +83,10 @@ export class FilterEngine {
               this._tempCtx.translate(0, 29);
               this._tempCtx.scale(1, -1);
             }
+            // Center-crop math mirrors ImageComposer.fitAndDraw()
             try {
-              const srcW = this.masterVideo.videoWidth || 52;
-              const srcH = this.masterVideo.videoHeight || 29;
+              const srcW = this.masterVideo.videoWidth || 52;  // fallback = temp canvas width
+              const srcH = this.masterVideo.videoHeight || 29; // fallback = temp canvas height
               const srcRatio = srcW / srcH;
               const dstRatio = 52 / 29;
               let sx, sy, sw, sh;
@@ -104,13 +107,16 @@ export class FilterEngine {
             }
             this._tempCtx.restore();
 
-            ctx.filter = item.filter;
             try {
-              ctx.drawImage(this._tempCanvas, 0, 0, 52, 29);
-            } catch (e) {
-              console.warn("[FilterEngine] Thumbnail drawImage failed:", e.message);
+              ctx.filter = item.filter;
+              try {
+                ctx.drawImage(this._tempCanvas, 0, 0, 52, 29);
+              } catch (e) {
+                console.warn("[FilterEngine] Thumbnail drawImage failed:", e.message);
+              }
+            } finally {
+              ctx.filter = "none";
             }
-            ctx.filter = "none";
 
             if (item.overlay) {
               ctx.fillStyle = item.overlay;
