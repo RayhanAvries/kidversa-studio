@@ -13,6 +13,10 @@ export class CameraManager {
     this.stream = null;
     this.raf = null;
     this.ready = false;
+    this.mirrorH = false;
+    this.mirrorV = false;
+    this.currentDeviceId = null;
+    this.devices = [];
   }
   async start() {
     this.ready = false;
@@ -25,16 +29,17 @@ export class CameraManager {
       this.stream = null;
     }
     try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: false,
-      });
+      const constraints = this.currentDeviceId
+        ? { video: { deviceId: { exact: this.currentDeviceId } }, audio: false }
+        : { video: true, audio: false };
+      this.stream = await navigator.mediaDevices.getUserMedia(constraints);
       await this.setupVid();
     } catch (e) {
       console.warn(
         "[CameraManager] Primary camera request failed, attempting fallback",
         e,
       );
+      this.currentDeviceId = null;
       await this.fallback();
     }
   }
@@ -69,6 +74,7 @@ export class CameraManager {
     this.vid.pause();
     this.vid.srcObject = null;
     this.vid.srcObject = this.stream;
+    this._updateVideoTransform();
     this.vid.onloadedmetadata = () => {
       this.updateCanvas();
       this.ready = true;
@@ -113,8 +119,14 @@ export class CameraManager {
         this.updateCanvas();
         if (this.cnv.width > 0) {
           this.ctx.save();
-          this.ctx.translate(this.cnv.width, 0);
-          this.ctx.scale(-1, 1);
+          if (this.mirrorH) {
+            this.ctx.translate(this.cnv.width, 0);
+            this.ctx.scale(-1, 1);
+          }
+          if (this.mirrorV) {
+            this.ctx.translate(0, this.cnv.height);
+            this.ctx.scale(1, -1);
+          }
 
           ImageComposer.fitAndDraw(this.ctx, this.vid, this.cnv.width, this.cnv.height, null);
 
@@ -139,5 +151,58 @@ export class CameraManager {
   }
   getCanvasData() {
     return this.cnv.toDataURL("image/png");
+  }
+
+  async getDevices() {
+    try {
+      const allDevices = await navigator.mediaDevices.enumerateDevices();
+      this.devices = allDevices.filter(d => d.kind === 'videoinput');
+      return this.devices;
+    } catch (e) {
+      console.warn('[CameraManager] enumerateDevices failed', e);
+      this.devices = [];
+      return this.devices;
+    }
+  }
+
+  async startWithDevice(deviceId) {
+    this.ready = false;
+    if (this.raf) {
+      cancelAnimationFrame(this.raf);
+      this.raf = null;
+    }
+    if (this.stream) {
+      this.stream.getTracks().forEach((t) => t.stop());
+      this.stream = null;
+    }
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: { exact: deviceId } },
+        audio: false,
+      });
+      this.currentDeviceId = deviceId;
+      await this.setupVid();
+    } catch (e) {
+      console.warn('[CameraManager] startWithDevice failed, falling back to default', e);
+      this.currentDeviceId = null;
+      await this.start();
+    }
+  }
+
+  setMirrorH(enabled) {
+    this.mirrorH = enabled;
+    this._updateVideoTransform();
+  }
+
+  setMirrorV(enabled) {
+    this.mirrorV = enabled;
+    this._updateVideoTransform();
+  }
+
+  _updateVideoTransform() {
+    let transform = '';
+    if (this.mirrorH) transform += 'scaleX(-1) ';
+    if (this.mirrorV) transform += 'scaleY(-1) ';
+    this.vid.style.transform = transform.trim();
   }
 }
