@@ -79,9 +79,16 @@ class ChunkAssemblyHelper
             return null;
         }
 
-        $meta = json_decode(file_get_contents($metaPath), true);
+        $fp = fopen($metaPath, 'r');
+        if (!$fp) {
+            return null;
+        }
+        flock($fp, LOCK_SH);
+        $meta = json_decode(stream_get_contents($fp), true);
+        flock($fp, LOCK_UN);
+        fclose($fp);
 
-        if ($meta['received_chunks'] !== $meta['total_chunks']) {
+        if (!$meta || $meta['received_chunks'] !== $meta['total_chunks']) {
             return null;
         }
 
@@ -145,7 +152,18 @@ class ChunkAssemblyHelper
             return null;
         }
 
-        $meta = json_decode(file_get_contents($metaPath), true);
+        $fp = fopen($metaPath, 'r');
+        if (!$fp) {
+            return null;
+        }
+        flock($fp, LOCK_SH);
+        $meta = json_decode(stream_get_contents($fp), true);
+        flock($fp, LOCK_UN);
+        fclose($fp);
+
+        if (!$meta) {
+            return null;
+        }
 
         return [
             'received' => $meta['received_chunks'],
