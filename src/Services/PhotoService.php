@@ -6,6 +6,7 @@ namespace Kidversa\Services;
 
 use Kidversa\Config\AppConfig;
 use Kidversa\Helpers\FileHelper;
+use Kidversa\Helpers\ValidationHelper;
 
 class PhotoService
 {
@@ -122,7 +123,7 @@ class PhotoService
 
     public static function validateFilename(string $filename): bool
     {
-        return !preg_match('/[^a-zA-Z0-9._-]/', $filename);
+        return ValidationHelper::validateFilename($filename);
     }
 
     public static function generateFilename(): string
