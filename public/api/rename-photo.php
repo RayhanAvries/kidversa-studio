@@ -53,6 +53,15 @@ try {
     }
 
     if (rename($oldPath, $newPath)) {
+        $oldMetaPath = PathHelper::getSafeUploadPath(
+            pathinfo($oldFilename, PATHINFO_FILENAME) . '.json'
+        );
+        $newMetaPath = PathHelper::getSafeUploadPath(
+            pathinfo($newFilename, PATHINFO_FILENAME) . '.json'
+        );
+        if (file_exists($oldMetaPath)) {
+            rename($oldMetaPath, $newMetaPath);
+        }
         echo json_encode([
             'success' => true,
             'message' => 'File renamed successfully',

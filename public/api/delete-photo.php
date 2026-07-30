@@ -30,9 +30,15 @@ try {
     }
 
     $filePath = PathHelper::getSafeUploadPath($filename);
+    $metaPath = PathHelper::getSafeUploadPath(
+        pathinfo($filename, PATHINFO_FILENAME) . '.json'
+    );
 
     if (file_exists($filePath)) {
         if (unlink($filePath)) {
+            if (file_exists($metaPath)) {
+                unlink($metaPath);
+            }
             echo json_encode(['success' => true, 'message' => 'File deleted successfully']);
         } else {
             throw new Exception('Failed to delete file');
