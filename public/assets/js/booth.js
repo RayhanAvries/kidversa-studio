@@ -8,6 +8,7 @@ import { initPermissions } from './modules/InitPermissions.js';
 import { HandDetection } from './modules/HandDetection.js';
 import { HandDetectionUI } from './modules/HandDetectionUI.js';
 import { MirrorToggleUI } from './modules/MirrorToggleUI.js';
+import { FABWidget } from './modules/FABWidget.js';
 import { ModalManager } from './modules/ModalManager.js';
 import { ChunkUploader } from './modules/ChunkUploader.js';
 import { OperationQueue } from './modules/OperationQueue.js';
@@ -40,6 +41,7 @@ export class Booth {
         this.handDetect = null;
         this.handDetectUI = null;
         this.modalManager = null;
+        this.fabWidget = null;
 
         this.counting = false;
         this.csrfToken = null;
@@ -106,7 +108,8 @@ export class Booth {
         this.modalManager = new ModalManager(this);
         this.modalManager.init();
 
-        this._initSidebarToggle();
+        this.fabWidget = new FABWidget();
+        this.fabWidget.init();
 
         this._startRetryProcessor();
 
@@ -651,6 +654,10 @@ export class Booth {
             this.mirrorVToggle.destroy();
             this.mirrorVToggle = null;
         }
+        if (this.fabWidget) {
+            this.fabWidget.destroy();
+            this.fabWidget = null;
+        }
         this.filters.stopPreviews();
         this.camera.stop();
     }
@@ -783,36 +790,6 @@ export class Booth {
                 }
             });
             if (this.camera.mirrorV) this.mirrorVToggle.setActive(true);
-        }
-    }
-
-    _initSidebarToggle() {
-        const toggle = document.getElementById('sidebarToggle');
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-
-        if (!toggle || !sidebar) return;
-
-        const open = () => {
-            sidebar.classList.add('open');
-            overlay.classList.add('on');
-        };
-
-        const close = () => {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('on');
-        };
-
-        toggle.addEventListener('click', () => {
-            if (sidebar.classList.contains('open')) {
-                close();
-            } else {
-                open();
-            }
-        });
-
-        if (overlay) {
-            overlay.addEventListener('click', close);
         }
     }
 
