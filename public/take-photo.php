@@ -143,21 +143,19 @@ if ('serviceWorker' in navigator) {
 </script>
 <script>
 (function() {
-  function attachRipple(el) {
-    el.addEventListener('click', function(e) {
-      const rect = this.getBoundingClientRect();
-      const ripple = document.createElement('span');
-      const size = Math.max(rect.width, rect.height) * 1.4;
-      ripple.className = 'ripple-el';
-      ripple.style.width = ripple.style.height = size + 'px';
-      ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
-      ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
-      this.appendChild(ripple);
-      setTimeout(function() { ripple.remove(); }, 600);
-    });
-  }
-
-  document.querySelectorAll('.mirror-badge, .hand-detect-badge, .btn-back, .camera-config-wrap, .timer-config-wrap').forEach(attachRipple);
+  document.addEventListener('click', function(e) {
+    var el = e.target.closest('.mirror-badge, .hand-detect-badge, .btn-back, .camera-config-wrap, .timer-config-wrap');
+    if (!el) return;
+    var rect = el.getBoundingClientRect();
+    var ripple = document.createElement('span');
+    var size = Math.max(rect.width, rect.height) * 1.4;
+    ripple.className = 'ripple-el';
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+    ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+    el.appendChild(ripple);
+    setTimeout(function() { ripple.remove(); }, 600);
+  });
 })();
 </script>
 </body>
