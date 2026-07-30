@@ -13,7 +13,7 @@ import { OperationQueue } from './modules/OperationQueue.js';
 import { RetryManager } from './modules/RetryManager.js';
 import { ImageComposer } from './modules/ImageComposer.js';
 
-console.log('[Kidversa] booth.js v4.2.1 loaded — retry/queue support active');
+// removed debug log
 
 export class Booth {
     constructor() {

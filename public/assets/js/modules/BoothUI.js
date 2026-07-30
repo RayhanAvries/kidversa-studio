@@ -1,5 +1,5 @@
 import { Lang } from "./Lang.js";
-console.log('[Kidversa] BoothUI.js v4.2.1 loaded — retry/queue controls active');
+// removed debug log
 export class BoothUI {
   constructor() {
     this.btnCap = document.getElementById("btnCapture");

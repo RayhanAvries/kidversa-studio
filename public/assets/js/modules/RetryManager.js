@@ -22,7 +22,7 @@ export class RetryManager {
         this.retryInterval = setInterval(async () => {
             const stats = await this.queue.getStats();
             if (stats.pending > 0) {
-                console.log(`[RetryManager] Processing ${stats.pending} pending operations`);
+                // removed debug log
                 await this.queue.process(executeFn);
             }
         }, this.retryDelay);
