@@ -219,7 +219,7 @@ body {
 }
 #camVideo {
   display: block;
-  transform: scaleX(-1);
+  transform: none;
 }
 #camCanvas {
   display: none;
