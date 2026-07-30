@@ -64,6 +64,11 @@ try {
         file_put_contents($metaPath, json_encode($metaData));
     }
 
+    $cacheFile = sys_get_temp_dir() . '/kidversa_list_photos_' . md5(FileHelper::getUploadDir()) . '.json';
+    if (file_exists($cacheFile)) {
+        unlink($cacheFile);
+    }
+
     echo json_encode([
         'success' => true,
         'filename' => $filename,

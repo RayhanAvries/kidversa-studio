@@ -34,42 +34,59 @@ try {
         exit;
     }
 
-    $files = scandir($uploadDir);
-    $photos = [];
+    $cacheFile = sys_get_temp_dir() . '/kidversa_list_photos_' . md5($uploadDir) . '.json';
+    $cacheTTL = 30;
 
-    foreach ($files as $file) {
-        if ($file === '.' || $file === '..' || $file === '.gitkeep') {
-            continue;
+    $photos = null;
+    $fromCache = false;
+    if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < $cacheTTL) {
+        $cached = json_decode(file_get_contents($cacheFile), true);
+        if (is_array($cached)) {
+            $photos = $cached;
+            $fromCache = true;
         }
-
-        $filePath = $uploadDir . '/' . $file;
-
-        if (!is_file($filePath)) {
-            continue;
-        }
-
-        $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-        if (!in_array($ext, ['png', 'jpg', 'jpeg'], true)) {
-            continue;
-        }
-
-        if (!ValidationHelper::validateFilename($file)) {
-            continue;
-        }
-
-        if (PhotoService::isExpired($file, $filePath)) {
-            continue;
-        }
-
-        $photos[] = [
-            'filename' => $file,
-            'size' => filesize($filePath),
-            'modified' => filemtime($filePath),
-            'url' => 'uploads/photos/' . $file,
-        ];
     }
 
-    usort($photos, static fn ($a, $b) => $b['modified'] <=> $a['modified']);
+    if ($photos === null) {
+        $files = scandir($uploadDir);
+        $photos = [];
+
+        foreach ($files as $file) {
+            if ($file === '.' || $file === '..' || $file === '.gitkeep') {
+                continue;
+            }
+
+            $filePath = $uploadDir . '/' . $file;
+
+            if (!is_file($filePath)) {
+                continue;
+            }
+
+            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            if (!in_array($ext, ['png', 'jpg', 'jpeg'], true)) {
+                continue;
+            }
+
+            if (!ValidationHelper::validateFilename($file)) {
+                continue;
+            }
+
+            if (PhotoService::isExpired($file, $filePath)) {
+                continue;
+            }
+
+            $photos[] = [
+                'filename' => $file,
+                'size' => filesize($filePath),
+                'modified' => filemtime($filePath),
+                'url' => 'uploads/photos/' . $file,
+            ];
+        }
+
+        usort($photos, static fn ($a, $b) => $b['modified'] <=> $a['modified']);
+
+        file_put_contents($cacheFile, json_encode($photos));
+    }
 
     $total = count($photos);
     $totalSize = array_sum(array_column($photos, 'size'));
@@ -93,6 +110,7 @@ try {
         'page' => $page,
         'per_page' => $perPage,
         'total_pages' => $totalPages,
+        'cached' => $fromCache,
     ]);
 
 } catch (Throwable $e) {
