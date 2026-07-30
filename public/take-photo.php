@@ -24,43 +24,49 @@
                     <div class="flash" id="flashFx"></div>
                     <div class="countdown" id="cdOverlay"><span id="cdNumber">3</span></div>
                 </div>
-                <div class="photo-tools-card" id="sidebar">
-                    <div class="photo-tools-inner" id="sidebarContent">
-                        <div class="photo-tools-title"><i class="fas fa-sliders-h"></i> Pengaturan</div>
-                        <div class="photo-tools-divider"></div>
+                <div id="fabWidget">
+                    <div class="photo-tools-card" id="sidebar">
+                        <div class="photo-tools-inner" id="sidebarContent">
+                            <div class="photo-tools-title"><i class="fas fa-sliders-h"></i> Pengaturan</div>
+                            <div class="photo-tools-divider"></div>
 
-                        <div class="camera-config-wrap">
-                            <i class="fas fa-video"></i>
-                            <select id="cameraSelect">
-                                <option value="">Default Camera</option>
-                            </select>
-                            <i class="fas fa-chevron-down"></i>
+                            <div class="camera-config-wrap">
+                                <i class="fas fa-video"></i>
+                                <select id="cameraSelect">
+                                    <option value="">Default Camera</option>
+                                </select>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+
+                            <div class="timer-config-wrap">
+                                <i class="fas fa-clock"></i>
+                                <select class="timer-select" id="captureTimerSelect">
+                                    <option value="3">3s</option>
+                                    <option value="5" selected>5s</option>
+                                    <option value="10">10s</option>
+                                    <option value="30">30s</option>
+                                </select>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+
+                            <div class="photo-tools-divider"></div>
+
+                            <div id="mirrorHBadgeWrap"></div>
+                            <div id="mirrorVBadgeWrap"></div>
+
+                            <div class="photo-tools-divider"></div>
+
+                            <div id="handDetectBadgeWrap"></div>
+
+                            <div class="photo-tools-divider"></div>
+
+                            <button class="btn-back" id="btnBack"><i class="fas fa-arrow-left"></i> Back</button>
                         </div>
-
-                        <div class="timer-config-wrap">
-                            <i class="fas fa-clock"></i>
-                            <select class="timer-select" id="captureTimerSelect">
-                                <option value="3">3s</option>
-                                <option value="5" selected>5s</option>
-                                <option value="10">10s</option>
-                                <option value="30">30s</option>
-                            </select>
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-
-                        <div class="photo-tools-divider"></div>
-
-                        <div id="mirrorHBadgeWrap"></div>
-                        <div id="mirrorVBadgeWrap"></div>
-
-                        <div class="photo-tools-divider"></div>
-
-                        <div id="handDetectBadgeWrap"></div>
-
-                        <div class="photo-tools-divider"></div>
-
-                        <button class="btn-back" id="btnBack"><i class="fas fa-arrow-left"></i> Back</button>
                     </div>
+
+                    <button class="fab-btn" id="fabBtn" aria-label="Toggle settings">
+                        <i class="fas fa-sliders-h" id="fabIcon"></i>
+                    </button>
                 </div>
             </div>
             <div class="btn-row">
