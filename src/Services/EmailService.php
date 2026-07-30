@@ -81,7 +81,6 @@ class EmailService
         try {
             $mail = self::getMailer();
             $mail->addAddress($email);
-            $mail->addAttachment($photoPath, AppConfig::EMAIL_ATTACHMENT_NAME);
 
             $timestamp = date('Y-m-d H:i:s');
             $location = AppConfig::STUDIO_LOCATION;
