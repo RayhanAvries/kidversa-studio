@@ -378,19 +378,9 @@ export class Booth {
         }, 200);
 
         const location = this._getUploadLocation();
+        const oldFilename = this.savedFilename;
 
         try {
-            if (isReplacement && this.savedFilename) {
-                this.ui.updateLoadingProgress(percent, "Menghapus berkas foto lama di server...");
-                const deleteFormData = new FormData();
-                deleteFormData.append("filename", this.savedFilename);
-                deleteFormData.append("csrf_token", this.csrfToken);
-                await fetch("api/delete-photo.php", {
-                    method: "POST",
-                    body: deleteFormData
-                });
-            }
-
             const blob = await this.dataURLtoBlob(this.captured);
 
             const uploadKey = "upload_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
@@ -432,6 +422,20 @@ export class Booth {
                     this.ui.hideLoadingOverlay();
                     this._handleUploadSuccess();
                 }, 500);
+
+                if (isReplacement && oldFilename) {
+                    try {
+                        const deleteFormData = new FormData();
+                        deleteFormData.append("filename", oldFilename);
+                        deleteFormData.append("csrf_token", this.csrfToken);
+                        await fetch("api/delete-photo.php", {
+                            method: "POST",
+                            body: deleteFormData
+                        });
+                    } catch (deleteErr) {
+                        console.warn("Failed to delete old photo:", deleteErr);
+                    }
+                }
             } else {
                 throw new Error(result?.message || "Gagal menyimpan foto");
             }
