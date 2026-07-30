@@ -6,21 +6,23 @@ export class ImageComposer {
     ctx.save();
     ctx.filter = filterStr || 'none';
 
-    const imgRatio = img.width / img.height;
+    const srcW = img.videoWidth || img.naturalWidth || img.width;
+    const srcH = img.videoHeight || img.naturalHeight || img.height;
+    const imgRatio = srcW / srcH;
     const canvasRatio = canvasWidth / canvasHeight;
 
     let drawWidth, drawHeight, offsetX, offsetY;
 
     if (imgRatio > canvasRatio) {
-      drawHeight = img.height;
-      drawWidth = img.height * canvasRatio;
-      offsetX = (img.width - drawWidth) / 2;
+      drawHeight = srcH;
+      drawWidth = srcH * canvasRatio;
+      offsetX = (srcW - drawWidth) / 2;
       offsetY = 0;
     } else {
-      drawWidth = img.width;
-      drawHeight = img.width / canvasRatio;
+      drawWidth = srcW;
+      drawHeight = srcW / canvasRatio;
       offsetX = 0;
-      offsetY = (img.height - drawHeight) / 2;
+      offsetY = (srcH - drawHeight) / 2;
     }
 
     ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight, 0, 0, canvasWidth, canvasHeight);
