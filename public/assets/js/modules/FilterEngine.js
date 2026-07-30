@@ -5,6 +5,7 @@ export class FilterEngine {
     this.filterRow = document.getElementById("filterRow");
     this.vid = document.getElementById("camVideo");
     this.cnv = document.getElementById("camCanvas");
+    this.getMirrorState = config.getMirrorState || (() => ({ mirrorH: false, mirrorV: false }));
   }
   applyFilter(filterId) {
     const f = this.filters.find((x) => x.id === filterId);
@@ -65,9 +66,21 @@ export class FilterEngine {
             const ctx = item.canvas.getContext("2d");
             ctx.filter = item.filter;
             ctx.save();
-            ctx.scale(-1, 1);
+            const mirror = this.getMirrorState();
+            if (mirror.mirrorH) {
+              ctx.translate(52, 0);
+              ctx.scale(-1, 1);
+            }
+            if (mirror.mirrorV) {
+              ctx.translate(0, 29);
+              ctx.scale(1, -1);
+            }
             try {
-              ctx.drawImage(this.masterVideo, -52, 0, 52, 29);
+              if (mirror.mirrorH) {
+                ctx.drawImage(this.masterVideo, 0, 0, 52, 29);
+              } else {
+                ctx.drawImage(this.masterVideo, -52, 0, 52, 29);
+              }
             } catch (e) {}
             ctx.restore();
             ctx.filter = "none";

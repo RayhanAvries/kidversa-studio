@@ -66,7 +66,13 @@ export class Booth {
         const filterRes = await fetch('assets/config/filters.json');
         if (!filterRes.ok) throw new Error(`Filters fetch failed: ${filterRes.status}`);
         const filterData = await filterRes.json();
-        this.filters = new FilterEngine({ filters: filterData });
+        this.filters = new FilterEngine({
+            filters: filterData,
+            getMirrorState: () => ({
+                mirrorH: this.camera.mirrorH,
+                mirrorV: this.camera.mirrorV
+            })
+        });
 
         await this.frames.loadFrameList();
 
