@@ -28,13 +28,15 @@
                     <div class="photo-tools-inner" id="sidebarContent">
                         <div class="photo-tools-title"><i class="fas fa-sliders-h"></i> Pengaturan</div>
                         <div class="photo-tools-divider"></div>
-                        <div class="camera-select-wrap">
+
+                        <div class="camera-config-wrap">
                             <i class="fas fa-video"></i>
-                            <select class="timer-select" id="cameraSelect">
+                            <select id="cameraSelect">
                                 <option value="">Default Camera</option>
                             </select>
+                            <i class="fas fa-chevron-down"></i>
                         </div>
-                        <div class="photo-tools-divider"></div>
+
                         <div class="timer-config-wrap">
                             <i class="fas fa-clock"></i>
                             <select class="timer-select" id="captureTimerSelect">
@@ -43,12 +45,20 @@
                                 <option value="10">10s</option>
                                 <option value="30">30s</option>
                             </select>
+                            <i class="fas fa-chevron-down"></i>
                         </div>
+
+                        <div class="photo-tools-divider"></div>
+
                         <div id="mirrorHBadgeWrap"></div>
                         <div id="mirrorVBadgeWrap"></div>
+
                         <div class="photo-tools-divider"></div>
+
                         <div id="handDetectBadgeWrap"></div>
+
                         <div class="photo-tools-divider"></div>
+
                         <button class="btn-back" id="btnBack"><i class="fas fa-arrow-left"></i> Back</button>
                     </div>
                 </div>
