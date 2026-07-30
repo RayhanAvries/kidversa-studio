@@ -110,12 +110,15 @@ class ChunkAssemblyHelper
                 return null;
             }
             $chunkHandle = fopen($chunkPath, 'r');
-            if ($chunkHandle) {
-                while (!feof($chunkHandle)) {
-                    fwrite($handle, fread($chunkHandle, 8192));
-                }
-                fclose($chunkHandle);
+            if (!$chunkHandle) {
+                fclose($handle);
+                unlink($tmpPath);
+                return null;
             }
+            while (!feof($chunkHandle)) {
+                fwrite($handle, fread($chunkHandle, 8192));
+            }
+            fclose($chunkHandle);
         }
 
         fclose($handle);
