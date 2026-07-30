@@ -13,7 +13,7 @@ class ValidationHelper
 
     public static function validateFilename(string $filename): bool
     {
-        if (strlen($filename) > 255) {
+        if (\strlen($filename) > 255) {
             return false;
         }
         return preg_match(self::FILENAME_PATTERN, $filename) === 1;
