@@ -82,7 +82,23 @@ export class FilterEngine {
               this._tempCtx.scale(1, -1);
             }
             try {
-              this._tempCtx.drawImage(this.masterVideo, 0, 0, 52, 29);
+              const srcW = this.masterVideo.videoWidth || 52;
+              const srcH = this.masterVideo.videoHeight || 29;
+              const srcRatio = srcW / srcH;
+              const dstRatio = 52 / 29;
+              let sx, sy, sw, sh;
+              if (srcRatio > dstRatio) {
+                sh = srcH;
+                sw = srcH * dstRatio;
+                sx = (srcW - sw) / 2;
+                sy = 0;
+              } else {
+                sw = srcW;
+                sh = srcW / dstRatio;
+                sx = 0;
+                sy = (srcH - sh) / 2;
+              }
+              this._tempCtx.drawImage(this.masterVideo, sx, sy, sw, sh, 0, 0, 52, 29);
             } catch (e) {}
             this._tempCtx.restore();
 
