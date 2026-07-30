@@ -20,7 +20,7 @@ class RateLimitHelper
 
         $fp = fopen($file, 'c+');
         if (!$fp) {
-            return true;
+            return false;
         }
 
         flock($fp, LOCK_EX);
