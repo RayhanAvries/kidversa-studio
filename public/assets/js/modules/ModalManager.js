@@ -141,7 +141,7 @@ export class ModalManager {
             const photoUrl = 'uploads/photos/' + statusCheck.filename;
             await BlobDownloader.downloadWithRetry(
                 photoUrl,
-                'kidversa-photo-' + Date.now() + '.png',
+                'kidversa-photo-' + Date.now() + '.jpg',
                 (progress) => {
                     if (btnDownload) {
                         btnDownload.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${progress.percent}%`;

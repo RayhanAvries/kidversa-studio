@@ -55,8 +55,12 @@ echo json_encode([
     ],
     'geolocation' => [
         'timeout' => AppConfig::GEOLOCATION_TIMEOUT,
+        'defaultLat' => AppConfig::DEFAULT_LAT,
+        'defaultLng' => AppConfig::DEFAULT_LNG,
+        'defaultName' => AppConfig::DEFAULT_LOCATION_NAME,
     ],
     'paths' => [
         'frames' => '/assets/img/frames',
+        'uploads' => '/uploads/photos/',
     ],
 ]);

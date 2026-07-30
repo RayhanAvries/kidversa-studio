@@ -1,4 +1,5 @@
 import { OperationQueue } from './OperationQueue.js';
+import { Config } from './Config.js';
 
 export class QueuePage {
     constructor() {
@@ -414,7 +415,11 @@ export class QueuePage {
                 const totalChunks = Math.ceil(blob.size / uploader.chunkSize);
                 await this.queue.updateProgress(id, { totalChunks, uploadedChunks: 0 });
 
-                const location = item.data.location || { lat: -6.9175, lng: 107.6191, name: 'Bandung' };
+                const location = item.data.location || {
+                    lat: Config.get('geolocation.defaultLat', -6.9175),
+                    lng: Config.get('geolocation.defaultLng', 107.6191),
+                    name: Config.get('geolocation.defaultName', 'Bandung')
+                };
                 const result = await uploader.upload(blob, item.data.filename, this.csrfToken, location, async (progress) => {
                     await this.queue.updateProgress(id, {
                         uploadedChunks: progress.chunk,

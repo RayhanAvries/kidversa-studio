@@ -310,8 +310,12 @@ export class Booth {
         return window.__appPermissions?.position ? {
             lat: window.__appPermissions.position.coords.latitude,
             lng: window.__appPermissions.position.coords.longitude,
-            name: window.__appPermissions.position.name || "Kidversa Studio, Bandung"
-        } : { lat: -6.9175, lng: 107.6191, name: "Bandung" };
+            name: window.__appPermissions.position.name || Config.get('geolocation.defaultName', 'Kidversa Studio, Bandung')
+        } : {
+            lat: Config.get('geolocation.defaultLat', -6.9175),
+            lng: Config.get('geolocation.defaultLng', 107.6191),
+            name: Config.get('geolocation.defaultName', 'Bandung')
+        };
     }
 
     async _uploadPhoto(blob, filename, csrfToken, location, onProgress) {
