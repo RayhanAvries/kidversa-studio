@@ -35,7 +35,8 @@ try {
         echo json_encode([
             'success' => true,
             'hasFiles' => false,
-            'message' => 'Upload directory does not exist: ' . $uploadDir,
+            'deletedCount' => 0,
+            'message' => 'No photos to clean up.',
         ]);
         exit;
     }
