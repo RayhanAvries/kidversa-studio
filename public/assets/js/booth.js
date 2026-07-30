@@ -7,6 +7,7 @@ import { Lang } from './modules/Lang.js';
 import { initPermissions } from './modules/InitPermissions.js';
 import { HandDetection } from './modules/HandDetection.js';
 import { HandDetectionUI } from './modules/HandDetectionUI.js';
+import { MirrorToggleUI } from './modules/MirrorToggleUI.js';
 import { ModalManager } from './modules/ModalManager.js';
 import { ChunkUploader } from './modules/ChunkUploader.js';
 import { OperationQueue } from './modules/OperationQueue.js';
@@ -80,7 +81,9 @@ export class Booth {
 
         window.__appPermissions = await initPermissions();
 
+        this._loadSettings();
         await this.camera.start();
+        this.camera._updateVideoTransform();
 
         this.ui.setCaptureButtonState(false);
         const f = this.filters.applyFilter(this.selFilter);
@@ -91,6 +94,8 @@ export class Booth {
         }
 
         this._initHandDetection();
+        await this._initCameraSelect();
+        this._initMirrorToggles();
 
         this.modalManager = new ModalManager(this);
         this.modalManager.init();
@@ -459,6 +464,7 @@ export class Booth {
         const f = this.filters.applyFilter(this.selFilter);
         document.getElementById('filterFx').style.display = f.overlay ? 'block' : 'none';
         await this.camera.start();
+        this.camera._updateVideoTransform();
         this.ui.setCaptureButtonState(false);
         if (this.camera.stream) {
             this.filters.initPreviews(this.camera.stream);
@@ -632,6 +638,33 @@ export class Booth {
         window.location.href = 'queue.php?autoretry=1';
     }
 
+    _loadSettings() {
+        try {
+            const savedDevice = localStorage.getItem('kidversa_camera_device');
+            const savedMirrorH = localStorage.getItem('kidversa_mirror_h');
+            const savedMirrorV = localStorage.getItem('kidversa_mirror_v');
+            if (savedDevice) this.camera.currentDeviceId = savedDevice;
+            if (savedMirrorH === 'true') this.camera.mirrorH = true;
+            if (savedMirrorV === 'true') this.camera.mirrorV = true;
+        } catch (e) {
+            console.warn('[Booth] Failed to load settings from localStorage', e);
+        }
+    }
+
+    _saveSettings() {
+        try {
+            if (this.camera.currentDeviceId) {
+                localStorage.setItem('kidversa_camera_device', this.camera.currentDeviceId);
+            } else {
+                localStorage.removeItem('kidversa_camera_device');
+            }
+            localStorage.setItem('kidversa_mirror_h', String(this.camera.mirrorH));
+            localStorage.setItem('kidversa_mirror_v', String(this.camera.mirrorV));
+        } catch (e) {
+            console.warn('[Booth] Failed to save settings to localStorage', e);
+        }
+    }
+
     destroy() {
         if (this.handDetect) {
             this.handDetect.destroy();
@@ -640,6 +673,14 @@ export class Booth {
         if (this.handDetectUI) {
             this.handDetectUI.destroy();
             this.handDetectUI = null;
+        }
+        if (this.mirrorHToggle) {
+            this.mirrorHToggle.destroy();
+            this.mirrorHToggle = null;
+        }
+        if (this.mirrorVToggle) {
+            this.mirrorVToggle.destroy();
+            this.mirrorVToggle = null;
         }
         this.filters.stopPreviews();
         this.camera.stop();
@@ -706,6 +747,73 @@ export class Booth {
     _enableHandDetectionIfActive() {
         if (this.handDetect && this.handDetect.isEnabled()) {
             this.handDetect.start();
+        }
+    }
+
+    async _initCameraSelect() {
+        const select = document.getElementById('cameraSelect');
+        if (!select) return;
+
+        if (this.camera.stream) {
+            await this.camera.getDevices();
+        }
+
+        if (this.camera.devices.length > 0) {
+            select.innerHTML = '';
+            this.camera.devices.forEach((device, i) => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                option.textContent = device.label || `Camera ${i + 1}`;
+                if (device.deviceId === this.camera.currentDeviceId) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+
+        select.addEventListener('change', async () => {
+            const deviceId = select.value;
+            if (!deviceId) {
+                this.camera.currentDeviceId = null;
+                await this.camera.start();
+            } else {
+                await this.camera.startWithDevice(deviceId);
+            }
+            this._saveSettings();
+            this.ui.setCaptureButtonState(false);
+            if (this.camera.stream) {
+                this.filters.stopPreviews();
+                this.filters.initPreviews(this.camera.stream);
+            }
+        });
+    }
+
+    _initMirrorToggles() {
+        const mirrorHWrap = document.getElementById('mirrorHBadgeWrap');
+        const mirrorVWrap = document.getElementById('mirrorVBadgeWrap');
+
+        if (mirrorHWrap) {
+            this.mirrorHToggle = new MirrorToggleUI(mirrorHWrap, {
+                icon: 'fas fa-arrows-alt-h',
+                label: 'Mirror H',
+                onToggle: (active) => {
+                    this.camera.setMirrorH(active);
+                    this._saveSettings();
+                }
+            });
+            if (this.camera.mirrorH) this.mirrorHToggle.setActive(true);
+        }
+
+        if (mirrorVWrap) {
+            this.mirrorVToggle = new MirrorToggleUI(mirrorVWrap, {
+                icon: 'fas fa-arrows-alt-v',
+                label: 'Mirror V',
+                onToggle: (active) => {
+                    this.camera.setMirrorV(active);
+                    this._saveSettings();
+                }
+            });
+            if (this.camera.mirrorV) this.mirrorVToggle.setActive(true);
         }
     }
 
