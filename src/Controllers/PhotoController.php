@@ -22,9 +22,9 @@ class PhotoController
             if ($data['fileInfo']['exists']) {
                 $data['expired'] = $data['fileInfo']['expired'];
                 $data['exists'] = !$data['expired'];
-            } else {
-                $data['expired'] = preg_match('/_(\d{8}_\d{6})\./', $filename) === 1;
             }
+            // If file doesn't exist, expired stays false (default)
+            // The view-photo.php template handles "not found" vs "expired" separately
         }
 
         return $data;
