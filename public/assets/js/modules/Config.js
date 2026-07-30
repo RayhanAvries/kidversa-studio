@@ -38,21 +38,24 @@ export class Config {
   }
   static email() {
     const emailConfig = this.values?.email || {};
-    if (typeof emailConfig.regex === "string") {
+    if (typeof emailConfig.regex === "string" && !emailConfig._regexCompiled) {
       try {
         const regexStr = emailConfig.regex;
         const match = regexStr.match(/^\/(.+)\/([gimuy]*)$/);
         if (match) {
-          emailConfig.regex = new RegExp(match[1], match[2]);
+          emailConfig._regexCompiled = new RegExp(match[1], match[2]);
         } else {
-          emailConfig.regex = new RegExp(regexStr);
+          emailConfig._regexCompiled = new RegExp(regexStr);
         }
       } catch (e) {
         console.error("Failed to parse email regex:", e);
-        emailConfig.regex = /^[a-z0-9._%+-]+@gmail\.com$/i;
+        emailConfig._regexCompiled = /^[a-z0-9._%+-]+@gmail\.com$/i;
       }
     }
-    return emailConfig;
+    return {
+      ...emailConfig,
+      regex: emailConfig._regexCompiled || emailConfig.regex,
+    };
   }
   static qr() {
     return this.values?.qr || {};
