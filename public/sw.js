@@ -1,5 +1,5 @@
 const CACHE_NAME = 'kidversa-v2';
-const APP_VERSION = '4.2.1';
+const APP_VERSION = '4.3.0';
 const STATIC_ASSETS = [
     '/assets/css/main.css',
     '/assets/css/capture.css',
@@ -20,6 +20,10 @@ const STATIC_ASSETS = [
     '/assets/js/modules/RetryManager.js',
     '/assets/js/modules/ClientQR.js',
     '/assets/js/modules/BlobDownloader.js',
+    '/assets/js/modules/MirrorToggleUI.js',
+    '/assets/js/modules/SharedActions.js',
+    '/assets/js/modules/QueuePage.js',
+    '/assets/js/modules/ImageComposer.js',
     '/assets/config/filters.json',
     '/assets/img/logo.png'
 ];

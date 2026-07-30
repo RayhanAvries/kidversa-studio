@@ -95,7 +95,7 @@
 <?php include 'partials/footer.php'; ?>
 <script>
 if ('serviceWorker' in navigator) {
-    const SW_VERSION = '4.2.1';
+    const SW_VERSION = '4.3.0';
 
     // If stored version differs, force-clear all caches and reload
     const storedVersion = localStorage.getItem('kidversa_sw_version');
