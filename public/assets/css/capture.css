@@ -23,78 +23,80 @@ body {
   position: relative;
   overflow: hidden;
 }
+/* ============================================
+   APP HEADER — Material 3 Light Design
+   ============================================ */
 .app-header {
-  background: #111827;
   position: relative;
-  z-index: 100;
+  height: var(--header-height, 64px);
+  background: var(--surface, #ffffff);
+  border-bottom: 1px solid var(--outline-variant, #e5e7eb);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  z-index: 1000;
   flex-shrink: 0;
+  transition: box-shadow 250ms cubic-bezier(0.2, 0, 0, 1);
 }
-.app-header::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #a855f7, #eab308);
-  z-index: 1;
+.app-header.scrolled {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
 }
 .app-header-inner {
-  padding: 0 14px;
+  padding: 0 20px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  height: 48px;
+  justify-content: space-between;
+  gap: 16px;
+  height: 100%;
 }
 .app-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   text-decoration: none;
   flex-shrink: 0;
 }
 .app-brand-logo {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   object-fit: contain;
   display: block;
 }
 .app-brand-name {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  color: #f9fafb;
+  color: var(--on-surface, #111827);
   white-space: nowrap;
   letter-spacing: -0.2px;
 }
 .app-brand-accent {
-  color: #a855f7;
+  color: var(--primary, #4F46E5);
 }
 .app-nav {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+  background: var(--surface-container, #f3f4f6);
+  padding: 5px;
+  border-radius: 999px;
 }
 .app-nav-tab {
-  padding: 6px 14px;
-  font-size: 0.72rem;
+  padding: 8px 16px;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--on-surface-variant, #6b7280);
   text-decoration: none;
-  border-radius: 6px;
-  transition: color 0.2s, background 0.2s;
+  border-radius: 999px;
+  transition: color 150ms cubic-bezier(0.2, 0, 0, 1), background 150ms cubic-bezier(0.2, 0, 0, 1);
   white-space: nowrap;
   font-family: inherit;
   letter-spacing: 0.3px;
 }
 .app-nav-tab:hover {
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--primary, #4F46E5);
 }
 .app-nav-tab.active {
-  color: #a855f7;
-  background: rgba(168, 85, 247, 0.1);
+  background: var(--primary, #4F46E5);
+  color: var(--on-primary, #ffffff);
 }
 .main-area {
   flex: 1;
@@ -656,7 +658,12 @@ button:disabled {
 }
 @supports (padding: max(0px)) {
   .app-header-inner {
-    padding-top: max(0px, env(safe-area-inset-top));
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
+  .app-header {
+    padding-top: env(safe-area-inset-top);
+    height: calc(var(--header-height, 64px) + env(safe-area-inset-top));
   }
   .controls {
     padding-bottom: max(10px, env(safe-area-inset-bottom));
@@ -1035,19 +1042,7 @@ button:disabled {
   flex-direction: column;
   overflow: hidden;
 }
-/* App Header (shared across pages) */
-.gallery-page .app-header {
-  background: #111827;
-}
-.gallery-page .app-header::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #a855f7, #eab308);
-}
+/* App Header — M3 Light (shared via base .app-header rules above) */
 
 /* Stats Bar */
 .gallery-stats {
@@ -1404,18 +1399,7 @@ button:disabled {
   flex-direction: column;
   overflow: hidden;
 }
-.queue-page .app-header {
-  background: #111827;
-}
-.queue-page .app-header::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #a855f7, #eab308);
-}
+
 
 /* Queue Stats Bar */
 .queue-stats {
