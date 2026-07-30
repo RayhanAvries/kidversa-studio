@@ -691,39 +691,116 @@ button:disabled {
   align-items: flex-start;
   justify-content: center;
   flex-shrink: 0;
-  gap: 12px;
 }
 
-/* ============================================================
-   Photo Tools Card — Material 3 Surface
-   ============================================================ */
-.photo-tools-card {
-  flex-shrink: 0;
-  width: 260px;
-  background: var(--surface, #ffffff);
-  border: 1px solid var(--outline-variant, #e0e0e0);
+#fabWidget {
+  position: fixed;
+  width: 64px;
+  height: 64px;
+  z-index: 190;
+  touch-action: none;
+}
+
+.fab-btn {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--primary, #4F46E5), #7F67BE);
+  color: var(--on-primary, #ffffff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  cursor: grab;
+  box-shadow: 0 6px 14px rgba(79, 70, 229, 0.20), 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.28s cubic-bezier(0.05, 0.7, 0.1, 1.0),
+              box-shadow 0.28s cubic-bezier(0.05, 0.7, 0.1, 1.0),
+              border-radius 0.35s cubic-bezier(0.05, 0.7, 0.1, 1.0);
+  position: relative;
+  overflow: hidden;
+}
+.fab-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.35) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.fab-btn:active::after {
+  opacity: 1;
+}
+.fab-btn:active {
+  transform: scale(0.92);
+  cursor: grabbing;
+}
+
+#fabWidget.dragging .fab-btn {
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.28), 0 3px 8px rgba(0, 0, 0, 0.18);
+  transform: scale(1.06);
+  cursor: grabbing;
+}
+#fabWidget.open .fab-btn {
   border-radius: 28px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.10), 0 4px 8px 3px rgba(0,0,0,0.08);
-  padding: 4px;
-  transition: box-shadow 0.3s ease;
 }
-.photo-tools-card:hover {
-  box-shadow: 0 2px 6px rgba(0,0,0,0.12), 0 10px 20px 4px rgba(0,0,0,0.08);
+
+.fab-btn i {
+  transition: transform 0.35s cubic-bezier(0.05, 0.7, 0.1, 1.0);
 }
+#fabWidget.open .fab-btn i {
+  transform: rotate(90deg);
+}
+
+.photo-tools-card {
+  position: absolute;
+  width: 300px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  background: var(--surface, rgba(255, 255, 255, 0.92));
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 28px;
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.28), 0 3px 8px rgba(0, 0, 0, 0.18);
+  padding: 18px;
+  opacity: 0;
+  transform: scale(0.75);
+  pointer-events: none;
+  transition: transform 0.32s cubic-bezier(0.05, 0.7, 0.1, 1.0),
+              opacity 0.22s cubic-bezier(0.2, 0, 0, 1);
+  will-change: transform, opacity;
+}
+.photo-tools-card.open {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
 .photo-tools-inner {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 20px 18px;
+  gap: 12px;
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  padding-right: 4px;
 }
+.photo-tools-inner::-webkit-scrollbar {
+  width: 6px;
+}
+.photo-tools-inner::-webkit-scrollbar-thumb {
+  background: var(--outline-variant, #cac4d0);
+  border-radius: 10px;
+}
+
 .photo-tools-title {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.1px;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--on-surface, #1d1b20);
+  letter-spacing: 0.2px;
 }
 .photo-tools-title i {
   width: 30px;
@@ -736,10 +813,10 @@ button:disabled {
   color: var(--on-primary-container, #21005d);
   font-size: 13px;
 }
+
 .photo-tools-divider {
   height: 1px;
-  background: var(--outline-variant, #e0e0e0);
-  border: none;
+  background: linear-gradient(90deg, transparent, var(--outline-variant, #e0e0e0), transparent);
   margin: 2px 0;
 }
 
@@ -990,32 +1067,16 @@ button:disabled {
   transform: translateX(-3px);
 }
 
-/* ============================================================
-   Responsive — Desktop hide, Mobile drawer
-   ============================================================ */
-@media (max-width: 900px) {
-  .photo-tools-card {
-    display: none;
-  }
-}
 @media (max-width: 768px) {
+  #fabWidget {
+    width: 56px;
+    height: 56px;
+  }
+  .fab-btn {
+    font-size: 20px;
+  }
   .photo-tools-card {
-    display: none;
-  }
-  .photo-tools-card.mobile-open {
-    display: flex;
-    position: fixed;
-    top: 50%;
-    right: 16px;
-    transform: translateY(-50%);
-    z-index: 160;
-    width: 260px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.12), 0 10px 20px 4px rgba(0,0,0,0.08);
-    animation: slideInRight 0.25s ease;
-  }
-  @keyframes slideInRight {
-    from { opacity: 0; transform: translateY(-50%) translateX(20px); }
-    to { opacity: 1; transform: translateY(-50%) translateX(0); }
+    width: calc(100vw - 48px);
   }
 }
 
