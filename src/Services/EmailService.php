@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Kidversa\Services;
 
 use Kidversa\Config\AppConfig;
-use Kidversa\Helpers\EnvHelper;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 
@@ -13,8 +12,6 @@ class EmailService
 {
     private static function getMailer(): PHPMailer
     {
-        EnvHelper::load(__DIR__ . '/../../.env');
-
         $mail = new PHPMailer(true);
         $mail->CharSet = 'UTF-8';
         $mail->isSMTP();
