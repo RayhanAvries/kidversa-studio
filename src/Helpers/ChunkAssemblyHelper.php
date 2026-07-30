@@ -41,16 +41,31 @@ class ChunkAssemblyHelper
             return false;
         }
 
-        $meta = json_decode(file_get_contents($metaPath), true);
+        $fp = fopen($metaPath, 'r+');
+        if (!$fp) {
+            return false;
+        }
+
+        flock($fp, LOCK_EX);
+
+        $meta = json_decode(stream_get_contents($fp), true);
         if ($meta['status'] !== 'uploading') {
+            flock($fp, LOCK_UN);
+            fclose($fp);
             return false;
         }
 
         $chunkPath = $sessionDir . '/chunk_' . str_pad((string) $chunkIndex, 6, '0', STR_PAD_LEFT);
         file_put_contents($chunkPath, $chunkData);
 
-        $meta['received_chunks']++;
-        file_put_contents($metaPath, json_encode($meta));
+        $meta['received_chunks'] = ($meta['received_chunks'] ?? 0) + 1;
+
+        ftruncate($fp, 0);
+        rewind($fp);
+        fwrite($fp, json_encode($meta));
+        fflush($fp);
+        flock($fp, LOCK_UN);
+        fclose($fp);
 
         return true;
     }
@@ -80,19 +95,35 @@ class ChunkAssemblyHelper
         }
 
         $finalPath = $uploadDir . '/' . $meta['filename'];
-        $handle = fopen($finalPath, 'w');
+        $tmpPath = $finalPath . '.tmp.' . getmypid();
+
+        $handle = fopen($tmpPath, 'w');
+        if (!$handle) {
+            return null;
+        }
 
         for ($i = 0; $i < $meta['total_chunks']; $i++) {
             $chunkPath = $sessionDir . '/chunk_' . str_pad((string) $i, 6, '0', STR_PAD_LEFT);
             if (!file_exists($chunkPath)) {
                 fclose($handle);
-
+                unlink($tmpPath);
                 return null;
             }
-            fwrite($handle, file_get_contents($chunkPath));
+            $chunkHandle = fopen($chunkPath, 'r');
+            if ($chunkHandle) {
+                while (!feof($chunkHandle)) {
+                    fwrite($handle, fread($chunkHandle, 8192));
+                }
+                fclose($chunkHandle);
+            }
         }
 
         fclose($handle);
+
+        if (!rename($tmpPath, $finalPath)) {
+            unlink($tmpPath);
+            return null;
+        }
 
         $meta['status'] = 'completed';
         file_put_contents($metaPath, json_encode($meta));
