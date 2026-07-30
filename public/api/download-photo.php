@@ -28,7 +28,13 @@ try {
     }
 
     header('Content-Description: File Transfer');
-    header('Content-Type: image/png');
+    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    $mimeType = match($ext) {
+        'jpg', 'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        default => 'application/octet-stream',
+    };
+    header('Content-Type: ' . $mimeType);
     header('Content-Disposition: attachment; filename="' . $filename . '"');
     header('Expires: 0');
     header('Cache-Control: must-revalidate');

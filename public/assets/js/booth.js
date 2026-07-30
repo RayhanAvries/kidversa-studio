@@ -225,7 +225,7 @@ export class Booth {
         const rawData = this.camera.getCanvasData();
         this.rawData = rawData;
         const compositeCanvas = await this.composeFinalImage(rawData, this.cameraConfig.TW, this.cameraConfig.TH);
-        this.captured = compositeCanvas.toDataURL('image/png');
+        this.captured = compositeCanvas.toDataURL('image/jpeg', 0.92);
         this.showCaptured();
         document.getElementById('camVideo').style.display = 'none';
         document.getElementById('camCanvas').style.display = 'block';
@@ -394,7 +394,7 @@ export class Booth {
                 String(dt.getHours()).padStart(2, '0') +
                 String(dt.getMinutes()).padStart(2, '0') +
                 String(dt.getSeconds()).padStart(2, '0');
-            const generatedFilename = `kidversa_${ts}.png`;
+            const generatedFilename = `kidversa_${ts}.jpg`;
             this.currentUploadFilename = generatedFilename;
 
             const result = await this._uploadPhoto(
