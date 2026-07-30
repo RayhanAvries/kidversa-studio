@@ -237,7 +237,7 @@ export class Booth {
         const rawData = this.camera.getCanvasData();
         this.rawData = rawData;
         const compositeCanvas = await this.composeFinalImage(rawData, this.cameraConfig.TW, this.cameraConfig.TH);
-        this.captured = compositeCanvas.toDataURL('image/jpeg', 0.92);
+        this.captured = compositeCanvas.toDataURL('image/png');
         this.showCaptured();
         document.getElementById('camVideo').style.display = 'none';
         document.getElementById('camCanvas').style.display = 'block';
@@ -335,28 +335,6 @@ export class Booth {
 
     async savePhotoToBackend(isReplacement = false) {
         this.ui.showLoadingOverlay("Memproses...");
-        let percent = 0;
-        const messages = isReplacement ? [
-            "Mempersiapkan data gambar...",
-            "Menghapus berkas foto lama di server...",
-            "Mengunggah foto per-bagian...",
-            "Menggabungkan foto di server...",
-            "Hampir selesai..."
-        ] : [
-            "Mempersiapkan data gambar...",
-            "Mengunggah foto per-bagian...",
-            "Menggabungkan foto di server...",
-            "Hampir selesai..."
-        ];
-        const progressInterval = setInterval(() => {
-            if (percent < 90) {
-                percent += Math.floor(Math.random() * 5) + 2;
-                if (percent > 90) percent = 90;
-                const step = Math.floor((percent / 100) * messages.length);
-                const currentMsg = messages[Math.min(step, messages.length - 1)];
-                this.ui.updateLoadingProgress(percent, currentMsg);
-            }
-        }, 200);
 
         const location = this._getUploadLocation();
         const oldFilename = this.savedFilename;
@@ -375,7 +353,7 @@ export class Booth {
                 String(dt.getHours()).padStart(2, '0') +
                 String(dt.getMinutes()).padStart(2, '0') +
                 String(dt.getSeconds()).padStart(2, '0');
-            const generatedFilename = `kidversa_${ts}.jpg`;
+            const generatedFilename = `kidversa_${ts}.png`;
             this.currentUploadFilename = generatedFilename;
 
             const result = await this._uploadPhoto(
@@ -391,8 +369,6 @@ export class Booth {
                     );
                 }
             );
-
-            clearInterval(progressInterval);
 
             if (result && result.success) {
                 this.savedFilename = result.filename;
@@ -421,7 +397,6 @@ export class Booth {
                 throw new Error(result?.message || "Gagal menyimpan foto");
             }
         } catch (e) {
-            clearInterval(progressInterval);
             this.ui.hideLoadingOverlay();
             console.error(e);
             this.pendingUpload = null;
@@ -576,15 +551,6 @@ export class Booth {
         this.ui.setRetryInProgressControls();
         this.ui.showLoadingOverlay("Mengunggah ulang...");
 
-        let percent = 0;
-        const progressInterval = setInterval(() => {
-            if (percent < 90) {
-                percent += Math.floor(Math.random() * 5) + 2;
-                if (percent > 90) percent = 90;
-                this.ui.updateLoadingProgress(percent, "Mengunggah ulang...");
-            }
-        }, 200);
-
         try {
             const blob = await this.dataURLtoBlob(this.captured);
 
@@ -604,8 +570,6 @@ export class Booth {
                 }
             );
 
-            clearInterval(progressInterval);
-
             if (result && result.success) {
                 this.savedFilename = result.filename;
                 this.pendingUpload = null;
@@ -619,7 +583,6 @@ export class Booth {
                 throw new Error(result?.message || "Gagal mengunggah ulang");
             }
         } catch (e) {
-            clearInterval(progressInterval);
             this.ui.hideLoadingOverlay();
             console.error('[Booth] Retry upload failed:', e);
             this.pendingUpload = null;
