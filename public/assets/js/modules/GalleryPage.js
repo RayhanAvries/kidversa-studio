@@ -1,4 +1,5 @@
 import { SharedActions } from './SharedActions.js';
+import { OperationQueue } from './OperationQueue.js';
 
 export class GalleryPage {
     constructor() {
@@ -13,6 +14,7 @@ export class GalleryPage {
         this.printModal = document.getElementById('printModal');
         this.qrModal = document.getElementById('qrModal');
         this.emailModal = document.getElementById('emailModal');
+        this.operationQueue = new OperationQueue();
     }
 
     async init() {
@@ -27,6 +29,7 @@ export class GalleryPage {
         }
 
         this._bindModalEvents();
+        await this.operationQueue.init();
         await this.loadPhotos();
     }
 
