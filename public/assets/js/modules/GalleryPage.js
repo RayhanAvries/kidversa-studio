@@ -1,6 +1,7 @@
 import { SharedActions } from './SharedActions.js';
 import { OperationQueue } from './OperationQueue.js';
 import { Config } from './Config.js';
+import { Lang } from './Lang.js';
 
 export class GalleryPage {
     constructor() {
@@ -332,10 +333,15 @@ export class GalleryPage {
         const icon = document.createElement('i');
         icon.className = 'fas fa-clock';
 
+        const label = document.createElement('span');
+        label.className = 'gallery-card-countdown-label';
+        label.textContent = Lang.get('countdown.remaining');
+
         const text = document.createElement('span');
         text.className = 'gallery-card-countdown-text';
 
         badge.appendChild(icon);
+        badge.appendChild(label);
         badge.appendChild(text);
 
         // Set initial state
@@ -344,7 +350,6 @@ export class GalleryPage {
         const urgency = this._getCountdownUrgency(secondsLeft);
 
         badge.classList.add(`countdown-${urgency}`);
-        // Show 00:00 when expired — no "expired" text
         text.textContent = this._formatCountdown(Math.max(0, secondsLeft));
 
         return badge;
@@ -422,7 +427,11 @@ export class GalleryPage {
                 );
                 elements.badge.classList.add(`countdown-${urgency}`);
 
-                // Update text — show 00:00 when expired
+                // Update label and text — show "Sisa waktu 00:00" when expired
+                const labelEl = elements.badge.querySelector('.gallery-card-countdown-label');
+                if (labelEl) {
+                    labelEl.textContent = Lang.get('countdown.remaining');
+                }
                 const textEl = elements.badge.querySelector('.gallery-card-countdown-text');
                 if (textEl) {
                     textEl.textContent = this._formatCountdown(Math.max(0, secondsLeft));

@@ -1524,6 +1524,13 @@ button:disabled {
 	color: #fff;
 }
 
+.gallery-card-countdown-label {
+	font-size: 0.48rem;
+	font-weight: 600;
+	color: rgba(255, 255, 255, 0.85);
+	letter-spacing: 0.02em;
+}
+
 .gallery-card-countdown-text {
 	font-size: 0.6rem;
 	font-weight: 700;
@@ -1559,7 +1566,9 @@ button:disabled {
 .gallery-card-progress-bar {
 	height: 100%;
 	border-radius: 0 2px 2px 0;
-	transition: width 1s linear, background-color 0.5s ease;
+	transition:
+		width 1s linear,
+		background-color 0.5s ease;
 	background-color: #10b981;
 }
 
@@ -1580,17 +1589,35 @@ button:disabled {
 
 /* Countdown pulse animation (critical state) */
 @keyframes countdown-pulse {
-	0%, 100% { opacity: 1; }
-	50% { opacity: 0.6; }
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.6;
+	}
 }
 
 /* countdown-fade dihapus: tidak ada state expired persisten */
 
 /* Card fade-out animation */
 @keyframes card-fadeout {
-	0% { opacity: 1; transform: scale(1); }
-	70% { opacity: 0.3; transform: scale(0.95); }
-	100% { opacity: 0; transform: scale(0.9); height: 0; margin: 0; padding: 0; overflow: hidden; }
+	0% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	70% {
+		opacity: 0.3;
+		transform: scale(0.95);
+	}
+	100% {
+		opacity: 0;
+		transform: scale(0.9);
+		height: 0;
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+	}
 }
 
 /* Compact mode for very small cards (mobile) */
@@ -1601,6 +1628,9 @@ button:disabled {
 	}
 	.gallery-card-countdown i {
 		font-size: 0.5rem;
+	}
+	.gallery-card-countdown-label {
+		font-size: 0.44rem;
 	}
 	.gallery-card-countdown-text {
 		font-size: 0.52rem;
