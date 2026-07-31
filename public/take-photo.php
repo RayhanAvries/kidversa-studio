@@ -82,8 +82,10 @@
     </div>
     <div class="controls">
         <div class="section-title">Filters</div>
-        <div class="scroll-row" id="filterRow"></div>
-        <div class="section-title" style="margin-top:6px">Frames</div>
+        <div class="filter-scroll-container">
+            <div class="scroll-row" id="filterRow"></div>
+        </div>
+        <div class="section-title">Frames</div>
         <div class="scroll-row" id="frameRow"></div>
     </div>
 </div>
