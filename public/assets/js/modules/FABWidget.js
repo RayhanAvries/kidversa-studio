@@ -119,10 +119,12 @@ export class FABWidget {
   _initPosition() {
     const MARGIN = 12;
     const controlsHeight = this._getControlsHeight();
-    this.widget.style.left = 'auto';
-    this.widget.style.right = MARGIN + 'px';
-    this.widget.style.top = 'auto';
-    this.widget.style.bottom = (controlsHeight + MARGIN) + 'px';
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    this.widget.style.left = (vw - 64 - MARGIN) + 'px';
+    this.widget.style.top = (vh - 64 - controlsHeight - MARGIN) + 'px';
+    this.widget.style.right = '';
+    this.widget.style.bottom = '';
     this.widget.dataset.edge = 'right';
   }
 
@@ -133,6 +135,7 @@ export class FABWidget {
 
   _snapToEdge(animate) {
     const MARGIN = 12;
+    const SNAP_THRESHOLD = 80;
     const rect = this.widget.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
@@ -145,6 +148,27 @@ export class FABWidget {
     const distBottom = vh - cy;
     const min = Math.min(distLeft, distRight, distTop, distBottom);
 
+    // If no edge is within threshold, just clamp to viewport and return
+    if (min > SNAP_THRESHOLD) {
+      const clampedLeft = this._clamp(rect.left, MARGIN, vw - rect.width - MARGIN);
+      const clampedTop = this._clamp(rect.top, MARGIN, vh - rect.height - MARGIN);
+      this.widget.style.left = clampedLeft + 'px';
+      this.widget.style.top = clampedTop + 'px';
+      this.widget.style.right = '';
+      this.widget.style.bottom = '';
+      this.widget.dataset.edge = '';
+      if (animate) {
+        this.widget.style.transition = 'left .35s cubic-bezier(0.05, 0.7, 0.1, 1.0), top .35s cubic-bezier(0.05, 0.7, 0.1, 1.0)';
+        const clear = () => {
+          this.widget.style.transition = '';
+          this.widget.removeEventListener('transitionend', clear);
+        };
+        this.widget.addEventListener('transitionend', clear);
+      }
+      if (this._isOpen) this._updatePanelPosition();
+      return;
+    }
+
     let left = rect.left;
     let top = rect.top;
     let edge = 'right';
@@ -155,7 +179,7 @@ export class FABWidget {
       top = this._clamp(rect.top, MARGIN, vh - rect.height - MARGIN);
     } else if (min === distRight) {
       edge = 'right';
-      left = null;
+      left = vw - rect.width - MARGIN;
       top = this._clamp(rect.top, MARGIN, vh - rect.height - MARGIN);
     } else if (min === distTop) {
       edge = 'top';
@@ -170,7 +194,7 @@ export class FABWidget {
     this.widget.dataset.edge = edge;
 
     if (animate) {
-      this.widget.style.transition = 'left .35s cubic-bezier(0.05, 0.7, 0.1, 1.0), top .35s cubic-bezier(0.05, 0.7, 0.1, 1.0), right .35s cubic-bezier(0.05, 0.7, 0.1, 1.0), bottom .35s cubic-bezier(0.05, 0.7, 0.1, 1.0)';
+      this.widget.style.transition = 'left .35s cubic-bezier(0.05, 0.7, 0.1, 1.0), top .35s cubic-bezier(0.05, 0.7, 0.1, 1.0)';
       const clear = () => {
         this.widget.style.transition = '';
         this.widget.removeEventListener('transitionend', clear);
@@ -178,17 +202,11 @@ export class FABWidget {
       this.widget.addEventListener('transitionend', clear);
     }
 
-    if (edge === 'right') {
-      this.widget.style.left = 'auto';
-      this.widget.style.right = MARGIN + 'px';
-      this.widget.style.top = top + 'px';
-      this.widget.style.bottom = '';
-    } else {
-      this.widget.style.right = '';
-      this.widget.style.bottom = '';
-      this.widget.style.left = left + 'px';
-      this.widget.style.top = top + 'px';
-    }
+    // Always use left/top positioning — never right/bottom
+    this.widget.style.left = left + 'px';
+    this.widget.style.top = top + 'px';
+    this.widget.style.right = '';
+    this.widget.style.bottom = '';
 
     if (this._isOpen) this._updatePanelPosition();
   }
@@ -201,7 +219,13 @@ export class FABWidget {
     const rect = this.widget.getBoundingClientRect();
     this._originX = rect.left;
     this._originY = rect.top;
+    // Cache dimensions for performance (avoids forced reflow in _onPointerMove)
+    this._cachedW = this.widget.offsetWidth;
+    this._cachedH = this.widget.offsetHeight;
     this.widget.style.transition = '';
+    // FIX: Set left/top BEFORE clearing right/bottom to prevent jump to (0,0)
+    this.widget.style.left = rect.left + 'px';
+    this.widget.style.top = rect.top + 'px';
     this.widget.style.right = '';
     this.widget.style.bottom = '';
     this.widget.classList.add('dragging');
@@ -217,15 +241,16 @@ export class FABWidget {
       this._moved = true;
     }
 
+    // Use cached dimensions for performance (avoids forced reflow)
     const nx = this._clamp(
       this._originX + dx,
       0,
-      window.innerWidth - this.widget.offsetWidth
+      window.innerWidth - this._cachedW
     );
     const ny = this._clamp(
       this._originY + dy,
       0,
-      window.innerHeight - this.widget.offsetHeight
+      window.innerHeight - this._cachedH
     );
 
     this.widget.style.left = nx + 'px';
@@ -251,17 +276,21 @@ export class FABWidget {
     const MARGIN = 12;
     const edge = this.widget.dataset.edge || 'right';
 
+    // Update cached dimensions
+    this._cachedW = this.widget.offsetWidth;
+    this._cachedH = this.widget.offsetHeight;
+
     if (edge === 'right') {
       const controlsHeight = this._getControlsHeight();
-      this.widget.style.left = 'auto';
-      this.widget.style.right = MARGIN + 'px';
-      this.widget.style.top = 'auto';
-      this.widget.style.bottom = (controlsHeight + MARGIN) + 'px';
+      this.widget.style.left = (vw - this._cachedW - MARGIN) + 'px';
+      this.widget.style.top = (vh - this._cachedH - controlsHeight - MARGIN) + 'px';
+      this.widget.style.right = '';
+      this.widget.style.bottom = '';
     } else {
       let left = parseFloat(this.widget.style.left) || 0;
       let top = parseFloat(this.widget.style.top) || 0;
-      left = this._clamp(left, 0, vw - this.widget.offsetWidth);
-      top = this._clamp(top, 0, vh - this.widget.offsetHeight);
+      left = this._clamp(left, MARGIN, vw - this._cachedW - MARGIN);
+      top = this._clamp(top, MARGIN, vh - this._cachedH - MARGIN);
       this.widget.style.left = left + 'px';
       this.widget.style.top = top + 'px';
     }

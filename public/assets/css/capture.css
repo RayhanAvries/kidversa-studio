@@ -839,7 +839,7 @@ button:disabled {
 .photo-tools-card {
   position: absolute;
   width: 300px;
-  max-width: calc(100vw - 24px);
+  max-width: 320px;
   max-height: calc(100vh - 24px);
   background: var(--surface, rgba(255, 255, 255, 0.92));
   backdrop-filter: blur(24px) saturate(160%);
