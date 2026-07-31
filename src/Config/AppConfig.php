@@ -4,8 +4,24 @@ declare(strict_types=1);
 
 namespace Kidversa\Config;
 
-class AppConfig
+final class AppConfig
 {
+    /**
+     * @var string|null Cached application version
+     */
+    private static ?string $appVersion = null;
+
+    /**
+     * Application version - single source of truth.
+     * Reads from public/version.json at class load time.
+     */
+    public static function getAppVersion(): string
+    {
+        if (self::$appVersion === null) {
+            self::$appVersion = self::loadVersion();
+        }
+        return self::$appVersion;
+    }
     public const PHOTO_UPLOAD_PATH = PhotoConfig::UPLOAD_PATH;
     public const FRAME_DIR = PhotoConfig::FRAME_DIR;
     public const LOGO_PATH = PhotoConfig::LOGO_PATH;
@@ -50,4 +66,19 @@ class AppConfig
     public const DAYS_INDONESIAN = StudioConfig::DAYS_INDONESIAN;
 
     public const DEFAULT_FRAMES = PhotoConfig::DEFAULT_FRAMES;
+
+    /**
+     * @return string Version from version.json or fallback
+     */
+    private static function loadVersion(): string
+    {
+        $versionFile = dirname(__DIR__, 2) . '/public/version.json';
+        if (!file_exists($versionFile)) {
+            return '4.3.1'; // fallback
+        }
+        $data = json_decode((string) file_get_contents($versionFile), true);
+        return is_array($data) && isset($data['version'])
+            ? (string) $data['version']
+            : '4.3.1';
+    }
 }
