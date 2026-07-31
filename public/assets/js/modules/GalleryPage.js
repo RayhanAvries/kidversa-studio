@@ -44,7 +44,11 @@ export class GalleryPage {
         // Cleanup when visibility changes (tab switching)
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                this._stopCountdownTimer();
+                // Only stop interval, preserve Map for restart
+                if (this._countdownInterval) {
+                    clearInterval(this._countdownInterval);
+                    this._countdownInterval = null;
+                }
             } else if (this._countdownElements.size > 0) {
                 this._startCountdownTimer();
             }
