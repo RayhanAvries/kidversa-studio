@@ -1,78 +1,99 @@
-const CACHE_NAME = 'kidversa-v2';
-const APP_VERSION = '4.3.0';
-const STATIC_ASSETS = [
-    '/assets/css/main.css',
-    '/assets/css/capture.css',
-    '/assets/css/view-photo.css',
-    '/assets/js/booth.js',
-    '/assets/js/modules/BoothUI.js',
-    '/assets/js/modules/CameraManager.js',
-    '/assets/js/modules/Config.js',
-    '/assets/js/modules/FilterEngine.js',
-    '/assets/js/modules/FrameManager.js',
-    '/assets/js/modules/Lang.js',
-    '/assets/js/modules/ModalManager.js',
-    '/assets/js/modules/HandDetection.js',
-    '/assets/js/modules/HandDetectionUI.js',
-    '/assets/js/modules/InitPermissions.js',
-    '/assets/js/modules/ChunkUploader.js',
-    '/assets/js/modules/OperationQueue.js',
-    '/assets/js/modules/RetryManager.js',
-    '/assets/js/modules/ClientQR.js',
-    '/assets/js/modules/BlobDownloader.js',
-    '/assets/js/modules/MirrorToggleUI.js',
-    '/assets/js/modules/SharedActions.js',
-    '/assets/js/modules/QueuePage.js',
-    '/assets/js/modules/ImageComposer.js',
-    '/assets/config/filters.json',
-    '/assets/img/logo.png'
-];
+// sw.js — Service Worker with dynamic versioning
+// Version fetched from /version.json at install time
+// CSS/JS: network-first (always fresh)
+// Images: cache-first (performance)
 
+let APP_VERSION = '4.3.1'; // fallback if version.json fetch fails
+
+// ============================================================
+// INSTALL: Fetch version.json, open cache, skip waiting
+// ============================================================
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(STATIC_ASSETS);
-        })
+        fetch('/version.json')
+            .then((response) => response.json())
+            .then((data) => {
+                APP_VERSION = data.version || APP_VERSION;
+                console.log('[SW] Version from version.json:', APP_VERSION);
+            })
+            .catch((err) => {
+                console.warn('[SW] Failed to fetch version.json, using fallback:', APP_VERSION, err);
+            })
+            .then(() => {
+                const CACHE_NAME = `kidversa-v${APP_VERSION}`;
+                return caches.open(CACHE_NAME).then((cache) => {
+                    console.log('[SW] Cache opened:', CACHE_NAME);
+                });
+            })
     );
+    // Activate new SW immediately without waiting for old one to die
     self.skipWaiting();
 });
 
+// ============================================================
+// ACTIVATE: Delete old caches, claim clients, notify update
+// ============================================================
 self.addEventListener('activate', (event) => {
+    const currentCache = `kidversa-v${APP_VERSION}`;
+
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames
-                    .filter((name) => name !== CACHE_NAME)
-                    .map((name) => caches.delete(name))
+                    .filter((name) => name !== currentCache)
+                    .map((name) => {
+                        console.log('[SW] Deleting old cache:', name);
+                        return caches.delete(name);
+                    })
             );
         })
     );
+
+    // Take control of all open pages immediately
     self.clients.claim();
 
-    // Notify all clients that a new version is available
+    // Notify all clients that a new SW is active
     event.waitUntil(
         self.clients.matchAll().then((clients) => {
             clients.forEach((client) => {
-                client.postMessage({ type: 'SW_UPDATED', version: APP_VERSION });
+                client.postMessage({
+                    type: 'SW_UPDATED',
+                    version: APP_VERSION
+                });
             });
         })
     );
 });
 
+// ============================================================
+// MESSAGE: Handle SKIP_WAITING from pages
+// ============================================================
 self.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'SKIP_WAITING') {
         self.skipWaiting();
     }
 });
 
+// ============================================================
+// FETCH: Routing strategy per resource type
+// ============================================================
 self.addEventListener('fetch', (event) => {
-    const url = new URL(event.request.url);
+    let url;
+    try {
+        url = new URL(event.request.url);
+    } catch (e) {
+        return; // Invalid URL, skip interception
+    }
 
+    // --- API calls: network only (no cache) ---
     if (url.pathname.startsWith('/api/')) {
         event.respondWith(
             fetch(event.request).catch(() => {
                 return new Response(
-                    JSON.stringify({ success: false, message: 'Network unavailable' }),
+                    JSON.stringify({
+                        success: false,
+                        message: 'Network unavailable'
+                    }),
                     {
                         status: 503,
                         headers: { 'Content-Type': 'application/json' }
@@ -83,48 +104,62 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Network-first for JS files to ensure fresh code is served
-    if (url.pathname.endsWith('.js')) {
+    // --- CSS/JS: network-first (always fresh) ---
+    if (url.pathname.endsWith('.css') || url.pathname.endsWith('.js')) {
         event.respondWith(
-            fetch(event.request).then((networkResponse) => {
-                if (networkResponse.ok) {
-                    const responseClone = networkResponse.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, responseClone);
-                    });
-                }
-                return networkResponse;
-            }).catch(() => {
-                return caches.match(event.request);
-            })
+            fetch(event.request)
+                .then((networkResponse) => {
+                    // Update cache with fresh version
+                    if (networkResponse.ok) {
+                        const responseClone = networkResponse.clone();
+                        caches.open(`kidversa-v${APP_VERSION}`).then((cache) => {
+                            cache.put(event.request, responseClone);
+                        });
+                    }
+                    return networkResponse;
+                })
+                .catch(() => {
+                    // Fallback to cache if offline
+                    return caches.match(event.request);
+                })
         );
         return;
     }
 
-    // Cache-first for everything else (CSS, images, fonts)
+    // --- Everything else (images, fonts, etc.): cache-first ---
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
             if (cachedResponse) {
                 return cachedResponse;
             }
 
-            return fetch(event.request).then((networkResponse) => {
-                if (networkResponse.ok) {
-                    const responseClone = networkResponse.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, responseClone);
+            return fetch(event.request)
+                .then((networkResponse) => {
+                    // Cache successful responses
+                    if (networkResponse.ok) {
+                        const responseClone = networkResponse.clone();
+                        caches.open(`kidversa-v${APP_VERSION}`).then((cache) => {
+                            cache.put(event.request, responseClone);
+                        });
+                    }
+                    return networkResponse;
+                })
+                .catch(() => {
+                    // Offline fallback for images
+                    if (event.request.destination === 'image') {
+                        return new Response(
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">' +
+                            '<rect fill="#f0f0f0" width="200" height="200"/>' +
+                            '<text fill="#999" font-size="14" text-anchor="middle" x="100" y="105">Offline</text>' +
+                            '</svg>',
+                            { headers: { 'Content-Type': 'image/svg+xml' } }
+                        );
+                    }
+                    return new Response('Offline', {
+                        status: 503,
+                        statusText: 'Offline'
                     });
-                }
-                return networkResponse;
-            }).catch(() => {
-                if (event.request.destination === 'image') {
-                    return new Response(
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect fill="#f0f0f0" width="200" height="200"/><text fill="#999" font-size="14" text-anchor="middle" x="100" y="105">Offline</text></svg>',
-                        { headers: { 'Content-Type': 'image/svg+xml' } }
-                    );
-                }
-                return new Response('Offline', { status: 503, statusText: 'Offline' });
-            });
+                });
         })
     );
 });
