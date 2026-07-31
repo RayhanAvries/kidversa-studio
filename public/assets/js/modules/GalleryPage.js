@@ -1,5 +1,6 @@
 import { SharedActions } from './SharedActions.js';
 import { OperationQueue } from './OperationQueue.js';
+import { Config } from './Config.js';
 
 export class GalleryPage {
     constructor() {
@@ -15,6 +16,11 @@ export class GalleryPage {
         this.qrModal = document.getElementById('qrModal');
         this.emailModal = document.getElementById('emailModal');
         this.operationQueue = new OperationQueue();
+
+        // Countdown timer state
+        this._countdownInterval = null;
+        this._countdownElements = new Map(); // filename -> { badge, progressBar, expiresAt, card }
+        this._updateInterval = 1000; // 1 second
     }
 
     async init() {
@@ -31,9 +37,24 @@ export class GalleryPage {
         this._bindModalEvents();
         await this.operationQueue.init();
         await this.loadPhotos();
+
+        // Cleanup countdown timer when page unloads
+        window.addEventListener('beforeunload', () => this._stopCountdownTimer());
+
+        // Cleanup when visibility changes (tab switching)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this._stopCountdownTimer();
+            } else if (this._countdownElements.size > 0) {
+                this._startCountdownTimer();
+            }
+        });
     }
 
     async loadPhotos(page = 1) {
+        // Stop existing countdown timer before loading new data
+        this._stopCountdownTimer();
+
         const grid = document.getElementById('galleryGrid');
         const empty = document.getElementById('galleryEmpty');
         const loading = document.getElementById('galleryLoading');
@@ -70,7 +91,11 @@ export class GalleryPage {
         } catch (e) {
             console.error('[Gallery] Failed to load photos:', e);
             if (loading) {
-                loading.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Gagal memuat foto';
+                loading.textContent = '';
+                const errorIcon = document.createElement('i');
+                errorIcon.className = 'fas fa-exclamation-triangle';
+                loading.appendChild(errorIcon);
+                loading.appendChild(document.createTextNode(' Gagal memuat foto'));
             }
         }
     }
@@ -78,7 +103,12 @@ export class GalleryPage {
     _renderGrid(photos) {
         const grid = document.getElementById('galleryGrid');
         if (!grid) return;
-        grid.innerHTML = '';
+        while (grid.firstChild) {
+            grid.removeChild(grid.firstChild);
+        }
+
+        // Clear previous countdown tracking
+        this._stopCountdownTimer();
 
         photos.forEach(photo => {
             const card = document.createElement('div');
@@ -96,7 +126,9 @@ export class GalleryPage {
 
             const renameBtn = document.createElement('button');
             renameBtn.className = 'gallery-action-btn gallery-action-rename';
-            renameBtn.innerHTML = '<i class="fas fa-pen"></i>';
+            const renameIcon = document.createElement('i');
+            renameIcon.className = 'fas fa-pen';
+            renameBtn.appendChild(renameIcon);
             renameBtn.title = 'Rename';
             renameBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -105,7 +137,9 @@ export class GalleryPage {
 
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'gallery-action-btn gallery-action-delete';
-            deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+            const deleteIcon = document.createElement('i');
+            deleteIcon.className = 'fas fa-trash';
+            deleteBtn.appendChild(deleteIcon);
             deleteBtn.title = 'Delete';
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -144,10 +178,32 @@ export class GalleryPage {
             card.appendChild(actions);
             card.appendChild(info);
 
+            // === COUNTDOWN TIMER ===
+            if (photo.expires_at) {
+                const countdownBadge = this._renderCountdownBadge(photo);
+                card.appendChild(countdownBadge);
+
+                const progressBar = this._renderProgressBar(photo.expires_at);
+                card.appendChild(progressBar);
+
+                // Track for live updates
+                this._countdownElements.set(photo.filename, {
+                    badge: countdownBadge,
+                    progressBar: progressBar,
+                    expiresAt: photo.expires_at,
+                    card: card,
+                });
+            }
+
             card.addEventListener('click', () => this._selectPhoto(photo.filename));
 
             grid.appendChild(card);
         });
+
+        // Start global countdown timer if there are photos with expires_at
+        if (this._countdownElements.size > 0) {
+            this._startCountdownTimer();
+        }
     }
 
     _renderStats(data) {
@@ -165,13 +221,17 @@ export class GalleryPage {
     _renderPagination() {
         const container = document.getElementById('galleryPagination');
         if (!container) return;
-        container.innerHTML = '';
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
 
         if (this.totalPages <= 1) return;
 
         const prevBtn = document.createElement('button');
         prevBtn.className = 'page-btn';
-        prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+        const prevIcon = document.createElement('i');
+        prevIcon.className = 'fas fa-chevron-left';
+        prevBtn.appendChild(prevIcon);
         prevBtn.disabled = this.currentPage === 1;
         prevBtn.addEventListener('click', () => this.loadPhotos(this.currentPage - 1));
         container.appendChild(prevBtn);
@@ -194,7 +254,9 @@ export class GalleryPage {
 
         const nextBtn = document.createElement('button');
         nextBtn.className = 'page-btn';
-        nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+        const nextIcon = document.createElement('i');
+        nextIcon.className = 'fas fa-chevron-right';
+        nextBtn.appendChild(nextIcon);
         nextBtn.disabled = this.currentPage === this.totalPages;
         nextBtn.addEventListener('click', () => this.loadPhotos(this.currentPage + 1));
         container.appendChild(nextBtn);
@@ -225,11 +287,194 @@ export class GalleryPage {
         return pages;
     }
 
+    /**
+     * Format seconds into HH:MM:SS or MM:SS display
+     * @param {number} totalSeconds - remaining seconds (can be 0 or negative)
+     * @returns {string} formatted time string
+     */
+    _formatCountdown(totalSeconds) {
+        const seconds = Math.max(0, Math.floor(totalSeconds));
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+
+        if (h > 0) {
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    /**
+     * Determine urgency level based on remaining seconds
+     * @param {number} secondsLeft - remaining seconds
+     * @returns {'normal'|'warning'|'critical'}
+     */
+    _getCountdownUrgency(secondsLeft) {
+        if (secondsLeft <= 0) return 'critical';     // = 0 triggers fade-out, not persistent state
+        if (secondsLeft < 3600) return 'critical';   // < 1 hour
+        if (secondsLeft < 21600) return 'warning';   // < 6 hours
+        return 'normal';                              // >= 6 hours
+    }
+
+    /**
+     * Create countdown badge element for a gallery card
+     * @param {Object} photo - photo data from API (must include expires_at)
+     * @returns {HTMLDivElement} countdown badge element
+     */
+    _renderCountdownBadge(photo) {
+        const badge = document.createElement('div');
+        badge.className = 'gallery-card-countdown';
+
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-clock';
+
+        const text = document.createElement('span');
+        text.className = 'gallery-card-countdown-text';
+
+        badge.appendChild(icon);
+        badge.appendChild(text);
+
+        // Set initial state
+        const now = Math.floor(Date.now() / 1000);
+        const secondsLeft = photo.expires_at - now;
+        const urgency = this._getCountdownUrgency(secondsLeft);
+
+        badge.classList.add(`countdown-${urgency}`);
+        // Show 00:00 when expired — no "expired" text
+        text.textContent = this._formatCountdown(Math.max(0, secondsLeft));
+
+        return badge;
+    }
+
+    /**
+     * Create progress bar element showing time remaining visually
+     * @param {number} expiresAt - Unix timestamp when photo expires
+     * @returns {HTMLDivElement} progress bar container element
+     */
+    _renderProgressBar(expiresAt) {
+        const container = document.createElement('div');
+        container.className = 'gallery-card-progress';
+
+        const bar = document.createElement('div');
+        bar.className = 'gallery-card-progress-bar';
+
+        // Calculate initial width (percentage of 24 hours)
+        const totalDuration = parseInt(Config.get('photo.expiry', '86400'), 10);
+        const now = Math.floor(Date.now() / 1000);
+        const secondsLeft = Math.max(0, expiresAt - now);
+        const percentage = Math.min(100, (secondsLeft / totalDuration) * 100);
+
+        bar.style.width = `${percentage}%`;
+
+        // Set initial urgency class
+        const urgency = this._getCountdownUrgency(secondsLeft);
+        if (urgency === 'warning') bar.classList.add('progress-warning');
+        else if (urgency === 'critical') bar.classList.add('progress-critical');
+
+        container.appendChild(bar);
+        return container;
+    }
+
+    /**
+     * Start the global countdown update interval
+     * Updates all visible countdown badges every second
+     */
+    _startCountdownTimer() {
+        this._stopCountdownTimer(); // Clear any existing interval
+
+        this._countdownInterval = setInterval(() => {
+            this._updateCountdowns();
+        }, this._updateInterval);
+    }
+
+    /**
+     * Stop the countdown update interval and clean up
+     */
+    _stopCountdownTimer() {
+        if (this._countdownInterval) {
+            clearInterval(this._countdownInterval);
+            this._countdownInterval = null;
+        }
+        this._countdownElements.clear();
+    }
+
+    /**
+     * Update all visible countdown badges and progress bars
+     * Removes expired cards from DOM with fade animation
+     */
+    _updateCountdowns() {
+        const now = Math.floor(Date.now() / 1000);
+        const expiredFiles = [];
+
+        this._countdownElements.forEach((elements, filename) => {
+            const secondsLeft = elements.expiresAt - now;
+            const urgency = this._getCountdownUrgency(secondsLeft);
+
+            // Update badge text and class
+            if (elements.badge) {
+                // Remove old urgency classes
+                elements.badge.classList.remove(
+                    'countdown-normal', 'countdown-warning', 'countdown-critical'
+                );
+                elements.badge.classList.add(`countdown-${urgency}`);
+
+                // Update text — show 00:00 when expired
+                const textEl = elements.badge.querySelector('.gallery-card-countdown-text');
+                if (textEl) {
+                    textEl.textContent = this._formatCountdown(Math.max(0, secondsLeft));
+                }
+            }
+
+            // Update progress bar
+            if (elements.progressBar) {
+                const totalDuration = parseInt(Config.get('photo.expiry', '86400'), 10);
+                const percentage = Math.max(0, Math.min(100, (secondsLeft / totalDuration) * 100));
+                elements.progressBar.style.width = `${percentage}%`;
+
+                // Update progress bar urgency class
+                elements.progressBar.classList.remove(
+                    'progress-warning', 'progress-critical'
+                );
+                if (urgency === 'warning') elements.progressBar.classList.add('progress-warning');
+                else if (urgency === 'critical') elements.progressBar.classList.add('progress-critical');
+            }
+
+            // When countdown = 0, trigger fade-out (no persistent expired state)
+            // Guard: don't trigger twice if card is already fading out
+            if (secondsLeft <= 0 && elements.card && !elements.card.classList.contains('card-expiring')) {
+                expiredFiles.push({ filename, card: elements.card });
+            }
+        });
+
+        // Remove expired cards with animation
+        expiredFiles.forEach(({ filename, card }) => {
+            card.classList.add('card-expiring');
+            setTimeout(() => {
+                card.remove();
+                this._countdownElements.delete(filename);
+
+                // Update total count
+                this.totalPhotos = Math.max(0, this.totalPhotos - 1);
+                const statTotal = document.getElementById('statTotal');
+                if (statTotal) statTotal.textContent = this.totalPhotos;
+
+                // Show empty state if no cards left
+                const grid = document.getElementById('galleryGrid');
+                const empty = document.getElementById('galleryEmpty');
+                if (grid && grid.children.length === 0) {
+                    grid.style.display = 'none';
+                    if (empty) empty.style.display = 'flex';
+                    this._stopCountdownTimer();
+                }
+            }, 2000); // Wait for fade animation
+        });
+    }
+
     _formatSize(bytes) {
         if (bytes === 0) return '0 B';
         const units = ['B', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(1024));
-        return (bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+        return (bytes / 1024 ** i).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
     }
 
     _startRename(card, oldFilename) {

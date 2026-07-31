@@ -12,7 +12,6 @@ export const Lang = {
     home: "Home",
     cancel: "Cancel",
     close: "Close",
-    print: "Print Photo",
     sendEmail: "Send Email",
     downloadQR: "Download Via QR",
     sendNow: "Send Now",
@@ -30,7 +29,6 @@ export const Lang = {
     modalClosing: "Modal akan ditutup dalam {countdown} detik",
 
     photoSaved: "Tautan foto berhasil disalin!",
-    allowPopups: "Izinkan pop-up untuk mencetak",
     photoNotReady: "Photo not ready yet",
     locationNotAvailable: "Lokasi tidak tersedia",
     errorPrefix: "Error: ",
@@ -95,7 +93,6 @@ export const Lang = {
       "Maaf, berkas foto yang Anda cari tidak ditemukan. Silakan pastikan tautan sudah benar atau lakukan sesi pengambilan foto baru.",
     modalWillClose: "Modal akan ditutup dalam {countdown} detik",
 
-    error: "Error",
     cameraAccessDenied: "Camera access denied",
     geolocationFailed: "Geolocation failed",
     cleanupFailed: "Photo cleanup failed",
