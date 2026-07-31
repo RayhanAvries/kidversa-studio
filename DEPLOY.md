@@ -79,6 +79,13 @@ git pull origin v4.4
 ### Cache Headers (di `/etc/nginx/sites-enabled/kidversa.conf`)
 
 ```nginx
+# HTML/PHP: never cache (dynamic content)
+location ~* \.(html|php)$ {
+    add_header Cache-Control "no-cache, must-revalidate";
+    add_header Pragma "no-cache";
+    add_header Expires "0";
+}
+
 # CSS/JS: aggressive cache (invalidated via query string)
 location ~* \.(css|js)$ {
     add_header Cache-Control "public, max-age=31536000, immutable";
