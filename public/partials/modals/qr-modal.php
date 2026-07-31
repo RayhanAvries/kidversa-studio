@@ -1,4 +1,4 @@
-<div class="modal-bg" id="qrModal" style="display:none; z-index: 2000;">
+<div class="modal-bg" id="qrModal" style="display:none;">
     <div class="modal-box">
         <div class="modal-icon"><i class="fas fa-qrcode"></i></div>
         <div class="modal-title">Scan to Download</div>

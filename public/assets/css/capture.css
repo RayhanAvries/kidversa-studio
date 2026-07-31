@@ -617,7 +617,7 @@ button:disabled {
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  z-index: 200;
+  z-index: 1500;
   display: none;
   align-items: center;
   justify-content: center;

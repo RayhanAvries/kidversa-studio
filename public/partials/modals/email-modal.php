@@ -1,4 +1,4 @@
-<div class="modal-bg" id="emailModal" style="display:none; z-index: 2000;">
+<div class="modal-bg" id="emailModal" style="display:none;">
     <div class="modal-box">
         <div class="modal-icon"><i class="fas fa-paper-plane"></i></div>
         <div class="modal-title">Send via Email</div>
