@@ -3,6 +3,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/../../src/bootstrap.php';
 
+use Kidversa\Config\AppConfig;
 use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\RateLimitHelper;
 use Kidversa\Helpers\SecurityHelper;
@@ -75,11 +76,17 @@ try {
                 continue;
             }
 
+            $createdAt = PhotoService::extractTimestampFromFilename($file);
+            $expiresAt = $createdAt !== null
+                ? $createdAt + AppConfig::PHOTO_EXPIRY_TIME
+                : filemtime($filePath) + AppConfig::PHOTO_EXPIRY_TIME;
+
             $photos[] = [
                 'filename' => $file,
                 'size' => filesize($filePath),
                 'modified' => filemtime($filePath),
                 'url' => 'uploads/photos/' . $file,
+                'expires_at' => $expiresAt,
             ];
         }
 
