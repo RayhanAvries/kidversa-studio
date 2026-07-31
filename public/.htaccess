@@ -11,7 +11,8 @@
 RewriteEngine On
 
 # --- Cache Control Headers (Docker Dev - Apache) ---
-# Production uses nginx.conf — these headers are for local dev only
+# Cache headers: Apache (Docker dev) handles these via .htaccess
+# Production (nginx + PHP-FPM): see nginx-cache.conf
 
 # HTML pages: always revalidate
 <FilesMatch "\.(html|php)$">
