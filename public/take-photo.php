@@ -133,7 +133,8 @@ if ('serviceWorker' in navigator) {
                     const newWorker = reg.installing;
                     if (newWorker) {
                         newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'activated') {
+                            if (newWorker.state === 'activated' && !window.__swReloadDone) {
+                                window.__swReloadDone = true;
                                 console.log('SW updated — reloading');
                                 window.location.reload();
                             }
@@ -145,7 +146,8 @@ if ('serviceWorker' in navigator) {
 
         // Listen for SW version update messages
         navigator.serviceWorker.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'SW_UPDATED') {
+            if (event.data && event.data.type === 'SW_UPDATED' && !window.__swReloadDone) {
+                window.__swReloadDone = true;
                 console.log('SW updated to v' + event.data.version + ' — reloading');
                 window.location.reload();
             }
