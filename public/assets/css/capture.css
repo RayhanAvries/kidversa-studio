@@ -1250,39 +1250,109 @@ button:disabled {
 }
 /* App Header — M3 Light (shared via base .app-header rules above) */
 
-/* Stats Bar */
+/* Stats Bar — Material You Cards */
 .gallery-stats {
-	background: linear-gradient(
-		135deg,
-		rgba(168, 85, 247, 0.04),
-		rgba(234, 179, 8, 0.03)
-	);
-	border-bottom: 1px solid #f0f0f0;
-	padding: 10px 16px;
+	background: transparent;
+	border-bottom: none;
+	padding: 16px 16px 8px;
 	flex-shrink: 0;
 }
-.stats-row {
+.stats-cards {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 10px;
+	max-width: 600px;
+	margin: 0 auto;
+}
+.stat-card {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 14px 12px;
+	border-radius: 20px;
+	background: #fff;
+	box-shadow:
+		0 1px 2px rgba(0, 0, 0, 0.04),
+		0 2px 6px rgba(0, 0, 0, 0.04);
+	transition:
+		transform 0.2s ease,
+		box-shadow 0.2s ease;
+}
+.stat-card:hover {
+	transform: translateY(-1px);
+	box-shadow:
+		0 2px 4px rgba(0, 0, 0, 0.06),
+		0 4px 12px rgba(0, 0, 0, 0.06);
+}
+.stat-card-icon {
+	width: 40px;
+	height: 40px;
+	border-radius: 14px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: 12px;
-	flex-wrap: wrap;
+	flex-shrink: 0;
+	font-size: 0.95rem;
 }
-.stat-item {
-	font-size: 0.72rem;
-	font-weight: 600;
-	color: #6b7280;
-	display: inline-flex;
-	align-items: center;
-	gap: 5px;
+.stat-card-photos .stat-card-icon {
+	background: rgba(124, 58, 237, 0.1);
+	color: #7c3aed;
 }
-.stat-item i {
-	color: #a855f7;
+.stat-card-size .stat-card-icon {
+	background: rgba(14, 165, 233, 0.1);
+	color: #0ea5e9;
+}
+.stat-card-showing .stat-card-icon {
+	background: rgba(34, 197, 94, 0.1);
+	color: #22c55e;
+}
+.stat-card-content {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	min-width: 0;
+}
+.stat-card-value {
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: #1f2937;
+	line-height: 1.2;
+	letter-spacing: -0.01em;
+}
+.stat-card-of {
 	font-size: 0.7rem;
+	font-weight: 500;
+	color: #9ca3af;
 }
-.stat-divider {
-	color: #d1d5db;
-	font-size: 0.65rem;
+.stat-card-label {
+	font-size: 0.6rem;
+	font-weight: 500;
+	color: #9ca3af;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+@media (max-width: 420px) {
+	.stats-cards {
+		grid-template-columns: repeat(3, 1fr);
+		gap: 6px;
+	}
+	.stat-card {
+		padding: 10px 8px;
+		gap: 6px;
+		border-radius: 16px;
+	}
+	.stat-card-icon {
+		width: 32px;
+		height: 32px;
+		border-radius: 10px;
+		font-size: 0.8rem;
+	}
+	.stat-card-value {
+		font-size: 0.78rem;
+	}
+	.stat-card-label {
+		font-size: 0.55rem;
+	}
 }
 
 /* Gallery Content */
@@ -1344,24 +1414,15 @@ button:disabled {
 	background: #f3f4f6;
 }
 
-/* Card Actions Overlay */
+/* Card Actions Overlay — Always Visible */
 .gallery-card-actions {
 	position: absolute;
 	top: 8px;
 	right: 8px;
 	display: flex;
 	gap: 4px;
-	opacity: 0;
-	transition: opacity 0.2s ease;
-	z-index: 5;
-}
-.gallery-card:hover .gallery-card-actions {
 	opacity: 1;
-}
-@media (hover: none) {
-	.gallery-card-actions {
-		opacity: 1;
-	}
+	z-index: 5;
 }
 .gallery-action-btn {
 	width: 28px;
@@ -1382,20 +1443,24 @@ button:disabled {
 	transform: scale(0.9);
 }
 .gallery-action-rename {
-	background: rgba(255, 255, 255, 0.9);
-	color: #6b7280;
+	background: rgba(255, 255, 255, 0.92);
+	color: #7c3aed;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 .gallery-action-rename:hover {
-	background: #a855f7;
+	background: #7c3aed;
 	color: #fff;
+	box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
 }
 .gallery-action-delete {
-	background: rgba(255, 255, 255, 0.9);
-	color: #6b7280;
+	background: rgba(255, 255, 255, 0.92);
+	color: #ef4444;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 .gallery-action-delete:hover {
 	background: #ef4444;
 	color: #fff;
+	box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 /* Card Info */

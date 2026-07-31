@@ -19,12 +19,34 @@ use Kidversa\Config\AppConfig;
 <div class="gallery-page">
     <?php $activePage = 'gallery'; include __DIR__ . '/partials/app-header.php'; ?>
     <div class="gallery-stats" id="galleryStats" style="display:none">
-        <div class="stats-row">
-            <span class="stat-item"><i class="fas fa-images"></i> <span id="statTotal">0</span> foto</span>
-            <span class="stat-divider">|</span>
-            <span class="stat-item"><i class="fas fa-weight-hanging"></i> <span id="statSize">0 KB</span></span>
-            <span class="stat-divider">|</span>
-            <span class="stat-item"><i class="fas fa-eye"></i> Menampilkan <span id="statShowing">0</span> dari <span id="statOfTotal">0</span></span>
+        <div class="stats-cards">
+            <div class="stat-card stat-card-photos">
+                <div class="stat-card-icon">
+                    <i class="fas fa-images"></i>
+                </div>
+                <div class="stat-card-content">
+                    <span class="stat-card-value" id="statTotal">0</span>
+                    <span class="stat-card-label">Total Foto</span>
+                </div>
+            </div>
+            <div class="stat-card stat-card-size">
+                <div class="stat-card-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div class="stat-card-content">
+                    <span class="stat-card-value" id="statSize">0 KB</span>
+                    <span class="stat-card-label">Ukuran</span>
+                </div>
+            </div>
+            <div class="stat-card stat-card-showing">
+                <div class="stat-card-icon">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <div class="stat-card-content">
+                    <span class="stat-card-value"><span id="statShowing">0</span> <span class="stat-card-of">dari</span> <span id="statOfTotal">0</span></span>
+                    <span class="stat-card-label">Ditampilkan</span>
+                </div>
+            </div>
         </div>
     </div>
     <div class="gallery-content">
