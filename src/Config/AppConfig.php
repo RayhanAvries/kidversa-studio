@@ -13,7 +13,7 @@ final class AppConfig
 
     /**
      * Application version - single source of truth.
-     * Reads from public/version.json at class load time.
+     * Reads from public/version.json lazily on first call.
      */
     public static function getAppVersion(): string
     {
@@ -22,6 +22,7 @@ final class AppConfig
         }
         return self::$appVersion;
     }
+
     public const PHOTO_UPLOAD_PATH = PhotoConfig::UPLOAD_PATH;
     public const FRAME_DIR = PhotoConfig::FRAME_DIR;
     public const LOGO_PATH = PhotoConfig::LOGO_PATH;
