@@ -118,11 +118,17 @@ export class FABWidget {
 
   _initPosition() {
     const MARGIN = 12;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    this.widget.style.left = (vw - this.widget.offsetWidth - MARGIN) + 'px';
-    this.widget.style.top = (vh - this.widget.offsetHeight - MARGIN - 90) + 'px';
+    const controlsHeight = this._getControlsHeight();
+    this.widget.style.left = 'auto';
+    this.widget.style.right = MARGIN + 'px';
+    this.widget.style.top = 'auto';
+    this.widget.style.bottom = (controlsHeight + MARGIN) + 'px';
     this.widget.dataset.edge = 'right';
+  }
+
+  _getControlsHeight() {
+    const controls = document.querySelector('.controls');
+    return controls ? controls.offsetHeight : 100;
   }
 
   _snapToEdge(animate) {
@@ -149,7 +155,7 @@ export class FABWidget {
       top = this._clamp(rect.top, MARGIN, vh - rect.height - MARGIN);
     } else if (min === distRight) {
       edge = 'right';
-      left = vw - rect.width - MARGIN;
+      left = null;
       top = this._clamp(rect.top, MARGIN, vh - rect.height - MARGIN);
     } else if (min === distTop) {
       edge = 'top';
@@ -164,7 +170,7 @@ export class FABWidget {
     this.widget.dataset.edge = edge;
 
     if (animate) {
-      this.widget.style.transition = 'left .35s cubic-bezier(0.05, 0.7, 0.1, 1.0), top .35s cubic-bezier(0.05, 0.7, 0.1, 1.0)';
+      this.widget.style.transition = 'left .35s cubic-bezier(0.05, 0.7, 0.1, 1.0), top .35s cubic-bezier(0.05, 0.7, 0.1, 1.0), right .35s cubic-bezier(0.05, 0.7, 0.1, 1.0), bottom .35s cubic-bezier(0.05, 0.7, 0.1, 1.0)';
       const clear = () => {
         this.widget.style.transition = '';
         this.widget.removeEventListener('transitionend', clear);
@@ -172,8 +178,17 @@ export class FABWidget {
       this.widget.addEventListener('transitionend', clear);
     }
 
-    this.widget.style.left = left + 'px';
-    this.widget.style.top = top + 'px';
+    if (edge === 'right') {
+      this.widget.style.left = 'auto';
+      this.widget.style.right = MARGIN + 'px';
+      this.widget.style.top = top + 'px';
+      this.widget.style.bottom = '';
+    } else {
+      this.widget.style.right = '';
+      this.widget.style.bottom = '';
+      this.widget.style.left = left + 'px';
+      this.widget.style.top = top + 'px';
+    }
 
     if (this._isOpen) this._updatePanelPosition();
   }
@@ -187,6 +202,8 @@ export class FABWidget {
     this._originX = rect.left;
     this._originY = rect.top;
     this.widget.style.transition = '';
+    this.widget.style.right = '';
+    this.widget.style.bottom = '';
     this.widget.classList.add('dragging');
     this.fabBtn.setPointerCapture(e.pointerId);
   }
@@ -231,12 +248,24 @@ export class FABWidget {
   _onResize() {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    let left = parseFloat(this.widget.style.left) || 0;
-    let top = parseFloat(this.widget.style.top) || 0;
-    left = this._clamp(left, 0, vw - this.widget.offsetWidth);
-    top = this._clamp(top, 0, vh - this.widget.offsetHeight);
-    this.widget.style.left = left + 'px';
-    this.widget.style.top = top + 'px';
+    const MARGIN = 12;
+    const edge = this.widget.dataset.edge || 'right';
+
+    if (edge === 'right') {
+      const controlsHeight = this._getControlsHeight();
+      this.widget.style.left = 'auto';
+      this.widget.style.right = MARGIN + 'px';
+      this.widget.style.top = 'auto';
+      this.widget.style.bottom = (controlsHeight + MARGIN) + 'px';
+    } else {
+      let left = parseFloat(this.widget.style.left) || 0;
+      let top = parseFloat(this.widget.style.top) || 0;
+      left = this._clamp(left, 0, vw - this.widget.offsetWidth);
+      top = this._clamp(top, 0, vh - this.widget.offsetHeight);
+      this.widget.style.left = left + 'px';
+      this.widget.style.top = top + 'px';
+    }
+
     if (this._isOpen) this._updatePanelPosition();
   }
 
