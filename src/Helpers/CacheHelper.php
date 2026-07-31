@@ -40,21 +40,4 @@ final class CacheHelper
         header('Pragma: no-cache');
         header('Expires: 0');
     }
-
-    /**
-     * Set Cache-Control headers for API responses.
-     * This duplicates SecurityHelper::sendApiSecurityHeaders() for clarity.
-     * New code should use SecurityHelper directly.
-     *
-     * @deprecated Use SecurityHelper::sendApiSecurityHeaders() instead
-     */
-    public static function setApiCacheHeaders(): void
-    {
-        if (headers_sent()) {
-            return;
-        }
-
-        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-        header('Pragma: no-cache');
-    }
 }
