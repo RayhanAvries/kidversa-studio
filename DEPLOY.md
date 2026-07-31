@@ -2,8 +2,12 @@
 
 ## Environment
 
-- **Development:** Docker (php:8.4-apache) — `docker-compose up -d`
+- **Development:** Laragon (Apache + PHP) atau Docker (opsional)
+  - **Laragon (recommended):** Set document root ke `public/`, langsung jalan
+  - **Docker (opsional):** `docker-compose up -d` — pastikan port 80 tidak dipakai Laragon
 - **Production:** Nginx + PHP-FPM di VPS — `git pull`
+
+> **⚠️ Catatan:** Jangan jalankan Docker dan Laragon bersamaan — keduanya menggunakan port 80. Matikan salah satu sebelum menjalankan yang lain.
 
 ## Pre-Deploy
 

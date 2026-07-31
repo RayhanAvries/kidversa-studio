@@ -7,7 +7,7 @@ Kidversa Studio — a PHP photo booth web app (camera capture, filters, frames, 
 ## Tech Stack
 
 | Layer | Technology | Version |
-|-------|-----------|---------|
+| ------- | ----------- | --------- |
 | Language | PHP | >= 8.1 (8.4 in Docker) |
 | Frontend | Vanilla JS (ES modules) | ES2020 |
 | Email | PHPMailer | ^6.10 |
@@ -21,23 +21,31 @@ Kidversa Studio — a PHP photo booth web app (camera capture, filters, frames, 
 
 ## Running Locally
 
-### Docker (preferred)
+### Laragon (recommended)
+
+- Set document root to `public/`
+- PHP >= 8.1 required
+- Copy `.env.example` → `.env`, fill in SMTP values and `STUDIO_EMAIL`
+- App at <http://localhost>
+
+### Docker (opsional)
+
 ```bash
 docker-compose up -d
 # App at http://localhost
 ```
+
+> **⚠️ Catatan:** Jangan jalankan Docker dan Laragon bersamaan — keduanya menggunakan port 80. Matikan salah satu sebelum menjalankan yang lain.
+
 Production uses `docker-compose.prod.yml` (named volume for uploads, env_file, restart: always).
 
-### Laragon / XAMPP
-- Set document root to `public/`
-- PHP >= 8.1 required (8.4 recommended in Docker)
-- Copy `.env.example` → `.env`, fill in SMTP values and `STUDIO_EMAIL`
-
 ### Composer
+
 ```bash
 composer install          # first time
 composer dump-autoload    # if vendor/ is corrupted
 ```
+
 **Windows gotcha:** If `composer dump-autoload` fails with "Permission denied" on `vendor/composer/`, delete `vendor/` entirely and re-run `composer install`. This happens when Docker creates files as root then Windows can't overwrite them.
 
 ## Project Structure
@@ -174,13 +182,14 @@ docs/
 ```
 SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, BASE_URL, STUDIO_EMAIL
 ```
+
 Optional: `APP_DEBUG` (true for dev), `APP_TIMEZONE` (defaults to `Asia/Jakarta`), `APP_ENV` (defaults to `production`).
 See `.env.example` (dev) and `.env.production.example` (production deployment reference).
 
 ## API Endpoints Reference
 
 | Endpoint | Method | Rate Limit | CSRF | Input Format | Response Type |
-|----------|--------|-----------|------|-------------|---------------|
+| ---------- | -------- | ----------- | ------ | ------------- | --------------- |
 | `config.php` | GET | - | - | - | JSON |
 | `csrf-token.php` | GET | - | - | - | JSON |
 | `check-photo.php` | GET | - | - | Query | JSON |
@@ -213,6 +222,7 @@ Endpoints without CSRF: config, csrf-token, check-photo, download-photo, frames,
 - All PHP classes use `declare(strict_types=1)`
 
 ### Formatting Commands
+
 ```bash
 composer cs              # auto-fix PHP formatting
 composer cs:check        # dry-run check (CI uses this)
@@ -221,6 +231,7 @@ composer cs:check        # dry-run check (CI uses this)
 ## CI (GitHub Actions)
 
 On push/PR to `main` / `v4.1`:
+
 1. PHP syntax check (`php -l` on all `.php` files in `src/` and `public/`)
 2. `composer validate --strict`
 3. Docker build + health check
@@ -245,6 +256,7 @@ On push/PR to `main` / `v4.1`:
 ## Cross-Cutting Patterns
 
 ### Architecture
+
 - **All classes are static** — no dependency injection, no constructor injection, no interfaces
 - **File-based persistence** — rate limiting (JSON + flock), chunk uploads (disk-based), config cache (temp files)
 - **Config facade pattern** — `AppConfig` delegates 33+ constants to 4 domain-specific config classes
@@ -252,6 +264,7 @@ On push/PR to `main` / `v4.1`:
 - **No test suite** — manual testing only
 
 ### API Patterns
+
 - **Error response**: Always `{"success": false, "message": "..."}`, some add `exists`, `errors`, `hasFiles`
 - **READ endpoints cache** — config (300s), frames (300s), list-photos (30s) — all file-based in `sys_get_temp_dir()`
 - **CSRF in body** — POST endpoints accept CSRF in `$_POST['csrf_token']` or JSON body `csrf_token`
@@ -260,6 +273,7 @@ On push/PR to `main` / `v4.1`:
 - **Query-string endpoints**: check-photo, download-photo, generate-qr, list-photos, cleanup-photos
 
 ### Frontend Patterns
+
 - **booth.js is the central orchestrator** — creates all subsystem instances, wires callbacks, manages state
 - **`Config.js` is a singleton** — fetched once, cached, dot-notation access
 - **`Lang.js` is a plain object** (not a class) — Indonesian primary, English fallback
@@ -269,6 +283,7 @@ On push/PR to `main` / `v4.1`:
 - **Mirror toggles**: `MirrorToggleUI.js` creates horizontal/vertical mirror toggle badges, read from `CameraManager.mirrorH`/`mirrorV` and persisted via localStorage
 
 ### Security
+
 - **Path traversal prevention**: `PathHelper::getSafeUploadPath()` uses realpath + prefix check
 - **Filename validation**: Regex `[a-zA-Z0-9._-]` max 255 chars via `ValidationHelper::validateFilename()`
 - **Upload validation**: 10MB max, MIME via `finfo`, only PNG/JPEG/WebP via `ValidationHelper::validateUploadedFile()`
