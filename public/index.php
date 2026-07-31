@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/../src/bootstrap.php';
+use Kidversa\Config\AppConfig;
+?>
 <!DOCTYPE html>
 <html lang="id">
 
@@ -9,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/main.css?v=<?php echo AppConfig::getAppVersion(); ?>">
 </head>
 
 <body>
@@ -101,8 +105,39 @@
                     ripple.remove();
                 }, 600);
             });
-        })();
-    </script>
+})();
+            </script>
+
+<script>
+if ('serviceWorker' in navigator) {
+            const SW_VERSION = '<?php echo AppConfig::getAppVersion(); ?>';
+            const storedVersion = localStorage.getItem('kidversa_sw_version');
+            if (storedVersion && storedVersion !== SW_VERSION) {
+                        caches.keys().then(names => Promise.all(names.map(n => caches.delete(n)))).then(() => {
+                                    localStorage.setItem('kidversa_sw_version', SW_VERSION);
+                                    window.location.reload();
+                        });
+            } else {
+                        localStorage.setItem('kidversa_sw_version', SW_VERSION);
+            }
+            window.addEventListener('load', () => {
+                        navigator.serviceWorker.register('/sw.js')
+                                    .then(reg => {
+                                                if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                                                reg.addEventListener('updatefound', () => {
+                                                            const w = reg.installing;
+                                                            if (w) w.addEventListener('statechange', () => {
+                                                                        if (w.state === 'activated') window.location.reload();
+                                                            });
+                                                });
+                                    })
+                                    .catch(() => {});
+                        navigator.serviceWorker.addEventListener('message', (e) => {
+                                    if (e.data?.type === 'SW_UPDATED') window.location.reload();
+                        });
+            });
+}
+</script>
 
 </body>
 

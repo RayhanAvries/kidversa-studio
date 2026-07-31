@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/../src/bootstrap.php';
+use Kidversa\Config\AppConfig;
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/capture.css">
+    <link rel="stylesheet" href="assets/css/capture.css?v=<?php echo AppConfig::getAppVersion(); ?>">
 </head>
 <body>
 <div class="app">
@@ -103,7 +107,7 @@
 <?php include 'partials/footer.php'; ?>
 <script>
 if ('serviceWorker' in navigator) {
-    const SW_VERSION = '4.3.0';
+    const SW_VERSION = '<?php echo AppConfig::getAppVersion(); ?>';
 
     // If stored version differs, force-clear all caches and reload
     const storedVersion = localStorage.getItem('kidversa_sw_version');

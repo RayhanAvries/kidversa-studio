@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/../src/bootstrap.php';
+use Kidversa\Config\AppConfig;
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +10,7 @@
     <title>Gallery - Kidversa Studio</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/capture.css">
+    <link rel="stylesheet" href="assets/css/capture.css?v=<?php echo AppConfig::getAppVersion(); ?>">
     <style>
         html, body { overflow: auto; height: auto; }
     </style>
@@ -48,7 +52,7 @@
 <?php include 'partials/footer.php'; ?>
 <script>
 if ('serviceWorker' in navigator) {
-    const SW_VERSION = '4.3.0';
+    const SW_VERSION = '<?php echo AppConfig::getAppVersion(); ?>';
     const storedVersion = localStorage.getItem('kidversa_sw_version');
     if (storedVersion && storedVersion !== SW_VERSION) {
         caches.keys().then(names => Promise.all(names.map(n => caches.delete(n)))).then(() => {
