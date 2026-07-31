@@ -127,13 +127,19 @@ use Kidversa\Config\AppConfig;
                     reg.addEventListener('updatefound', () => {
                         const w = reg.installing;
                         if (w) w.addEventListener('statechange', () => {
-                            if (w.state === 'activated') window.location.reload();
+                            if (w.state === 'activated' && !window.__swReloadDone) {
+                                window.__swReloadDone = true;
+                                window.location.reload();
+                            }
                         });
                     });
                 })
                 .catch(() => {});
             navigator.serviceWorker.addEventListener('message', (e) => {
-                if (e.data?.type === 'SW_UPDATED') window.location.reload();
+                if (e.data?.type === 'SW_UPDATED' && !window.__swReloadDone) {
+                    window.__swReloadDone = true;
+                    window.location.reload();
+                }
             });
         });
     }
