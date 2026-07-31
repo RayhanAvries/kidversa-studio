@@ -17,6 +17,54 @@ import { ImageComposer } from './modules/ImageComposer.js';
 
 // removed debug log
 
+function makeDraggable(el) {
+  let isDown = false;
+  let startX, scrollLeft, moved = false;
+
+  const start = (pageX) => {
+    isDown = true;
+    moved = false;
+    el.classList.add("dragging");
+    startX = pageX - el.offsetLeft;
+    scrollLeft = el.scrollLeft;
+  };
+  const move = (pageX) => {
+    if (!isDown) return;
+    const x = pageX - el.offsetLeft;
+    const walk = x - startX;
+    if (Math.abs(walk) > 4) moved = true;
+    el.scrollLeft = scrollLeft - walk;
+  };
+  const end = () => {
+    if (!isDown) return;
+    isDown = false;
+    el.classList.remove("dragging");
+    if (moved) {
+      el.classList.add("was-dragging");
+      setTimeout(() => el.classList.remove("was-dragging"), 50);
+    }
+  };
+
+  el.addEventListener("mousedown", (e) => {
+    start(e.pageX);
+  });
+  window.addEventListener("mousemove", (e) => {
+    move(e.pageX);
+  });
+  window.addEventListener("mouseup", end);
+  el.addEventListener("mouseleave", () => {
+    if (isDown) end();
+  });
+
+  el.addEventListener("touchstart", (e) => {
+    start(e.touches[0].pageX);
+  }, { passive: true });
+  el.addEventListener("touchmove", (e) => {
+    move(e.touches[0].pageX);
+  }, { passive: true });
+  el.addEventListener("touchend", end);
+}
+
 export class Booth {
     constructor() {
         this.cameraConfig = {
@@ -143,6 +191,9 @@ export class Booth {
                 this.handleFilterOrFrameChange();
             }
         });
+
+        // Draggable horizontal scroll for filter and frame rows
+        document.querySelectorAll('.scroll-row').forEach(makeDraggable);
 
         this.ui.btnCap.addEventListener('click', () => this.startCountdown());
         this.ui.btnRet.addEventListener('click', () => this.retake());

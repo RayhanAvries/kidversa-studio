@@ -36,8 +36,16 @@ export class FrameManager {
       const d = document.createElement("div");
       d.className = `frame-card${i === 0 ? " sel" : ""}`;
       d.dataset.frame = name;
-      d.innerHTML = `<div class="frame-thumb"><img src="${this.getFramePath()}/${name}.png" alt="${displayName}" onerror="this.style.display='none'"></div><div class="frame-label">${displayName}</div>`;
+      d.innerHTML = `<div class="frame-thumb"><img src="${this.getFramePath()}/${name}.png" alt="${displayName}"></div><div class="frame-label">${displayName}</div>`;
       this.frameRow.appendChild(d);
+
+      const img = d.querySelector("img");
+      if (img) {
+        img.addEventListener("error", () => {
+          img.style.display = "none";
+          img.closest(".frame-thumb").classList.add("noimg");
+        });
+      }
     });
   }
 
