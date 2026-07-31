@@ -41,7 +41,7 @@ export class FilterEngine {
 
     this._tempCanvas = document.createElement("canvas");
     this._tempCanvas.width = 52;
-    this._tempCanvas.height = 29;
+    this._tempCanvas.height = 52;
     this._tempCtx = this._tempCanvas.getContext("2d");
 
     this.previewCanvases = this.filters.map((f) => ({
@@ -70,25 +70,25 @@ export class FilterEngine {
         this.previewCanvases.forEach((item) => {
           if (item.canvas) {
             item.canvas.width = 52;
-            item.canvas.height = 29;
+            item.canvas.height = 52;
             const ctx = item.canvas.getContext("2d");
 
-            this._tempCtx.clearRect(0, 0, 52, 29);
+            this._tempCtx.clearRect(0, 0, 52, 52);
             this._tempCtx.save();
             if (mirror.mirrorH) {
               this._tempCtx.translate(52, 0);
               this._tempCtx.scale(-1, 1);
             }
             if (mirror.mirrorV) {
-              this._tempCtx.translate(0, 29);
+              this._tempCtx.translate(0, 52);
               this._tempCtx.scale(1, -1);
             }
             // Center-crop math mirrors ImageComposer.fitAndDraw()
             try {
-              const srcW = this.masterVideo.videoWidth || 52;  // fallback = temp canvas width
-              const srcH = this.masterVideo.videoHeight || 29; // fallback = temp canvas height
+              const srcW = this.masterVideo.videoWidth || 52;
+              const srcH = this.masterVideo.videoHeight || 52;
               const srcRatio = srcW / srcH;
-              const dstRatio = 52 / 29;
+              const dstRatio = 1;
               let sx, sy, sw, sh;
               if (srcRatio > dstRatio) {
                 sh = srcH;
@@ -101,7 +101,7 @@ export class FilterEngine {
                 sx = 0;
                 sy = (srcH - sh) / 2;
               }
-              this._tempCtx.drawImage(this.masterVideo, sx, sy, sw, sh, 0, 0, 52, 29);
+              this._tempCtx.drawImage(this.masterVideo, sx, sy, sw, sh, 0, 0, 52, 52);
             } catch (e) {
               console.warn("[FilterEngine] Preview drawImage failed:", e.message);
             }
@@ -110,7 +110,7 @@ export class FilterEngine {
             try {
               ctx.filter = item.filter;
               try {
-                ctx.drawImage(this._tempCanvas, 0, 0, 52, 29);
+                ctx.drawImage(this._tempCanvas, 0, 0, 52, 52);
               } catch (e) {
                 console.warn("[FilterEngine] Thumbnail drawImage failed:", e.message);
               }
@@ -120,7 +120,7 @@ export class FilterEngine {
 
             if (item.overlay) {
               ctx.fillStyle = item.overlay;
-              ctx.fillRect(0, 0, 52, 29);
+              ctx.fillRect(0, 0, 52, 52);
             }
           }
         });
