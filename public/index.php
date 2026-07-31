@@ -105,39 +105,39 @@ use Kidversa\Config\AppConfig;
                     ripple.remove();
                 }, 600);
             });
-})();
-            </script>
+        })();
+    </script>
 
-<script>
-if ('serviceWorker' in navigator) {
-            const SW_VERSION = '<?php echo AppConfig::getAppVersion(); ?>';
-            const storedVersion = localStorage.getItem('kidversa_sw_version');
-            if (storedVersion && storedVersion !== SW_VERSION) {
-                        caches.keys().then(names => Promise.all(names.map(n => caches.delete(n)))).then(() => {
-                                    localStorage.setItem('kidversa_sw_version', SW_VERSION);
-                                    window.location.reload();
-                        });
-            } else {
-                        localStorage.setItem('kidversa_sw_version', SW_VERSION);
-            }
-            window.addEventListener('load', () => {
-                        navigator.serviceWorker.register('/sw.js')
-                                    .then(reg => {
-                                                if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-                                                reg.addEventListener('updatefound', () => {
-                                                            const w = reg.installing;
-                                                            if (w) w.addEventListener('statechange', () => {
-                                                                        if (w.state === 'activated') window.location.reload();
-                                                            });
-                                                });
-                                    })
-                                    .catch(() => {});
-                        navigator.serviceWorker.addEventListener('message', (e) => {
-                                    if (e.data?.type === 'SW_UPDATED') window.location.reload();
-                        });
+    <script>
+    if ('serviceWorker' in navigator) {
+        const SW_VERSION = '<?php echo AppConfig::getAppVersion(); ?>';
+        const storedVersion = localStorage.getItem('kidversa_sw_version');
+        if (storedVersion && storedVersion !== SW_VERSION) {
+            caches.keys().then(names => Promise.all(names.map(n => caches.delete(n)))).then(() => {
+                localStorage.setItem('kidversa_sw_version', SW_VERSION);
+                window.location.reload();
             });
-}
-</script>
+        } else {
+            localStorage.setItem('kidversa_sw_version', SW_VERSION);
+        }
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => {
+                    if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    reg.addEventListener('updatefound', () => {
+                        const w = reg.installing;
+                        if (w) w.addEventListener('statechange', () => {
+                            if (w.state === 'activated') window.location.reload();
+                        });
+                    });
+                })
+                .catch(() => {});
+            navigator.serviceWorker.addEventListener('message', (e) => {
+                if (e.data?.type === 'SW_UPDATED') window.location.reload();
+            });
+        });
+    }
+    </script>
 
 </body>
 
