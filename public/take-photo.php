@@ -6,6 +6,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Capture - Kidversa Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/capture.css">
@@ -80,10 +82,8 @@
     </div>
     <div class="controls">
         <div class="section-title">Filters</div>
-        <div class="filter-scroll-container">
-            <div class="scroll-row" id="filterRow"></div>
-        </div>
-        <div class="section-title" style="margin-top:5px">Frames</div>
+        <div class="scroll-row" id="filterRow"></div>
+        <div class="section-title" style="margin-top:6px">Frames</div>
         <div class="scroll-row" id="frameRow"></div>
     </div>
 </div>
