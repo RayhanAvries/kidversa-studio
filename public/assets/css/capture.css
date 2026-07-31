@@ -432,36 +432,29 @@ button:disabled {
   background: var(--md-primary);
   display: inline-block;
 }
+.filter-scroll-container {
+  margin-bottom: 4px;
+}
 .scroll-row {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   overflow-x: auto;
-  flex-wrap: nowrap;
-  width: max-content;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  padding: 4px 12px 6px;
-  -webkit-overflow-scrolling: touch;
+  overflow-y: hidden;
   scroll-behavior: smooth;
-  align-items: center;
-  margin: 0 auto;
-  touch-action: pan-x;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(168, 85, 247, 0.3) transparent;
+  padding: 4px 4px 12px;
+  cursor: grab;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 .scroll-row::-webkit-scrollbar {
-  height: 4px;
+  display: none;
 }
-.scroll-row::-webkit-scrollbar-track {
-  background: transparent;
+.scroll-row.dragging {
+  cursor: grabbing;
+  scroll-behavior: auto;
 }
-.scroll-row::-webkit-scrollbar-thumb {
-  background: rgba(168, 85, 247, 0.3);
-  border-radius: 10px;
-}
-.scroll-row::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 0.6);
+.scroll-row.dragging * {
+  pointer-events: none;
 }
 .filter-card {
   flex: 0 0 auto;
