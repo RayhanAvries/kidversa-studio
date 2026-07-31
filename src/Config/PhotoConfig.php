@@ -12,7 +12,7 @@ class PhotoConfig
 
     public const WIDTH = 1920;
     public const HEIGHT = 1080;
-    public const EXPIRY_TIME = 3600;
+    public const EXPIRY_TIME = 86400;
     public const FILENAME_PREFIX = 'kidversa';
     public const TIMESTAMP_FORMAT = 'Ymd_His';
 

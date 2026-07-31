@@ -82,7 +82,7 @@ export const Lang = {
     kidversaStudio: "Kidversa Studio",
     jakartaIndonesia: "Bandung, Jawa Barat",
     expiredMessage:
-      "Waktu penyimpanan foto ini telah habis (batas maksimal 60 menit). Demi keamanan privasi Anda, semua file foto di Kidversa Studio akan dihapus secara otomatis dari sistem secara berkala.",
+      "Waktu penyimpanan foto ini telah habis (batas maksimal 24 jam). Demi keamanan privasi Anda, semua file foto di Kidversa Studio akan dihapus secara otomatis dari sistem secara berkala.",
     photoNotFoundMessage:
       "Maaf, berkas foto yang Anda cari tidak ditemukan. Silakan pastikan tautan sudah benar atau lakukan sesi pengambilan foto baru.",
     modalWillClose: "Modal akan ditutup dalam {countdown} detik",
@@ -165,7 +165,7 @@ export const Lang = {
     kidversaStudio: "Kidversa Studio",
     jakartaIndonesia: "Bandung, Jawa Barat",
     expiredMessage:
-      "The storage time for this photo has expired (maximum limit of 60 minutes). For your privacy security, all photo files in Kidversa Studio will be automatically deleted from the system periodically.",
+      "The storage time for this photo has expired (maximum limit of 24 hours). For your privacy security, all photo files in Kidversa Studio will be automatically deleted from the system periodically.",
     photoNotFoundMessage:
       "Sorry, the photo file you are looking for was not found. Please make sure the link is correct or perform a new photo capture session.",
     modalWillClose: "Modal will close in {countdown} seconds",
