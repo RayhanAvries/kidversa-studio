@@ -28,7 +28,7 @@ ssh kidversa@server
 cd /var/www/kidversa.fun/kidversa-studio
 
 # Pull perubahan
-git pull origin v4.3
+git pull origin v4.4
 
 # Tidak perlu restart PHP-FPM (OPcache validate_timestamps=On)
 # Tidak perlu reload Nginx (kecuali nginx.conf berubah)
