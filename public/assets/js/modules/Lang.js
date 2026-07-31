@@ -59,6 +59,14 @@ export const Lang = {
 
     countdownText: ["3", "2", "1"],
 
+    countdown: {
+      remaining: "Sisa waktu",
+      hours: "jam",
+      minutes: "menit",
+      seconds: "detik",
+      autoDelete: "Auto-delete",
+    },
+
     warning: "Time's up! Last capture",
 
     viewTitlePhotoFound: "Foto Kenangan Anda",
@@ -141,6 +149,14 @@ export const Lang = {
     emailSendFailed: "Failed to send email",
 
     countdownText: ["3", "2", "1"],
+
+    countdown: {
+      remaining: "Time remaining",
+      hours: "h",
+      minutes: "m",
+      seconds: "s",
+      autoDelete: "Auto-delete",
+    },
 
     warning: "Time's up! Last capture",
 
