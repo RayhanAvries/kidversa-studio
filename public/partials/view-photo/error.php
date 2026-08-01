@@ -1,3 +1,4 @@
+<?php /** @var bool $isExpired */ ?>
 <section class="error-section">
     <div class="error-icon"><i class="fas fa-<?php echo ($isExpired ? 'clock' : 'image'); ?>"></i></div>
     <h2 class="error-title"><?php echo ($isExpired ? 'Foto Telah Kadaluarsa' : 'Foto Tidak Ditemukan'); ?></h2>
