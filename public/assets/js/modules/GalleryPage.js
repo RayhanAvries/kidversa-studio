@@ -553,7 +553,12 @@ export class GalleryPage {
 		input.focus();
 		input.select();
 
+		let finishing = false;
+
 		const finishRename = async (save) => {
+			if (finishing) return;
+			finishing = true;
+
 			nameEl.classList.remove("editing");
 			if (save) {
 				const newName = input.value.trim();
