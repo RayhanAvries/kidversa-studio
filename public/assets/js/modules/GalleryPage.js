@@ -2,6 +2,7 @@ import { SharedActions } from "./SharedActions.js";
 import { OperationQueue } from "./OperationQueue.js";
 import { Config } from "./Config.js";
 import { Lang } from "./Lang.js";
+import { BlobDownloader } from "./BlobDownloader.js";
 
 export class GalleryPage {
 	constructor() {
@@ -670,9 +671,6 @@ export class GalleryPage {
 	_openPrintModal() {
 		if (!this.printModal || !this.selectedFilename) return;
 
-		const btnDownload = document.getElementById("btnDownload");
-		if (btnDownload) btnDownload.style.display = "none";
-
 		const btnHome = document.getElementById("btnHome");
 		if (btnHome) btnHome.style.display = "none";
 
@@ -693,6 +691,9 @@ export class GalleryPage {
 		document
 			.getElementById("btnPrint")
 			?.addEventListener("click", () => this._printPhoto());
+		document
+			.getElementById("btnDownload")
+			?.addEventListener("click", () => this._downloadPhoto());
 		document
 			.getElementById("btnEmailAction")
 			?.addEventListener("click", () => this._openEmailModal());
@@ -783,6 +784,46 @@ export class GalleryPage {
 		} catch (e) {
 			console.error("[Gallery] Print error:", e);
 			alert("Gagal memuat foto untuk cetak. Silakan coba lagi.");
+		}
+	}
+
+	async _downloadPhoto() {
+		if (!this.selectedFilename) return;
+		const btn = document.getElementById("btnDownload");
+		const originalText = btn?.innerHTML;
+
+		if (btn) {
+			btn.disabled = true;
+			btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+		}
+
+		try {
+			const photoUrl = "uploads/photos/" + this.selectedFilename;
+			await BlobDownloader.downloadWithRetry(
+				photoUrl,
+				"kidversa-photo-" + Date.now() + ".png",
+				(progress) => {
+					if (btn) {
+						btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${progress.percent}%`;
+					}
+				},
+				3,
+			);
+
+			if (btn) {
+				btn.innerHTML = '<i class="fas fa-check"></i> Done';
+				setTimeout(() => {
+					btn.disabled = false;
+					btn.innerHTML = originalText;
+				}, 2000);
+			}
+		} catch (e) {
+			console.error("[Gallery] Download error:", e);
+			alert("Gagal mengunduh foto. Silakan coba lagi.");
+			if (btn) {
+				btn.disabled = false;
+				btn.innerHTML = originalText;
+			}
 		}
 	}
 }
