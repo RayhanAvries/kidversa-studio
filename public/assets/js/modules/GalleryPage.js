@@ -783,6 +783,14 @@ export class GalleryPage {
 		}
 	}
 
+	_getBaseUrl() {
+		return window.location.protocol + "//" + window.location.host;
+	}
+
+	_getPhotoViewUrl(filename) {
+		return `${this._getBaseUrl()}/view-photo.php?file=${encodeURIComponent(filename)}`;
+	}
+
 	async _openQRModal() {
 		if (!this.selectedFilename) return;
 
@@ -792,8 +800,7 @@ export class GalleryPage {
 		if (loading) loading.style.display = "block";
 		if (image) image.style.display = "none";
 
-		const baseUrl = window.location.protocol + "//" + window.location.host;
-		const viewUrl = `${baseUrl}/view-photo.php?file=${encodeURIComponent(this.selectedFilename)}`;
+		const viewUrl = this._getPhotoViewUrl(this.selectedFilename);
 
 		try {
 			await SharedActions.generateQR(viewUrl, "qrImage");
