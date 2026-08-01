@@ -13,6 +13,7 @@ import { ChunkUploader } from "./modules/ChunkUploader.js";
 import { OperationQueue } from "./modules/OperationQueue.js";
 import { RetryManager } from "./modules/RetryManager.js";
 import { ImageComposer } from "./modules/ImageComposer.js";
+import { UploadProcessor } from "./modules/UploadProcessor.js";
 
 function makeDraggable(el) {
 	let isDown = false;
@@ -110,6 +111,7 @@ export class Booth {
 		this.fabWidget = null;
 
 		this.counting = false;
+		this._filterDebounceTimer = null;
 		this.csrfToken = null;
 
 		this.chunkUploader = new ChunkUploader();
@@ -130,6 +132,21 @@ export class Booth {
 			}
 
 			await this.operationQueue.init();
+
+			this.uploadProcessor = new UploadProcessor(
+				this.operationQueue,
+				this.chunkUploader,
+				{
+					pollInterval: 2000,
+					onProgress: (id, progress) =>
+						this._onUploadProgress(id, progress),
+					onStatusChange: (id, status, result) =>
+						this._onUploadStatusChange(id, status, result),
+					onError: (id, error, permanent) =>
+						this._onUploadError(id, error, permanent),
+				},
+			);
+			this.uploadProcessor.start();
 
 			const filterRes = await fetch("assets/config/filters.json");
 			if (!filterRes.ok)
@@ -201,7 +218,10 @@ export class Booth {
 			this.selFilter = c.dataset.filter;
 			this.filters.applyFilter(this.selFilter);
 			if (this.captured) {
-				this.handleFilterOrFrameChange();
+				clearTimeout(this._filterDebounceTimer);
+				this._filterDebounceTimer = setTimeout(() => {
+					this.handleFilterOrFrameChange();
+				}, 300);
 			}
 		});
 
@@ -215,7 +235,10 @@ export class Booth {
 			c.classList.add("sel");
 			this.frames.setFrame(c.dataset.frame);
 			if (this.captured) {
-				this.handleFilterOrFrameChange();
+				clearTimeout(this._filterDebounceTimer);
+				this._filterDebounceTimer = setTimeout(() => {
+					this.handleFilterOrFrameChange();
+				}, 300);
 			}
 		});
 
@@ -325,26 +348,111 @@ export class Booth {
 		}, 1000);
 	}
 
+	_generateFilename() {
+		const dt = new Date();
+		const ts =
+			dt.getFullYear().toString() +
+			String(dt.getMonth() + 1).padStart(2, "0") +
+			String(dt.getDate()).padStart(2, "0") +
+			"_" +
+			String(dt.getHours()).padStart(2, "0") +
+			String(dt.getMinutes()).padStart(2, "0") +
+			String(dt.getSeconds()).padStart(2, "0");
+		return `kidversa_${ts}.png`;
+	}
+
+	_onUploadProgress(id, progress) {
+		const percent = Math.round(progress.percent);
+		this.ui.updateQueueStatus(id, `Uploading... ${percent}%`);
+	}
+
+	_onUploadStatusChange(id, status, result) {
+		if (status === "completed") {
+			this.ui.showToastMessage("Upload selesai \u2713", 2000);
+			this._updateQueueCounter();
+		} else if (status === "uploading") {
+			this._updateQueueCounter();
+		}
+	}
+
+	_onUploadError(id, error, permanent) {
+		if (permanent) {
+			this.ui.showToastMessage("Upload gagal permanen", 3000);
+		} else {
+			this.ui.showToastMessage("Upload gagal, akan retry...", 2000);
+		}
+		this._updateQueueCounter();
+	}
+
+	async _updateQueueCounter() {
+		const count = await this.operationQueue.getTotalPendingCount();
+		this.ui.updateQueueCounter(count);
+	}
+
 	async capture() {
+		if (this.counting) return;
+
+		// Pause hand detection if enabled
 		if (this.handDetect && this.handDetect.isEnabled()) {
 			this.handDetect.pause();
 		}
+
+		// Stop filter previews
 		this.filters.stopPreviews();
+
+		// Stop camera
 		this.camera.stop();
+
+		// Get raw canvas data
 		const rawData = this.camera.getCanvasData();
 		this.rawData = rawData;
-		const compositeCanvas = await this.composeFinalImage(
-			rawData,
-			this.cameraConfig.TW,
-			this.cameraConfig.TH,
-		);
+
+		// Compose final image
+		const TW = this.camera.videoWidth;
+		const TH = this.camera.videoHeight;
+		const compositeCanvas = await this.composeFinalImage(rawData, TW, TH);
 		this.captured = compositeCanvas.toDataURL("image/png");
-		this.showCaptured();
-		document.getElementById("camVideo").style.display = "none";
-		document.getElementById("camCanvas").style.display = "block";
-		this.ui.setCaptureControls("captured");
+
+		// Generate filename
+		this.currentUploadFilename = this._generateFilename();
+
+		// Enqueue to queue — don't block UI!
+		await this.operationQueue.enqueue({
+			type: "save_photo",
+			data: {
+				filename: this.currentUploadFilename,
+				blobBase64: this.captured,
+				location: this._getUploadLocation(),
+				csrfToken: this.csrfToken,
+			},
+			maxRetries: 5,
+			status: "captured",
+		});
+
+		// Toast notification
+		this.ui.showToastMessage("Foto tersimpan \u2713", 2000);
+
+		// Update queue counter
+		await this._updateQueueCounter();
+
+		// Clear in-memory data (already in IndexedDB)
+		this.captured = null;
+		this.rawData = null;
+
+		// Return to camera — user can capture again!
+		document.getElementById("camVideo").style.display = "block";
+		document.getElementById("camCanvas").style.display = "none";
+		this.ui.setCaptureControls("capture");
 		this.ui.scrollToTop();
-		this.savePhotoToBackend();
+		await this.camera.start();
+		this.camera._updateVideoTransform();
+		this.ui.setCaptureButtonState(false);
+		if (this.camera.stream) {
+			this.filters.initPreviews(this.camera.stream);
+		}
+
+		// Resume hand detection
+		this._enableHandDetectionIfActive();
 	}
 
 	async composeFinalImage(imageDataUrl, targetWidth, targetHeight) {
@@ -548,8 +656,13 @@ export class Booth {
 	}
 
 	async retake() {
+		// Cancel any in-flight upload
+		if (this.uploadProcessor) {
+			this.uploadProcessor.cancelCurrent();
+		}
+
 		if (this.captured && !this.savedFilename && this.currentUploadFilename) {
-			const operation = {
+			await this.operationQueue.enqueue({
 				type: "save_photo",
 				data: {
 					filename: this.currentUploadFilename,
@@ -558,8 +671,8 @@ export class Booth {
 					csrfToken: this.csrfToken,
 				},
 				maxRetries: 5,
-			};
-			await this.operationQueue.enqueue(operation);
+				status: "captured",
+			});
 			this.ui.showToastMessage(
 				"Foto masuk antrian. Akan dicoba otomatis.",
 				3000,
@@ -739,9 +852,9 @@ export class Booth {
 		}
 	}
 
-	_handleGoToQueue() {
+	async _handleGoToQueue() {
 		if (this.currentUploadFilename && this.captured) {
-			const operation = {
+			await this.operationQueue.enqueue({
 				type: "save_photo",
 				data: {
 					filename: this.currentUploadFilename,
@@ -750,8 +863,8 @@ export class Booth {
 					csrfToken: this.csrfToken,
 				},
 				maxRetries: 5,
-			};
-			this.operationQueue.enqueue(operation);
+				status: "captured",
+			});
 		}
 		window.location.href = "queue.php?autoretry=1";
 	}
@@ -787,6 +900,12 @@ export class Booth {
 	}
 
 	destroy() {
+		if (this.uploadProcessor) {
+			this.uploadProcessor.stop();
+		}
+		if (this.retryManager) {
+			this.retryManager.stopBackgroundProcessor();
+		}
 		if (this.handDetect) {
 			this.handDetect.destroy();
 			this.handDetect = null;
@@ -940,11 +1059,6 @@ export class Booth {
 			});
 			if (this.camera.mirrorV) this.mirrorVToggle.setActive(true);
 		}
-	}
-
-	openPrintModalForPhoto(filename) {
-		this.savedFilename = filename;
-		this.ui.showPrintModal();
 	}
 
 	_startRetryProcessor() {

@@ -153,6 +153,40 @@ export class BoothUI {
 		if (overlay) overlay.style.display = "none";
 	}
 
+	updateQueueCounter(count) {
+		let badge = document.getElementById("queueCountBadge");
+		if (!badge) {
+			badge = document.createElement("div");
+			badge.id = "queueCountBadge";
+			badge.style.cssText =
+				"position:fixed;top:12px;right:12px;background:#a855f7;color:#fff;padding:6px 14px;border-radius:20px;font-size:0.8rem;font-weight:700;z-index:100000;box-shadow:0 4px 12px rgba(168,85,247,0.4);transition:opacity 0.3s ease;font-family:'Plus Jakarta Sans',sans-serif;display:none;";
+			document.body.appendChild(badge);
+		}
+		if (count > 0) {
+			badge.textContent = `${count} foto di antrian`;
+			badge.style.display = "block";
+		} else {
+			badge.style.display = "none";
+		}
+	}
+
+	updateQueueStatus(id, text) {
+		let statusEl = document.getElementById("queueStatusToast");
+		if (!statusEl) {
+			statusEl = document.createElement("div");
+			statusEl.id = "queueStatusToast";
+			statusEl.style.cssText =
+				"position:fixed;bottom:140px;left:50%;transform:translateX(-50%);background:rgba(30,41,59,0.9);color:#a5b4fc;padding:8px 20px;border-radius:10px;font-size:0.8rem;font-weight:600;z-index:100000;transition:opacity 0.3s ease;font-family:'Plus Jakarta Sans',sans-serif;max-width:80%;text-align:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;";
+			document.body.appendChild(statusEl);
+		}
+		statusEl.textContent = text;
+		statusEl.style.display = "block";
+		clearTimeout(this._queueStatusTimer);
+		this._queueStatusTimer = setTimeout(() => {
+			statusEl.style.display = "none";
+		}, 3000);
+	}
+
 	showToastMessage(message, duration = 3000) {
 		let toast = document.getElementById("boothToast");
 		if (!toast) {
