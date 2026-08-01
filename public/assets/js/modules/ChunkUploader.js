@@ -3,9 +3,31 @@ export class ChunkUploader {
         this.chunkSize = options.chunkSize || 512 * 1024;
         this.maxRetries = options.maxRetries || 3;
         this.retryDelay = options.retryDelay || 1000;
+        this._abortController = null;
+        this._isUploading = false;
+        this._currentXhr = null;
+    }
+
+    get isUploading() {
+        return this._isUploading;
+    }
+
+    cancel() {
+        if (this._currentXhr) {
+            this._currentXhr.abort();
+            this._currentXhr = null;
+        }
+        if (this._abortController) {
+            this._abortController.abort();
+            this._abortController = null;
+        }
+        this._isUploading = false;
     }
 
     async upload(blob, filename, csrfToken, location, onProgress) {
+        this._abortController = new AbortController();
+        this._isUploading = true;
+
         const totalChunks = Math.ceil(blob.size / this.chunkSize);
         const uploadId = 'upload_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
@@ -32,7 +54,10 @@ export class ChunkUploader {
             }
         }
 
-        return this.completeSession(uploadId, csrfToken, location);
+        const result = await this.completeSession(uploadId, csrfToken, location);
+        this._isUploading = false;
+        this._abortController = null;
+        return result;
     }
 
     async initSession(uploadId, filename, totalChunks, totalSize, csrfToken) {
@@ -64,13 +89,16 @@ export class ChunkUploader {
         let lastError;
 
         for (let attempt = 0; attempt <= retries; attempt++) {
+            if (this._abortController?.signal.aborted) {
+                throw new Error('Upload cancelled');
+            }
             try {
                 await this.uploadChunk(uploadId, chunkIndex, chunkBlob, csrfToken);
                 return;
             } catch (e) {
                 lastError = e;
                 if (attempt < retries) {
-                    await this.delay(this.retryDelay * Math.pow(2, attempt));
+                    await this.delay(this.retryDelay * 2 ** attempt);
                 }
             }
         }
@@ -87,9 +115,18 @@ export class ChunkUploader {
             formData.append('csrf_token', csrfToken);
 
             const xhr = new XMLHttpRequest();
+            this._currentXhr = xhr;
             xhr.open('POST', 'api/chunk-upload.php', true);
 
-            xhr.onload = function () {
+            const signal = this._abortController?.signal;
+            if (signal) {
+                signal.addEventListener('abort', () => {
+                    xhr.abort();
+                });
+            }
+
+            xhr.onload = () => {
+                this._currentXhr = null;
                 if (xhr.status >= 200 && xhr.status < 300) {
                     try {
                         const data = JSON.parse(xhr.responseText);
@@ -106,8 +143,14 @@ export class ChunkUploader {
                 }
             };
 
-            xhr.onerror = function () {
+            xhr.onerror = () => {
+                this._currentXhr = null;
                 reject(new Error('Network error during chunk upload'));
+            };
+
+            xhr.onabort = () => {
+                this._currentXhr = null;
+                reject(new Error('Upload cancelled'));
             };
 
             xhr.send(formData);
