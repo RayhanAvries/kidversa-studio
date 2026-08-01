@@ -101,9 +101,13 @@ export class ModalManager {
 			setTimeout(() => this.closeEmailModal(), 1500);
 		} else if (result.error !== "validation" && this.booth?.operationQueue) {
 			await this.booth.operationQueue.enqueue({
-				type: "email",
-				filename: currentFilename,
-				email: document.getElementById("emailInput")?.value?.trim() || "",
+				type: "send_email",
+				data: {
+					filename: currentFilename,
+					email: document.getElementById("emailInput")?.value?.trim() || "",
+					csrf_token: this.booth.csrfToken,
+				},
+				maxRetries: 3,
 			});
 		}
 

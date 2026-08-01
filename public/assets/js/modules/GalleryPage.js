@@ -810,6 +810,7 @@ export class GalleryPage {
 	}
 
 	async _sendEmail() {
+		await this._refreshCsrfToken();
 		const result = await SharedActions.sendEmail(
 			this.selectedFilename,
 			this.csrfToken,
@@ -821,9 +822,13 @@ export class GalleryPage {
 			if (this.operationQueue && result.error !== "validation") {
 				const emailInput = document.getElementById("emailInput");
 				await this.operationQueue.enqueue({
-					type: "email",
-					filename: this.selectedFilename,
-					email: emailInput?.value?.trim() || "",
+					type: "send_email",
+					data: {
+						filename: this.selectedFilename,
+						email: emailInput?.value?.trim() || "",
+						csrf_token: this.csrfToken,
+					},
+					maxRetries: 3,
 				});
 			}
 		}
