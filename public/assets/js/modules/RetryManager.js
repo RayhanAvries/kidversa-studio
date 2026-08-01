@@ -1,28 +1,18 @@
 export class RetryManager {
-    constructor(queue) {
+    constructor(queue, options = {}) {
         this.queue = queue;
         this.retryInterval = null;
-        this.retryDelay = 30000;
-    }
-
-    async execute(operation, fn) {
-        try {
-            const result = await fn();
-            return result;
-        } catch (error) {
-            console.warn('[RetryManager] Operation failed, enqueuing for retry:', error.message);
-            await this.queue.enqueue(operation);
-            throw error;
-        }
+        this.retryDelay = options.retryDelay || 30000;
     }
 
     startBackgroundProcessor(executeFn) {
         if (this.retryInterval) return;
 
         this.retryInterval = setInterval(async () => {
+            if (!navigator.onLine) return;
+
             const stats = await this.queue.getStats();
             if (stats.pending > 0) {
-                // removed debug log
                 await this.queue.process(executeFn);
             }
         }, this.retryDelay);
