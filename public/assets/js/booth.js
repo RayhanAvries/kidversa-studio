@@ -117,7 +117,6 @@ export class Booth {
 		this.chunkUploader = new ChunkUploader();
 		this.operationQueue = new OperationQueue();
 
-
 		this.init();
 	}
 
@@ -138,8 +137,7 @@ export class Booth {
 				this.chunkUploader,
 				{
 					pollInterval: 2000,
-					onProgress: (id, progress) =>
-						this._onUploadProgress(id, progress),
+					onProgress: (id, progress) => this._onUploadProgress(id, progress),
 					onStatusChange: (id, status, result) =>
 						this._onUploadStatusChange(id, status, result),
 					onError: (id, error, permanent) =>
@@ -195,8 +193,6 @@ export class Booth {
 
 			this.fabWidget = new FABWidget();
 			this.fabWidget.init();
-
-	
 
 			// Cleanup is handled server-side via cron (cron/cleanup-chunks.php)
 		} catch (e) {
@@ -319,11 +315,7 @@ export class Booth {
 		// Re-compose image with new filter/frame
 		const TW = this.cameraConfig.TW;
 		const TH = this.cameraConfig.TH;
-		const compositeCanvas = await this.composeFinalImage(
-			this.rawData,
-			TW,
-			TH,
-		);
+		const compositeCanvas = await this.composeFinalImage(this.rawData, TW, TH);
 		this.captured = compositeCanvas.toDataURL("image/png");
 
 		// Generate filename
@@ -602,90 +594,6 @@ export class Booth {
 				};
 	}
 
-	async _uploadPhoto(blob, filename, csrfToken, location, onProgress) {
-		return await this.chunkUploader.upload(
-			blob,
-			filename,
-			csrfToken,
-			location,
-			onProgress,
-		);
-	}
-
-	async savePhotoToBackend(isReplacement = false) {
-		this.ui.showLoadingOverlay("Memproses...");
-
-		const location = this._getUploadLocation();
-		const oldFilename = this.savedFilename;
-
-		try {
-			const blob = await this.dataURLtoBlob(this.captured);
-
-			const uploadKey =
-				"upload_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
-			this.uploadKey = uploadKey;
-			this.pendingUpload = { key: uploadKey, startTime: Date.now() };
-
-			const dt = new Date();
-			const ts =
-				dt.getFullYear().toString() +
-				String(dt.getMonth() + 1).padStart(2, "0") +
-				String(dt.getDate()).padStart(2, "0") +
-				"_" +
-				String(dt.getHours()).padStart(2, "0") +
-				String(dt.getMinutes()).padStart(2, "0") +
-				String(dt.getSeconds()).padStart(2, "0");
-			const generatedFilename = `kidversa_${ts}.png`;
-			this.currentUploadFilename = generatedFilename;
-
-			const result = await this._uploadPhoto(
-				blob,
-				generatedFilename,
-				this.csrfToken,
-				location,
-				(progress) => {
-					const uploadPercent = Math.round(progress.percent * 0.8);
-					this.ui.updateLoadingProgress(
-						Math.min(uploadPercent, 80),
-						`Mengunggah foto... (${progress.chunk}/${progress.totalChunks})`,
-					);
-				},
-			);
-
-			if (result && result.success) {
-				this.savedFilename = result.filename;
-				this.pendingUpload = null;
-				this.currentUploadFilename = null;
-				this.ui.updateLoadingProgress(100, "Selesai!");
-				setTimeout(() => {
-					this.ui.hideLoadingOverlay();
-					this._handleUploadSuccess();
-				}, 500);
-
-				if (isReplacement && oldFilename) {
-					try {
-						const deleteFormData = new FormData();
-						deleteFormData.append("filename", oldFilename);
-						deleteFormData.append("csrf_token", this.csrfToken);
-						await fetch("api/delete-photo.php", {
-							method: "POST",
-							body: deleteFormData,
-						});
-					} catch (deleteErr) {
-						console.warn("Failed to delete old photo:", deleteErr);
-					}
-				}
-			} else {
-				throw new Error(result?.message || "Gagal menyimpan foto");
-			}
-		} catch (e) {
-			this.ui.hideLoadingOverlay();
-			console.error(e);
-			this.pendingUpload = null;
-			this._handleUploadFailure();
-		}
-	}
-
 	getPhotoStatus() {
 		if (this.pendingUpload && this.pendingUpload.key === this.uploadKey) {
 			return { status: "pending", key: this.uploadKey };
@@ -750,79 +658,6 @@ export class Booth {
 		this._enableHandDetectionIfActive();
 	}
 
-	async dataURLtoBlob(dataurl) {
-		try {
-			const res = await fetch(dataurl);
-			return await res.blob();
-		} catch (e) {
-			console.warn("[Booth] Fetch dataURL failed, falling back to atob", e);
-			const arr = dataurl.split(",");
-			const mime = arr[0].match(/:(.*?);/)[1];
-			const bstr = atob(arr[1]);
-			let n = bstr.length;
-			const u8arr = new Uint8Array(n);
-			while (n--) {
-				u8arr[n] = bstr.charCodeAt(n);
-			}
-			return new Blob([u8arr], { type: mime });
-		}
-	}
-
-	showCaptured() {
-		const sourceImg = this.rawData || this.captured;
-		if (!sourceImg) return;
-		const img = new Image();
-		img.onload = () => {
-			this.camera.updateCanvas();
-			const ctx = this.camera.ctx;
-			ctx.clearRect(0, 0, this.camera.cnv.width, this.camera.cnv.height);
-			const filterObj = this.filters.applyFilter(this.selFilter);
-			ctx.filter = filterObj ? filterObj.filter || "none" : "none";
-			const imgWidth = img.width;
-			const imgHeight = img.height;
-			const canvasWidth = this.camera.cnv.width;
-			const canvasHeight = this.camera.cnv.height;
-			const imgRatio = imgWidth / imgHeight;
-			const canvasRatio = canvasWidth / canvasHeight;
-			let drawWidth, drawHeight, offsetX, offsetY;
-			if (imgRatio > canvasRatio) {
-				drawHeight = imgHeight;
-				drawWidth = imgHeight * canvasRatio;
-				offsetX = (imgWidth - drawWidth) / 2;
-				offsetY = 0;
-			} else {
-				drawWidth = imgWidth;
-				drawHeight = imgWidth / canvasRatio;
-				offsetX = 0;
-				offsetY = (imgHeight - drawHeight) / 2;
-			}
-			ctx.drawImage(
-				img,
-				offsetX,
-				offsetY,
-				drawWidth,
-				drawHeight,
-				0,
-				0,
-				canvasWidth,
-				canvasHeight,
-			);
-			ctx.filter = "none";
-			if (filterObj && filterObj.overlay) {
-				ctx.fillStyle = filterObj.overlay;
-				ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-			}
-			document.getElementById("filterFx").style.display = "none";
-		};
-		img.src = sourceImg;
-		const filterObj = this.filters.applyFilter(this.selFilter);
-		if (filterObj && filterObj.overlay) {
-			document.getElementById("filterFx").style.background = filterObj.overlay;
-			document.getElementById("filterFx").style.display = "block";
-		}
-		this.frames.loadFrame();
-	}
-
 	async finish() {
 		try {
 			if (!this.savedFilename) {
@@ -833,18 +668,6 @@ export class Booth {
 			console.error("[Booth] Finish error:", e);
 			this.ui.showToastMessage("Error: " + e.message);
 		}
-	}
-
-	_handleUploadSuccess() {
-		if (this.captured) {
-			this.ui.setCaptureControls("captured");
-			this.ui.showPrintModal();
-		}
-	}
-
-	_handleUploadFailure() {
-		this.ui.showToastMessage("Upload gagal. Periksa jaringan Anda.", 4000);
-		this.ui.setUploadFailedControls();
 	}
 
 	async _handleGoToQueue() {
@@ -1053,8 +876,6 @@ export class Booth {
 			if (this.camera.mirrorV) this.mirrorVToggle.setActive(true);
 		}
 	}
-
-
 }
 
 window.booth = new Booth();
