@@ -27,37 +27,38 @@ export class ChunkUploader {
     async upload(blob, filename, csrfToken, location, onProgress) {
         this._abortController = new AbortController();
         this._isUploading = true;
+        try {
+            const totalChunks = Math.ceil(blob.size / this.chunkSize);
+            const uploadId = 'upload_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
-        const totalChunks = Math.ceil(blob.size / this.chunkSize);
-        const uploadId = 'upload_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            await this.initSession(uploadId, filename, totalChunks, blob.size, csrfToken);
 
-        await this.initSession(uploadId, filename, totalChunks, blob.size, csrfToken);
+            let uploadedChunks = 0;
 
-        let uploadedChunks = 0;
+            for (let i = 0; i < totalChunks; i++) {
+                const start = i * this.chunkSize;
+                const end = Math.min(start + this.chunkSize, blob.size);
+                const chunkBlob = blob.slice(start, end);
 
-        for (let i = 0; i < totalChunks; i++) {
-            const start = i * this.chunkSize;
-            const end = Math.min(start + this.chunkSize, blob.size);
-            const chunkBlob = blob.slice(start, end);
+                await this.uploadChunkWithRetry(uploadId, i, chunkBlob, this.maxRetries, csrfToken);
 
-            await this.uploadChunkWithRetry(uploadId, i, chunkBlob, this.maxRetries, csrfToken);
-
-            uploadedChunks++;
-            if (onProgress) {
-                onProgress({
-                    loaded: uploadedChunks * this.chunkSize,
-                    total: blob.size,
-                    percent: Math.round((uploadedChunks / totalChunks) * 100),
-                    chunk: uploadedChunks,
-                    totalChunks: totalChunks
-                });
+                uploadedChunks++;
+                if (onProgress) {
+                    onProgress({
+                        loaded: uploadedChunks * this.chunkSize,
+                        total: blob.size,
+                        percent: Math.round((uploadedChunks / totalChunks) * 100),
+                        chunk: uploadedChunks,
+                        totalChunks: totalChunks
+                    });
+                }
             }
-        }
 
-        const result = await this.completeSession(uploadId, csrfToken, location);
-        this._isUploading = false;
-        this._abortController = null;
-        return result;
+            return await this.completeSession(uploadId, csrfToken, location);
+        } finally {
+            this._isUploading = false;
+            this._abortController = null;
+        }
     }
 
     async initSession(uploadId, filename, totalChunks, totalSize, csrfToken) {
@@ -119,13 +120,13 @@ export class ChunkUploader {
             xhr.open('POST', 'api/chunk-upload.php', true);
 
             const signal = this._abortController?.signal;
+            const onAbort = () => xhr.abort();
             if (signal) {
-                signal.addEventListener('abort', () => {
-                    xhr.abort();
-                });
+                signal.addEventListener('abort', onAbort);
             }
 
             xhr.onload = () => {
+                if (signal) signal.removeEventListener('abort', onAbort);
                 this._currentXhr = null;
                 if (xhr.status >= 200 && xhr.status < 300) {
                     try {
@@ -144,11 +145,13 @@ export class ChunkUploader {
             };
 
             xhr.onerror = () => {
+                if (signal) signal.removeEventListener('abort', onAbort);
                 this._currentXhr = null;
                 reject(new Error('Network error during chunk upload'));
             };
 
             xhr.onabort = () => {
+                if (signal) signal.removeEventListener('abort', onAbort);
                 this._currentXhr = null;
                 reject(new Error('Upload cancelled'));
             };
