@@ -325,17 +325,24 @@ export class Booth {
 		this.currentUploadFilename = this._generateFilename();
 
 		// Enqueue to queue — don't block UI!
-		await this.operationQueue.enqueue({
-			type: "save_photo",
-			data: {
-				filename: this.currentUploadFilename,
-				blobBase64: this.captured,
-				location: this._getUploadLocation(),
-				csrfToken: this.csrfToken,
-			},
-			maxRetries: Booth.MAX_RETRIES,
-			status: STATUS_CAPTURED,
-		});
+		try {
+			await this.operationQueue.enqueue({
+				type: "save_photo",
+				data: {
+					filename: this.currentUploadFilename,
+					blobBase64: this.captured,
+					location: this._getUploadLocation(),
+					csrfToken: this.csrfToken,
+				},
+				maxRetries: Booth.MAX_RETRIES,
+				status: STATUS_CAPTURED,
+			});
+		} catch (e) {
+			console.error("[Booth] Enqueue failed:", e);
+			this.ui.showToastMessage("Gagal memperbarui filter/framing", 4000);
+			this.ui.hideLoadingOverlay();
+			return;
+		}
 
 		// Toast notification
 		this.ui.showToastMessage("Filter/framing diperbarui \u2713", 2000);
@@ -454,17 +461,24 @@ export class Booth {
 		this.currentUploadFilename = this._generateFilename();
 
 		// Enqueue to queue — don't block UI!
-		await this.operationQueue.enqueue({
-			type: "save_photo",
-			data: {
-				filename: this.currentUploadFilename,
-				blobBase64: this.captured,
-				location: this._getUploadLocation(),
-				csrfToken: this.csrfToken,
-			},
-			maxRetries: Booth.MAX_RETRIES,
-			status: STATUS_CAPTURED,
-		});
+		try {
+			await this.operationQueue.enqueue({
+				type: "save_photo",
+				data: {
+					filename: this.currentUploadFilename,
+					blobBase64: this.captured,
+					location: this._getUploadLocation(),
+					csrfToken: this.csrfToken,
+				},
+				maxRetries: Booth.MAX_RETRIES,
+				status: STATUS_CAPTURED,
+			});
+		} catch (e) {
+			console.error("[Booth] Enqueue failed:", e);
+			this.ui.showToastMessage("Gagal menyimpan foto ke antrian", 4000);
+			this.ui.hideLoadingOverlay();
+			return;
+		}
 
 		// Toast notification
 		this.ui.showToastMessage("Foto tersimpan \u2713", 2000);
@@ -625,10 +639,9 @@ export class Booth {
 				maxRetries: Booth.MAX_RETRIES,
 				status: STATUS_CAPTURED,
 			});
-			this.ui.showToastMessage(
-				"Foto masuk antrian. Akan dicoba otomatis.",
-				3000,
-			);
+		} catch (e) {
+			console.error("[Booth] Retake enqueue failed:", e);
+			this.ui.showToastMessage("Gagal menyimpan foto ke antrian", 4000);
 		}
 		this.currentUploadFilename = null;
 		this.rawData = null;
@@ -675,22 +688,26 @@ export class Booth {
 
 	async _handleGoToQueue() {
 		if (this.currentUploadFilename && this.captured) {
-			await this.operationQueue.enqueue({
-				type: "save_photo",
-				data: {
-					filename: this.currentUploadFilename,
-					blobBase64: this.captured,
-					location: this._getUploadLocation(),
-					csrfToken: this.csrfToken,
-				},
-				maxRetries: Booth.MAX_RETRIES,
-				status: STATUS_CAPTURED,
-			});
-		}
-		window.location.href = "queue.php?autoretry=1";
+			try {
+				await this.operationQueue.enqueue({
+					type: "save_photo",
+					data: {
+						filename: this.currentUploadFilename,
+						blobBase64: this.captured,
+						location: this._getUploadLocation(),
+						csrfToken: this.csrfToken,
+					},
+					maxRetries: Booth.MAX_RETRIES,
+					status: STATUS_CAPTURED,
+				});
+			} catch (e) {
+				console.error("[Booth] GoToQueue enqueue failed:", e);
+				this.ui.showToastMessage("Gagal menyimpan foto ke antrian", 4000);
+			}
+			window.location.href = "queue.php?autoretry=1";
 	}
 
-	_loadSettings() {
+	_loadSettings() 
 		try {
 			const savedDevice = localStorage.getItem("kidversa_camera_device");
 			const savedMirrorH = localStorage.getItem("kidversa_mirror_h");
@@ -701,9 +718,8 @@ export class Booth {
 		} catch (e) {
 			console.warn("[Booth] Failed to load settings from localStorage", e);
 		}
-	}
 
-	_saveSettings() {
+	_saveSettings() 
 		try {
 			if (this.camera.currentDeviceId) {
 				localStorage.setItem(
@@ -718,9 +734,8 @@ export class Booth {
 		} catch (e) {
 			console.warn("[Booth] Failed to save settings to localStorage", e);
 		}
-	}
 
-	destroy() {
+	destroy() 
 		if (this.uploadProcessor) {
 			this.uploadProcessor.stop();
 		}
@@ -747,7 +762,6 @@ export class Booth {
 		}
 		this.filters.stopPreviews();
 		this.camera.stop();
-	}
 
 	_initHandDetection() {
 		const badgeWrap = document.getElementById("handDetectBadgeWrap");
@@ -802,16 +816,14 @@ export class Booth {
 		}
 	}
 
-	_handleHandDetected() {
+	_handleHandDetected() 
 		if (!this.camera.ready || this.counting || this.captured) return;
 		this.startCountdown();
-	}
 
-	_enableHandDetectionIfActive() {
+	_enableHandDetectionIfActive() 
 		if (this.handDetect && this.handDetect.isEnabled()) {
 			this.handDetect.start();
 		}
-	}
 
 	async _initCameraSelect() {
 		const select = document.getElementById("cameraSelect");
