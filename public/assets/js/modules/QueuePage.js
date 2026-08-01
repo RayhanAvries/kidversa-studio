@@ -20,6 +20,7 @@ export class QueuePage {
 		this._bindFilterTabs();
 		this._bindFooterActions();
 		await this.loadQueue();
+		await this._processCapturedItems();
 		this._startPolling();
 
 		window.addEventListener("beforeunload", () => this.destroy());
@@ -557,6 +558,21 @@ export class QueuePage {
 		}
 	}
 
+	async _processCapturedItems() {
+		const all = this.items;
+		const needsRetry = all.filter(
+			(i) => i.status === STATUS_CAPTURED || i.status === "uploading",
+		);
+		if (needsRetry.length === 0) return;
+
+		for (const item of needsRetry) {
+			await this.queue.updateStatus(item.id, STATUS_CAPTURED);
+		}
+
+		await this.loadQueue();
+		await this._autoRetryRecent();
+	}
+
 	async _checkSingleFile(filename) {
 		try {
 			const res = await fetch(
@@ -572,7 +588,7 @@ export class QueuePage {
 	async _autoRetryRecent() {
 		const all = await this.queue.getAll();
 		const pending = all
-			.filter((op) => op.status === "pending" || op.status === "failed")
+			.filter((op) => op.status === "pending" || op.status === "failed" || op.status === STATUS_CAPTURED)
 			.sort((a, b) => b.createdAt - a.createdAt);
 
 		if (pending.length === 0) return;
