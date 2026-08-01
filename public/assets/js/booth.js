@@ -315,8 +315,56 @@ export class Booth {
 
 	async handleFilterOrFrameChange() {
 		if (!this.rawData) return;
-		this.showCaptured();
-		await this.savePhotoToBackend(true);
+
+		// Re-compose image with new filter/frame
+		const TW = this.cameraConfig.TW;
+		const TH = this.cameraConfig.TH;
+		const compositeCanvas = await this.composeFinalImage(
+			this.rawData,
+			TW,
+			TH,
+		);
+		this.captured = compositeCanvas.toDataURL("image/png");
+
+		// Generate filename
+		this.currentUploadFilename = this._generateFilename();
+
+		// Enqueue to queue — don't block UI!
+		await this.operationQueue.enqueue({
+			type: "save_photo",
+			data: {
+				filename: this.currentUploadFilename,
+				blobBase64: this.captured,
+				location: this._getUploadLocation(),
+				csrfToken: this.csrfToken,
+			},
+			maxRetries: 5,
+			status: "captured",
+		});
+
+		// Toast notification
+		this.ui.showToastMessage("Filter/framing diperbarui \u2713", 2000);
+
+		// Update queue counter
+		await this._updateQueueCounter();
+
+		// Clear in-memory data (already in IndexedDB)
+		this.captured = null;
+		this.rawData = null;
+		this.currentUploadFilename = null;
+
+		// Return to camera — user can capture again!
+		document.getElementById("camVideo").style.display = "block";
+		document.getElementById("camCanvas").style.display = "none";
+		this.ui.setCaptureControls("capture");
+		await this.camera.start();
+		this.ui.setCaptureButtonState(false);
+		if (this.camera.stream) {
+			this.filters.initPreviews(this.camera.stream);
+		}
+
+		// Resume hand detection
+		this._enableHandDetectionIfActive();
 	}
 
 	startCountdown() {
