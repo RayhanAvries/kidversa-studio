@@ -36,7 +36,7 @@ use Kidversa\Config\AppConfig;
                 <button class="btn-retake" id="btnRetake" style="display:none"><i class="fas fa-redo"></i>Retake</button>
                 <button class="btn-done" id="btnDone" style="display:none"><i class="fas fa-check"></i>Done</button>
                 <button class="btn-retry" id="btnRetry" style="display:none"><i class="fas fa-sync-alt"></i>Retry</button>
-                <button class="btn-queue" id="btnQueue" style="display:none"><i class="fas fa-list"></i>Queue</button>
+                <button class="btn-queue" id="btnQueue" style="display:none"><i class="fas fa-list"></i>Queue<span id="queueBadge" class="queue-badge" style="display: none;">0</span></button>
             </div>
         </div>
     </div>
