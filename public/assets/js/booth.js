@@ -85,6 +85,9 @@ function makeDraggable(el) {
 }
 
 export class Booth {
+	/** @type {number} Maximum upload retry attempts per operation */
+	static MAX_RETRIES = 5;
+
 	constructor() {
 		this.cameraConfig = {
 			TW: Config.get("photo.width", 1920),
@@ -330,7 +333,7 @@ export class Booth {
 				location: this._getUploadLocation(),
 				csrfToken: this.csrfToken,
 			},
-			maxRetries: 5,
+			maxRetries: Booth.MAX_RETRIES,
 			status: "captured",
 		});
 
@@ -459,7 +462,7 @@ export class Booth {
 				location: this._getUploadLocation(),
 				csrfToken: this.csrfToken,
 			},
-			maxRetries: 5,
+			maxRetries: Booth.MAX_RETRIES,
 			status: "captured",
 		});
 
@@ -619,7 +622,7 @@ export class Booth {
 					location: this._getUploadLocation(),
 					csrfToken: this.csrfToken,
 				},
-				maxRetries: 5,
+				maxRetries: Booth.MAX_RETRIES,
 				status: "captured",
 			});
 			this.ui.showToastMessage(
@@ -680,7 +683,7 @@ export class Booth {
 					location: this._getUploadLocation(),
 					csrfToken: this.csrfToken,
 				},
-				maxRetries: 5,
+				maxRetries: Booth.MAX_RETRIES,
 				status: "captured",
 			});
 		}
