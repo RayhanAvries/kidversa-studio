@@ -200,9 +200,13 @@ export class GalleryPage {
 				const progressBar = this._renderProgressBar(photo.expires_at);
 				card.appendChild(progressBar);
 
-				// Track for live updates
+				// Track for live updates (include child refs to avoid querySelector per tick)
+				const labelEl = countdownBadge.querySelector('.gallery-card-countdown-label');
+				const textEl = countdownBadge.querySelector('.gallery-card-countdown-text');
 				this._countdownElements.set(photo.filename, {
 					badge: countdownBadge,
+					labelEl: labelEl,
+					textEl: textEl,
 					progressBar: progressBar,
 					expiresAt: photo.expires_at,
 					card: card,
@@ -442,18 +446,9 @@ export class GalleryPage {
 				);
 				elements.badge.classList.add(`countdown-${urgency}`);
 
-				// Update label and text — show "Sisa waktu 00:00" when expired
-				const labelEl = elements.badge.querySelector(
-					".gallery-card-countdown-label",
-				);
-				if (labelEl) {
-					labelEl.textContent = Lang.get("countdown.remaining");
-				}
-				const textEl = elements.badge.querySelector(
-					".gallery-card-countdown-text",
-				);
-				if (textEl) {
-					textEl.textContent = this._formatCountdown(Math.max(0, secondsLeft));
+				// Update countdown text (label is static, set once at render time)
+				if (elements.textEl) {
+					elements.textEl.textContent = this._formatCountdown(Math.max(0, secondsLeft));
 				}
 			}
 
