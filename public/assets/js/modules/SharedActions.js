@@ -36,6 +36,7 @@ export class SharedActions {
                     btnSend.innerHTML = originalBtnText;
                     btnSend.disabled = false;
                 }, 3000);
+                emailInput.value = '';
                 return { success: true };
             } else {
                 btnSend.innerHTML = originalBtnText;
