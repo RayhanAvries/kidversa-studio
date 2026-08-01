@@ -50,10 +50,22 @@ export class SharedActions {
     }
 
     static async printPhoto(imageUrl) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const img = new Image();
             img.crossOrigin = 'anonymous';
+
+            const timeout = setTimeout(() => {
+                img.src = '';
+                reject(new Error('Image load timed out'));
+            }, 15000);
+
+            img.onerror = () => {
+                clearTimeout(timeout);
+                reject(new Error('Failed to load image: ' + imageUrl));
+            };
+
             img.onload = () => {
+                clearTimeout(timeout);
                 const canvas = document.createElement('canvas');
                 canvas.width = img.width;
                 canvas.height = img.height;

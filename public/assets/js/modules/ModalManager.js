@@ -195,7 +195,12 @@ export class ModalManager {
             return;
         }
 
-        await SharedActions.printPhoto('uploads/photos/' + statusCheck.filename);
+        try {
+            await SharedActions.printPhoto('uploads/photos/' + statusCheck.filename);
+        } catch (e) {
+            console.error('[ModalManager] Print error:', e);
+            alert(Lang.get('error.prefix') + 'Gagal memuat foto untuk cetak. Silakan coba lagi.');
+        }
     }
 
     closeQRModal() {

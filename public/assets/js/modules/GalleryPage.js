@@ -778,6 +778,11 @@ export class GalleryPage {
 	async _printPhoto() {
 		if (!this.selectedFilename) return;
 		const imageUrl = "uploads/photos/" + this.selectedFilename;
-		await SharedActions.printPhoto(imageUrl);
+		try {
+			await SharedActions.printPhoto(imageUrl);
+		} catch (e) {
+			console.error("[Gallery] Print error:", e);
+			alert("Gagal memuat foto untuk cetak. Silakan coba lagi.");
+		}
 	}
 }
