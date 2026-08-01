@@ -29,16 +29,20 @@ export class GalleryPage {
 		this._countdownElements = new Map(); // filename -> { badge, labelEl, textEl, progressBar, expiresAt, card }
 	}
 
-	async init() {
+	async _refreshCsrfToken() {
 		try {
-			const csrfRes = await fetch("api/csrf-token.php");
-			if (csrfRes.ok) {
-				const data = await csrfRes.json();
+			const res = await fetch("api/csrf-token.php");
+			if (res.ok) {
+				const data = await res.json();
 				this.csrfToken = data.token;
 			}
 		} catch (e) {
-			console.warn("[Gallery] Failed to load CSRF token:", e);
+			console.warn("[Gallery] Failed to refresh CSRF token:", e);
 		}
+	}
+
+	async init() {
+		await this._refreshCsrfToken();
 
 		this._bindModalEvents();
 		await this.operationQueue.init();
@@ -588,7 +592,7 @@ export class GalleryPage {
 		this._isRenaming = true;
 
 		try {
-			const res = await fetch("api/rename-photo.php", {
+			let res = await fetch("api/rename-photo.php", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -598,7 +602,23 @@ export class GalleryPage {
 				}),
 			});
 
-			const data = await res.json();
+			let data = await res.json();
+
+			// Retry once on CSRF failure
+			if (!data.success && data.message && data.message.includes("CSRF")) {
+				await this._refreshCsrfToken();
+				res = await fetch("api/rename-photo.php", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						old_filename: oldFilename,
+						new_filename: newFilename,
+						csrf_token: this.csrfToken,
+					}),
+				});
+				data = await res.json();
+			}
+
 			if (data.success) {
 				await this.loadPhotos(this.currentPage);
 			} else {
@@ -662,13 +682,26 @@ export class GalleryPage {
 			formData.append("filename", filename);
 			formData.append("csrf_token", this.csrfToken);
 
-			const res = await fetch("api/delete-photo.php", {
+			let res = await fetch("api/delete-photo.php", {
 				method: "POST",
 				headers: { "Content-Type": "application/x-www-form-urlencoded" },
 				body: formData.toString(),
 			});
 
-			const data = await res.json();
+			let data = await res.json();
+
+			// Retry once on CSRF failure
+			if (!data.success && data.message && data.message.includes("CSRF")) {
+				await this._refreshCsrfToken();
+				formData.set("csrf_token", this.csrfToken);
+				res = await fetch("api/delete-photo.php", {
+					method: "POST",
+					headers: { "Content-Type": "application/x-www-form-urlencoded" },
+					body: formData.toString(),
+				});
+				data = await res.json();
+			}
+
 			if (data.success) {
 				await this.loadPhotos(this.currentPage);
 			} else {
@@ -734,7 +767,11 @@ export class GalleryPage {
 
 	_closePrintModal() {
 		this.printModal?.classList.remove("on");
-		this.qrModal && (this.qrModal.style.display = "none");
+
+		// Clear QR modal state
+		if (this.qrModal) this.qrModal.style.display = "none";
+		const qrImage = document.getElementById("qrImage");
+		if (qrImage) qrImage.src = "";
 
 		// Clear email state when closing parent modal
 		if (this.emailModal) this.emailModal.style.display = "none";
@@ -743,11 +780,17 @@ export class GalleryPage {
 		if (emailError) emailError.style.display = "none";
 		if (emailInput) emailInput.style.borderColor = "";
 
+		// Reset button states
 		const btnDownload = document.getElementById("btnDownload");
 		if (btnDownload) {
 			btnDownload.style.display = "";
 			btnDownload.disabled = false;
 			btnDownload.innerHTML = '<i class="fas fa-download"></i> Download Photo';
+		}
+		const btnSendEmail = document.getElementById("btnSendEmail");
+		if (btnSendEmail) {
+			btnSendEmail.disabled = false;
+			btnSendEmail.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
 		}
 		const btnHome = document.getElementById("btnHome");
 		if (btnHome) btnHome.style.display = "";

@@ -100,14 +100,27 @@ export class SharedActions {
 						iframe.contentDocument.write(html);
 						iframe.contentDocument.close();
 
+						function cleanup() {
+							window.removeEventListener("message", onMsg);
+							if (iframe.parentNode) document.body.removeChild(iframe);
+							URL.revokeObjectURL(url);
+						}
+
 						window.addEventListener("message", function onMsg(e) {
 							if (e.data === "printDone") {
-								window.removeEventListener("message", onMsg);
-								document.body.removeChild(iframe);
-								URL.revokeObjectURL(url);
+								cleanup();
 								resolve();
 							}
 						});
+
+						// Safety timeout: if onafterprint never fires (dialog cancelled), clean up after 60s
+						setTimeout(() => {
+							if (!settled) {
+								settled = true;
+								cleanup();
+								reject(new Error("Print dialog timed out or was cancelled"));
+							}
+						}, 60000);
 					},
 					"image/jpeg",
 					0.92,
