@@ -19,6 +19,10 @@ export class GalleryPage {
 		this.emailModal = document.getElementById("emailModal");
 		this.operationQueue = new OperationQueue();
 
+		// Concurrency guards
+		this._isDeleting = false;
+		this._isRenaming = false;
+
 		// Countdown timer state
 		this._countdownRafId = null;
 		this._lastCountdownTick = 0;
@@ -578,6 +582,9 @@ export class GalleryPage {
 	}
 
 	async _renamePhoto(oldFilename, newFilename) {
+		if (this._isRenaming) return;
+		this._isRenaming = true;
+
 		try {
 			const res = await fetch("api/rename-photo.php", {
 				method: "POST",
@@ -600,12 +607,15 @@ export class GalleryPage {
 			console.error("[Gallery] Rename error:", e);
 			alert("Gagal rename file. Silakan coba lagi.");
 			await this.loadPhotos(this.currentPage);
+		} finally {
+			this._isRenaming = false;
 		}
 	}
 
 	_showDeleteConfirm(card, filename) {
 		const existing = card.querySelector(".gallery-delete-confirm");
 		if (existing) return;
+		if (this._isDeleting) return;
 
 		const overlay = document.createElement("div");
 		overlay.className = "gallery-delete-confirm";
@@ -643,6 +653,9 @@ export class GalleryPage {
 	}
 
 	async _deletePhoto(filename) {
+		if (this._isDeleting) return;
+		this._isDeleting = true;
+
 		try {
 			const formData = new URLSearchParams();
 			formData.append("filename", filename);
@@ -665,6 +678,8 @@ export class GalleryPage {
 			console.error("[Gallery] Delete error:", e);
 			alert("Gagal menghapus foto. Silakan coba lagi.");
 			await this.loadPhotos(this.currentPage);
+		} finally {
+			this._isDeleting = false;
 		}
 	}
 
