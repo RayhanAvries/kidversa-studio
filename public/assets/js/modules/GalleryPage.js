@@ -19,9 +19,9 @@ export class GalleryPage {
 		this.operationQueue = new OperationQueue();
 
 		// Countdown timer state
-		this._countdownInterval = null;
-		this._countdownElements = new Map(); // filename -> { badge, progressBar, expiresAt, card }
-		this._updateInterval = 1000; // 1 second
+		this._countdownRafId = null;
+		this._lastCountdownTick = 0;
+		this._countdownElements = new Map(); // filename -> { badge, labelEl, textEl, progressBar, expiresAt, card }
 	}
 
 	async init() {
@@ -45,10 +45,10 @@ export class GalleryPage {
 		// Cleanup when visibility changes (tab switching)
 		document.addEventListener("visibilitychange", () => {
 			if (document.hidden) {
-				// Only stop interval, preserve Map for restart
-				if (this._countdownInterval) {
-					clearInterval(this._countdownInterval);
-					this._countdownInterval = null;
+				// Only stop rAF, preserve Map for restart
+				if (this._countdownRafId) {
+					cancelAnimationFrame(this._countdownRafId);
+					this._countdownRafId = null;
 				}
 			} else if (this._countdownElements.size > 0) {
 				this._startCountdownTimer();
@@ -406,25 +406,36 @@ export class GalleryPage {
 	}
 
 	/**
-	 * Start the global countdown update interval
-	 * Updates all visible countdown badges every second
+	 * Start the global countdown update loop using requestAnimationFrame.
+	 * Throttled to 1 update per second via timestamp comparison.
 	 */
 	_startCountdownTimer() {
-		this._stopCountdownTimer(); // Clear any existing interval
+		this._stopCountdownTimer(); // Clear any existing animation frame
 
-		this._countdownInterval = setInterval(() => {
+		this._lastCountdownTick = 0;
+
+		const loop = (timestamp) => {
+			this._countdownRafId = requestAnimationFrame(loop);
+
+			// Throttle to once per second (1000ms)
+			if (timestamp - this._lastCountdownTick < 1000) return;
+			this._lastCountdownTick = timestamp;
+
 			this._updateCountdowns();
-		}, this._updateInterval);
+		};
+
+		this._countdownRafId = requestAnimationFrame(loop);
 	}
 
 	/**
-	 * Stop the countdown update interval and clean up
+	 * Stop the countdown animation frame and clean up tracked elements
 	 */
 	_stopCountdownTimer() {
-		if (this._countdownInterval) {
-			clearInterval(this._countdownInterval);
-			this._countdownInterval = null;
+		if (this._countdownRafId) {
+			cancelAnimationFrame(this._countdownRafId);
+			this._countdownRafId = null;
 		}
+		this._lastCountdownTick = 0;
 		this._countdownElements.clear();
 	}
 
