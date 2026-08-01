@@ -295,11 +295,6 @@ export class Booth {
 			});
 		}
 
-		const btnRetry = document.getElementById("btnRetry");
-		if (btnRetry) {
-			btnRetry.addEventListener("click", () => this._handleUploadRetry());
-		}
-
 		const btnQueue = document.getElementById("btnQueue");
 		if (btnQueue) {
 			btnQueue.addEventListener("click", () => this._handleGoToQueue());
@@ -802,51 +797,6 @@ export class Booth {
 	_handleUploadFailure() {
 		this.ui.showToastMessage("Upload gagal. Periksa jaringan Anda.", 4000);
 		this.ui.setUploadFailedControls();
-	}
-
-	async _handleUploadRetry() {
-		if (!this.captured || !this.currentUploadFilename) return;
-
-		this.ui.setRetryInProgressControls();
-		this.ui.showLoadingOverlay("Mengunggah ulang...");
-
-		try {
-			const blob = await this.dataURLtoBlob(this.captured);
-
-			const location = this._getUploadLocation();
-
-			const result = await this._uploadPhoto(
-				blob,
-				this.currentUploadFilename,
-				this.csrfToken,
-				location,
-				(progress) => {
-					const uploadPercent = Math.round(progress.percent * 0.8);
-					this.ui.updateLoadingProgress(
-						Math.min(uploadPercent, 80),
-						`Mengunggah ulang... (${progress.chunk}/${progress.totalChunks})`,
-					);
-				},
-			);
-
-			if (result && result.success) {
-				this.savedFilename = result.filename;
-				this.pendingUpload = null;
-				this.currentUploadFilename = null;
-				this.ui.updateLoadingProgress(100, "Selesai!");
-				setTimeout(() => {
-					this.ui.hideLoadingOverlay();
-					this._handleUploadSuccess();
-				}, 500);
-			} else {
-				throw new Error(result?.message || "Gagal mengunggah ulang");
-			}
-		} catch (e) {
-			this.ui.hideLoadingOverlay();
-			console.error("[Booth] Retry upload failed:", e);
-			this.pendingUpload = null;
-			this._handleUploadFailure();
-		}
 	}
 
 	async _handleGoToQueue() {

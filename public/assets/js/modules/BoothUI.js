@@ -4,7 +4,6 @@ export class BoothUI {
 		this.btnCap = document.getElementById("btnCapture");
 		this.btnRet = document.getElementById("btnRetake");
 		this.btnDone = document.getElementById("btnDone");
-		this.btnRetry = document.getElementById("btnRetry");
 		this.btnQueue = document.getElementById("btnQueue");
 		this.modal = document.getElementById("printModal");
 		this.qrModal = document.getElementById("qrModal");
@@ -85,19 +84,16 @@ export class BoothUI {
 			this.btnCap.style.display = "flex";
 			this.btnRet.style.display = "none";
 			this.btnDone.style.display = "none";
-			if (this.btnRetry) this.btnRetry.style.display = "none";
 			if (this.btnQueue) this.btnQueue.style.display = "none";
 		} else if (state === "captured") {
 			this.btnCap.style.display = "none";
 			this.btnRet.style.display = "flex";
 			this.btnDone.style.display = "flex";
-			if (this.btnRetry) this.btnRetry.style.display = "none";
 			if (this.btnQueue) this.btnQueue.style.display = "none";
 		} else if (state === "done") {
 			this.btnCap.style.display = "none";
 			this.btnRet.style.display = "none";
 			this.btnDone.style.display = "flex";
-			if (this.btnRetry) this.btnRetry.style.display = "none";
 			if (this.btnQueue) this.btnQueue.style.display = "none";
 		}
 	}
@@ -106,16 +102,7 @@ export class BoothUI {
 		this.btnCap.style.display = "none";
 		this.btnRet.style.display = "flex";
 		this.btnDone.style.display = "none";
-		if (this.btnRetry) this.btnRetry.style.display = "flex";
 		if (this.btnQueue) this.btnQueue.style.display = "flex";
-	}
-
-	setRetryInProgressControls() {
-		this.btnCap.style.display = "none";
-		this.btnRet.style.display = "none";
-		this.btnDone.style.display = "none";
-		if (this.btnRetry) this.btnRetry.style.display = "none";
-		if (this.btnQueue) this.btnQueue.style.display = "none";
 	}
 
 	scrollToTop() {
