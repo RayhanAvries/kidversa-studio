@@ -617,7 +617,6 @@ export class GalleryPage {
 	_showDeleteConfirm(card, filename) {
 		const existing = card.querySelector(".gallery-delete-confirm");
 		if (existing) return;
-		if (this._isDeleting) return;
 
 		const overlay = document.createElement("div");
 		overlay.className = "gallery-delete-confirm";
@@ -745,7 +744,11 @@ export class GalleryPage {
 		if (emailInput) emailInput.style.borderColor = "";
 
 		const btnDownload = document.getElementById("btnDownload");
-		if (btnDownload) btnDownload.style.display = "";
+		if (btnDownload) {
+			btnDownload.style.display = "";
+			btnDownload.disabled = false;
+			btnDownload.innerHTML = '<i class="fas fa-download"></i> Download Photo';
+		}
 		const btnHome = document.getElementById("btnHome");
 		if (btnHome) btnHome.style.display = "";
 	}
@@ -787,6 +790,10 @@ export class GalleryPage {
 		return window.location.protocol + "//" + window.location.host;
 	}
 
+	_getPhotoUrl(filename) {
+		return "uploads/photos/" + filename;
+	}
+
 	_getPhotoViewUrl(filename) {
 		return `${this._getBaseUrl()}/view-photo.php?file=${encodeURIComponent(filename)}`;
 	}
@@ -818,9 +825,8 @@ export class GalleryPage {
 
 	async _printPhoto() {
 		if (!this.selectedFilename) return;
-		const imageUrl = "uploads/photos/" + this.selectedFilename;
 		try {
-			await SharedActions.printPhoto(imageUrl);
+			await SharedActions.printPhoto(this._getPhotoUrl(this.selectedFilename));
 		} catch (e) {
 			console.error("[Gallery] Print error:", e);
 			alert("Gagal memuat foto untuk cetak. Silakan coba lagi.");
@@ -838,10 +844,10 @@ export class GalleryPage {
 		}
 
 		try {
-			const photoUrl = "uploads/photos/" + this.selectedFilename;
+			const ext = this.selectedFilename.split(".").pop() || "png";
 			await BlobDownloader.downloadWithRetry(
-				photoUrl,
-				"kidversa-photo-" + Date.now() + ".png",
+				this._getPhotoUrl(this.selectedFilename),
+				`kidversa-photo-${Date.now()}.${ext}`,
 				(progress) => {
 					if (btn) {
 						btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${progress.percent}%`;
