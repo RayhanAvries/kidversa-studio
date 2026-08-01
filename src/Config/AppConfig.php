@@ -73,12 +73,12 @@ final class AppConfig
      */
     private static function loadVersion(): string
     {
-        $versionFile = dirname(__DIR__, 2) . '/public/version.json';
+        $versionFile = \dirname(__DIR__, 2) . '/public/version.json';
         if (!file_exists($versionFile)) {
             return '4.3.1'; // fallback
         }
         $data = json_decode((string) file_get_contents($versionFile), true);
-        return is_array($data) && isset($data['version'])
+        return \is_array($data) && isset($data['version'])
             ? (string) $data['version']
             : '4.3.1';
     }
