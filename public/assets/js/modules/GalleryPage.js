@@ -410,7 +410,11 @@ export class GalleryPage {
 	 * Throttled to 1 update per second via timestamp comparison.
 	 */
 	_startCountdownTimer() {
-		this._stopCountdownTimer(); // Clear any existing animation frame
+		// Cancel existing rAF without clearing the Map
+		if (this._countdownRafId) {
+			cancelAnimationFrame(this._countdownRafId);
+			this._countdownRafId = null;
+		}
 
 		this._lastCountdownTick = 0;
 
