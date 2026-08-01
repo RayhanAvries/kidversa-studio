@@ -1,3 +1,5 @@
+export const STATUS_CAPTURED = "captured";
+
 export class OperationQueue {
 	constructor(dbName = "KidversaQueue", storeName = "operations") {
 		this.dbName = dbName;
@@ -174,7 +176,7 @@ export class OperationQueue {
 
 	async getNextPending() {
 		const pending = await this.getByStatus("pending");
-		const captured = await this.getByStatus("captured");
+		const captured = await this.getByStatus(STATUS_CAPTURED);
 		const all = [...pending, ...captured];
 		if (all.length === 0) return null;
 		// Sort by createdAt, oldest first
@@ -188,7 +190,7 @@ export class OperationQueue {
 
 	async getTotalPendingCount() {
 		const pending = await this.countByStatus("pending");
-		const captured = await this.countByStatus("captured");
+		const captured = await this.countByStatus(STATUS_CAPTURED);
 		return pending + captured;
 	}
 

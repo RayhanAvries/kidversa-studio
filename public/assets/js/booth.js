@@ -10,7 +10,7 @@ import { MirrorToggleUI } from "./modules/MirrorToggleUI.js";
 import { FABWidget } from "./modules/FABWidget.js";
 import { ModalManager } from "./modules/ModalManager.js";
 import { ChunkUploader } from "./modules/ChunkUploader.js";
-import { OperationQueue } from "./modules/OperationQueue.js";
+import { OperationQueue, STATUS_CAPTURED } from "./modules/OperationQueue.js";
 
 import { ImageComposer } from "./modules/ImageComposer.js";
 import { UploadProcessor } from "./modules/UploadProcessor.js";
@@ -334,7 +334,7 @@ export class Booth {
 				csrfToken: this.csrfToken,
 			},
 			maxRetries: Booth.MAX_RETRIES,
-			status: "captured",
+			status: STATUS_CAPTURED,
 		});
 
 		// Toast notification
@@ -463,7 +463,7 @@ export class Booth {
 				csrfToken: this.csrfToken,
 			},
 			maxRetries: Booth.MAX_RETRIES,
-			status: "captured",
+			status: STATUS_CAPTURED,
 		});
 
 		// Toast notification
@@ -623,7 +623,7 @@ export class Booth {
 					csrfToken: this.csrfToken,
 				},
 				maxRetries: Booth.MAX_RETRIES,
-				status: "captured",
+				status: STATUS_CAPTURED,
 			});
 			this.ui.showToastMessage(
 				"Foto masuk antrian. Akan dicoba otomatis.",
@@ -684,7 +684,7 @@ export class Booth {
 					csrfToken: this.csrfToken,
 				},
 				maxRetries: Booth.MAX_RETRIES,
-				status: "captured",
+				status: STATUS_CAPTURED,
 			});
 		}
 		window.location.href = "queue.php?autoretry=1";

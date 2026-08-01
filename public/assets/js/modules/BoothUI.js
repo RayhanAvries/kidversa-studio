@@ -1,3 +1,5 @@
+import { STATUS_CAPTURED } from "./OperationQueue.js";
+
 // removed debug log
 export class BoothUI {
 	constructor() {
@@ -85,7 +87,7 @@ export class BoothUI {
 			this.btnRet.style.display = "none";
 			this.btnDone.style.display = "none";
 			if (this.btnQueue) this.btnQueue.style.display = "none";
-		} else if (state === "captured") {
+		} else if (state === STATUS_CAPTURED) {
 			this.btnCap.style.display = "none";
 			this.btnRet.style.display = "flex";
 			this.btnDone.style.display = "flex";
