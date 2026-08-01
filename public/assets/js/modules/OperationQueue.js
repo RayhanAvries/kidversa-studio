@@ -58,6 +58,24 @@ export class OperationQueue {
         });
     }
 
+    async _withStore(mode, callback) {
+        if (!this.db) await this.init();
+
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(this.storeName, mode);
+            const store = tx.objectStore(this.storeName);
+            const result = callback(store);
+
+            if (result instanceof Promise) {
+                result.then(resolve, reject);
+            } else {
+                resolve(result);
+            }
+
+            tx.onerror = () => reject(tx.error);
+        });
+    }
+
     async enqueue(operation) {
         if (!this.db) await this.init();
 
@@ -71,7 +89,7 @@ export class OperationQueue {
             id: 'op_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
             type: operation.type,
             data: operation.data,
-            status: 'pending',
+            status: operation.status || 'pending',
             retries: 0,
             maxRetries: operation.maxRetries || 5,
             createdAt: Date.now(),
@@ -109,8 +127,7 @@ export class OperationQueue {
                     await executeFn(operation);
                     await this.updateStatus(operation.id, 'completed');
                 } catch (error) {
-                    await this.updateStatus(operation.id, 'pending', error.message);
-                    await this.incrementRetries(operation.id);
+                    await this._updateStatusAndRetries(operation.id, 'pending', error.message);
                 }
             }
         } finally {
@@ -130,6 +147,36 @@ export class OperationQueue {
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
+    }
+
+    async getById(id) {
+        return this._withStore('readonly', (store) => {
+            const request = store.get(id);
+            return new Promise((resolve, reject) => {
+                request.onsuccess = () => resolve(request.result || null);
+                request.onerror = () => reject(request.error);
+            });
+        });
+    }
+
+    async getNextPending() {
+        const pending = await this.getByStatus('pending');
+        const captured = await this.getByStatus('captured');
+        const all = [...pending, ...captured];
+        if (all.length === 0) return null;
+        // Sort by createdAt, oldest first
+        return all.sort((a, b) => a.createdAt - b.createdAt)[0];
+    }
+
+    async countByStatus(status) {
+        const items = await this.getByStatus(status);
+        return items.length;
+    }
+
+    async getTotalPendingCount() {
+        const pending = await this.countByStatus('pending');
+        const captured = await this.countByStatus('captured');
+        return pending + captured;
     }
 
     async getAll() {
@@ -155,12 +202,15 @@ export class OperationQueue {
 
             getReq.onsuccess = () => {
                 const entry = getReq.result;
-                if (entry) {
-                    entry.status = status;
-                    entry.lastAttemptAt = Date.now();
-                    entry.error = error;
-                    store.put(entry);
+                if (!entry) {
+                    console.warn(`[OperationQueue] updateStatus: entry ${id} not found`);
+                    resolve();
+                    return;
                 }
+                entry.status = status;
+                entry.lastAttemptAt = Date.now();
+                entry.error = error;
+                store.put(entry);
                 resolve();
             };
 
@@ -178,14 +228,40 @@ export class OperationQueue {
 
             getReq.onsuccess = () => {
                 const entry = getReq.result;
-                if (entry) {
-                    entry.retries++;
-                    store.put(entry);
+                if (!entry) {
+                    console.warn(`[OperationQueue] incrementRetries: entry ${id} not found`);
+                    resolve();
+                    return;
                 }
+                entry.retries++;
+                store.put(entry);
                 resolve();
             };
 
             getReq.onerror = () => reject(getReq.error);
+        });
+    }
+
+    async _updateStatusAndRetries(id, status, error) {
+        return this._withStore('readwrite', (store) => {
+            const request = store.get(id);
+            return new Promise((resolve, reject) => {
+                request.onsuccess = () => {
+                    const entry = request.result;
+                    if (!entry) {
+                        resolve();
+                        return;
+                    }
+                    entry.status = status;
+                    entry.lastAttemptAt = Date.now();
+                    entry.error = error || null;
+                    entry.retries = (entry.retries || 0) + 1;
+                    const putRequest = store.put(entry);
+                    putRequest.onsuccess = () => resolve();
+                    putRequest.onerror = () => reject(putRequest.error);
+                };
+                request.onerror = () => reject(request.error);
+            });
         });
     }
 
