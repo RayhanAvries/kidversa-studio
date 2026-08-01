@@ -11,7 +11,7 @@ import { FABWidget } from "./modules/FABWidget.js";
 import { ModalManager } from "./modules/ModalManager.js";
 import { ChunkUploader } from "./modules/ChunkUploader.js";
 import { OperationQueue } from "./modules/OperationQueue.js";
-import { RetryManager } from "./modules/RetryManager.js";
+
 import { ImageComposer } from "./modules/ImageComposer.js";
 import { UploadProcessor } from "./modules/UploadProcessor.js";
 
@@ -116,7 +116,7 @@ export class Booth {
 
 		this.chunkUploader = new ChunkUploader();
 		this.operationQueue = new OperationQueue();
-		this.retryManager = new RetryManager(this.operationQueue);
+
 
 		this.init();
 	}
@@ -196,7 +196,7 @@ export class Booth {
 			this.fabWidget = new FABWidget();
 			this.fabWidget.init();
 
-			this._startRetryProcessor();
+	
 
 			// Cleanup is handled server-side via cron (cron/cleanup-chunks.php)
 		} catch (e) {
@@ -850,9 +850,7 @@ export class Booth {
 		if (this.uploadProcessor) {
 			this.uploadProcessor.stop();
 		}
-		if (this.retryManager) {
-			this.retryManager.stopBackgroundProcessor();
-		}
+
 		if (this.handDetect) {
 			this.handDetect.destroy();
 			this.handDetect = null;
@@ -1008,37 +1006,7 @@ export class Booth {
 		}
 	}
 
-	_startRetryProcessor() {
-		this.retryManager.startBackgroundProcessor(async (op) => {
-			if (op.type === "save_photo" && op.data?.blobBase64) {
-				const blob = await this.dataURLtoBlob(op.data.blobBase64);
-				const location = op.data.location || {
-					lat: Config.get("geolocation.defaultLat", -6.9175),
-					lng: Config.get("geolocation.defaultLng", 107.6191),
-					name: Config.get("geolocation.defaultName", "Bandung"),
-				};
-				const result = await this.chunkUploader.upload(
-					blob,
-					op.data.filename,
-					this.csrfToken,
-					location,
-					() => {},
-				);
-				return result;
-			}
-			if (op.type === "send_email") {
-				const res = await fetch("api/send-email.php", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(op.data),
-				});
-				const data = await res.json();
-				if (!data.success) throw new Error(data.message || "Email send failed");
-				return data;
-			}
-			throw new Error("Unknown operation type: " + op.type);
-		});
-	}
+
 }
 
 window.booth = new Booth();
