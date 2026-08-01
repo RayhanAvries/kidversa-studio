@@ -1,4 +1,3 @@
-import { Lang } from "./Lang.js";
 // removed debug log
 export class BoothUI {
   constructor() {

@@ -3,7 +3,6 @@ import { FilterEngine } from "./modules/FilterEngine.js";
 import { FrameManager } from "./modules/FrameManager.js";
 import { BoothUI } from "./modules/BoothUI.js";
 import { Config } from "./modules/Config.js";
-import { Lang } from "./modules/Lang.js";
 import { initPermissions } from "./modules/InitPermissions.js";
 import { HandDetection } from "./modules/HandDetection.js";
 import { HandDetectionUI } from "./modules/HandDetectionUI.js";
