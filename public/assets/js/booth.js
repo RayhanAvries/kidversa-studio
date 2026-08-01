@@ -175,7 +175,6 @@ export class Booth {
 
 			this._loadSettings();
 			await this.camera.start();
-			this.camera._updateVideoTransform();
 
 			this.ui.setCaptureButtonState(false);
 			const f = this.filters.applyFilter(this.selFilter);
@@ -408,8 +407,8 @@ export class Booth {
 		this.rawData = rawData;
 
 		// Compose final image
-		const TW = this.camera.videoWidth;
-		const TH = this.camera.videoHeight;
+		const TW = this.cameraConfig.TW;
+		const TH = this.cameraConfig.TH;
 		const compositeCanvas = await this.composeFinalImage(rawData, TW, TH);
 		this.captured = compositeCanvas.toDataURL("image/png");
 
@@ -445,7 +444,6 @@ export class Booth {
 		this.ui.setCaptureControls("capture");
 		this.ui.scrollToTop();
 		await this.camera.start();
-		this.camera._updateVideoTransform();
 		this.ui.setCaptureButtonState(false);
 		if (this.camera.stream) {
 			this.filters.initPreviews(this.camera.stream);
@@ -701,7 +699,6 @@ export class Booth {
 			? "block"
 			: "none";
 		await this.camera.start();
-		this.camera._updateVideoTransform();
 		this.ui.setCaptureButtonState(false);
 		if (this.camera.stream) {
 			this.filters.initPreviews(this.camera.stream);
