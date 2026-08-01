@@ -22,6 +22,8 @@ export class QueuePage {
         await this.loadQueue();
         this._startPolling();
 
+        window.addEventListener('beforeunload', () => this.destroy());
+
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('autoretry') === '1') {
             await this._autoRetryRecent();
@@ -29,7 +31,17 @@ export class QueuePage {
     }
 
     _startPolling() {
-        this._pollInterval = setInterval(() => this._refreshStats(), 5000);
+        this._pollInterval = setInterval(async () => {
+            await this._refreshStats();
+            await this.loadQueue();
+        }, 5000);
+    }
+
+    destroy() {
+        if (this._pollInterval) {
+            clearInterval(this._pollInterval);
+            this._pollInterval = null;
+        }
     }
 
     async _refreshCsrfToken() {
@@ -219,8 +231,8 @@ export class QueuePage {
         list.innerHTML = '';
 
         const sorted = [...this.filteredItems].sort((a, b) => {
-            const order = { pending: 0, failed: 1, completed: 2 };
-            return (order[a.status] ?? 3) - (order[b.status] ?? 3);
+            const order = { captured: 0, pending: 1, uploading: 2, failed: 3, completed: 4 };
+            return (order[a.status] ?? 5) - (order[b.status] ?? 5);
         });
 
         sorted.forEach(item => {
@@ -358,8 +370,10 @@ export class QueuePage {
 
     _statusLabel(status, retries, maxRetries) {
         switch (status) {
-            case 'pending': return `Antrian (${retries}/${maxRetries})`;
-            case 'failed': return `Gagal (${retries}/${maxRetries})`;
+            case 'captured': return 'Siap upload';
+            case 'uploading': return 'Uploading...';
+            case 'pending': return `Antrian (${retries}/${maxRetries || 5})`;
+            case 'failed': return `Gagal (${retries}/${maxRetries || 5})`;
             case 'completed': return 'Selesai';
             case 'verified': return 'Terverifikasi di server';
             default: return status;
@@ -370,7 +384,7 @@ export class QueuePage {
         if (!bytes || bytes === 0) return '0 B';
         const units = ['B', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(1024));
-        return (bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+        return (bytes / 1024 ** i).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
     }
 
     _escapeHtml(str) {
@@ -386,6 +400,11 @@ export class QueuePage {
     async retryItem(id) {
         const item = this.items.find(op => op.id === id);
         if (!item) return;
+
+        if (item.retries >= (item.maxRetries || 5)) {
+            console.warn('[Queue] maxRetries reached for', id);
+            return;
+        }
 
         await this._refreshCsrfToken();
         if (!this.csrfToken) {

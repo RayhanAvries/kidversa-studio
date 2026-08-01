@@ -35,7 +35,9 @@ use Kidversa\Config\AppConfig;
 
     <div class="queue-filters" id="queueFilters" style="display:none">
         <button class="queue-filter-btn active" data-filter="all">Semua</button>
-        <button class="queue-filter-btn" data-filter="pending"><i class="fas fa-clock"></i> Proses</button>
+        <button class="queue-filter-btn" data-filter="captured"><i class="fas fa-camera"></i> Tangkap</button>
+        <button class="queue-filter-btn" data-filter="pending"><i class="fas fa-clock"></i> Antrian</button>
+        <button class="queue-filter-btn" data-filter="uploading"><i class="fas fa-upload"></i> Upload</button>
         <button class="queue-filter-btn" data-filter="completed"><i class="fas fa-check"></i> Selesai</button>
         <button class="queue-filter-btn" data-filter="failed"><i class="fas fa-times"></i> Gagal</button>
     </div>
