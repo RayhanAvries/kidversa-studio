@@ -516,13 +516,15 @@ export class GalleryPage {
 				card.remove();
 				this._countdownElements.delete(filename);
 
-				// Update total count
-				this.totalPhotos = Math.max(0, this.totalPhotos - 1);
+				// Recount visible cards from DOM instead of decrementing stale counter
+				const grid = document.getElementById("galleryGrid");
 				const statTotal = document.getElementById("statTotal");
-				if (statTotal) statTotal.textContent = this.totalPhotos;
+				if (grid) {
+					this.totalPhotos = grid.children.length;
+					if (statTotal) statTotal.textContent = this.totalPhotos;
+				}
 
 				// Show empty state if no cards left
-				const grid = document.getElementById("galleryGrid");
 				const empty = document.getElementById("galleryEmpty");
 				if (grid && grid.children.length === 0) {
 					grid.style.display = "none";
