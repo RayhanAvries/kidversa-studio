@@ -714,7 +714,13 @@ export class GalleryPage {
 	_closePrintModal() {
 		this.printModal?.classList.remove("on");
 		this.qrModal && (this.qrModal.style.display = "none");
-		this.emailModal && (this.emailModal.style.display = "none");
+
+		// Clear email state when closing parent modal
+		if (this.emailModal) this.emailModal.style.display = "none";
+		const emailError = document.getElementById("emailError");
+		const emailInput = document.getElementById("emailInput");
+		if (emailError) emailError.style.display = "none";
+		if (emailInput) emailInput.style.borderColor = "";
 
 		const btnDownload = document.getElementById("btnDownload");
 		if (btnDownload) btnDownload.style.display = "";
@@ -727,7 +733,12 @@ export class GalleryPage {
 	}
 
 	_closeEmailModal() {
-		this.emailModal && (this.emailModal.style.display = "none");
+		if (this.emailModal) this.emailModal.style.display = "none";
+
+		const emailError = document.getElementById("emailError");
+		const emailInput = document.getElementById("emailInput");
+		if (emailError) emailError.style.display = "none";
+		if (emailInput) emailInput.style.borderColor = "";
 	}
 
 	async _sendEmail() {
