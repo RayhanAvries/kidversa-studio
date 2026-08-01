@@ -762,7 +762,7 @@ export class GalleryPage {
 		const viewUrl = `${baseUrl}/view-photo.php?file=${encodeURIComponent(this.selectedFilename)}`;
 
 		try {
-			await SharedActions.generateQR(viewUrl, "galleryQrImage");
+			await SharedActions.generateQR(viewUrl, "qrImage");
 		} catch (e) {
 			console.error("QR generation failed:", e);
 		} finally {
