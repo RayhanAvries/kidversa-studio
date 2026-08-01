@@ -1,4 +1,4 @@
-import Config from "./Config.js";
+import { Config } from "./Config.js";
 
 /**
  * Internationalization helper with dot-notation key access
@@ -45,5 +45,3 @@ export const Lang = {
 		return value;
 	},
 };
-
-export default Lang;
