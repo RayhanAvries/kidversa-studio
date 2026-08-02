@@ -54,7 +54,7 @@ class RateLimitHelper
 
     public static function getRemaining(string $key, int $maxRequests, int $windowSeconds = 60): int
     {
-        $data = self::readRateLimitData($key);
+        $data = self::readRateLimitData($key) ?? [];
 
         $now = time();
         $windowStart = $data['window_start'] ?? 0;
@@ -70,7 +70,7 @@ class RateLimitHelper
 
     public static function getRetryAfter(string $key, int $windowSeconds = 60): int
     {
-        $data = self::readRateLimitData($key);
+        $data = self::readRateLimitData($key) ?? [];
 
         $now = time();
         $windowStart = $data['window_start'] ?? 0;
