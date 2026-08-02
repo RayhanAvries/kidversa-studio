@@ -136,7 +136,7 @@ export class UploadProcessor {
 				} else if (isRateLimit) {
 					// Rate limit: do NOT increment retries, set cooldown to prevent rapid re-polling
 					const retryAfter = error.retryAfter || 30;
-					this._rateLimitCooldownUntil = Date.now() + (retryAfter * 1000);
+					this._rateLimitCooldownUntil = Date.now() + retryAfter * 1000;
 					const friendlyMsg = `Batas permintaan tercapai. Menunggu ${retryAfter}s...`;
 					await this.queue.updateStatus(item.id, "pending", friendlyMsg);
 					this.onStatusChange(item.id, "pending");
