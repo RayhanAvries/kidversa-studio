@@ -14,6 +14,7 @@ export class QueuePage {
 		this._pollInterval = null;
 		this._loading = false;
 		this._lastServerCheck = 0;
+		this._retryingIds = new Set();
 	}
 
 	async init() {
@@ -328,12 +329,15 @@ export class QueuePage {
                 ${item.error && displayStatus !== "completed" && displayStatus !== "verified" ? `<div class="queue-item-error"><i class="fas fa-exclamation-circle"></i> ${this._escapeHtml(item.error)}</div>` : ""}
                 <div class="queue-item-actions">
                     ${
-											displayStatus === "pending" || displayStatus === "failed"
-												? `
+						(displayStatus === "pending" || displayStatus === "failed") &&
+						item.retries < (item.maxRetries || 5)
+							? `
                         <button class="queue-btn-retry" data-id="${item.id}">
                             <i class="fas fa-redo"></i> Retry
                         </button>`
-												: ""
+							: displayStatus === "failed" && item.retries >= (item.maxRetries || 5)
+								? `<span class="queue-max-retries-msg"><i class="fas fa-ban"></i> Batas percobaan tercapai</span>`
+								: ""
 										}
                     <button class="queue-btn-remove-single" data-id="${item.id}" title="Hapus dari antrian">
                         <i class="fas fa-times"></i>
@@ -450,26 +454,65 @@ export class QueuePage {
 			.replace(/>/g, "&gt;");
 	}
 
+	_showItemError(id, message) {
+		const el = document.querySelector(`.queue-item[data-id="${id}"]`);
+		if (!el) return;
+
+		let errorDiv = el.querySelector(".queue-item-error");
+		if (!errorDiv) {
+			errorDiv = document.createElement("div");
+			errorDiv.className = "queue-item-error";
+			const actionsDiv = el.querySelector(".queue-item-actions");
+			if (actionsDiv) {
+				actionsDiv.before(errorDiv);
+			}
+		}
+		errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${this._escapeHtml(message)}`;
+
+		// Re-enable retry button
+		const btn = el.querySelector(`.queue-btn-retry[data-id="${id}"]`);
+		if (btn) {
+			btn.disabled = false;
+			btn.innerHTML = '<i class="fas fa-redo"></i> Retry';
+		}
+	}
+
 	async retryItem(id) {
-		const item = this.items.find((op) => op.id === id);
+		// Re-entrancy guard — prevent concurrent retries for same item
+		if (this._retryingIds.has(id)) return;
+
+		// Refetch from IndexedDB to get fresh status (not stale local cache)
+		const item = await this.queue.getById(id);
 		if (!item) return;
 
-		if (item.retries >= (item.maxRetries || 5)) {
-			console.warn("[Queue] maxRetries reached for", id);
+		// Offline check — show friendly message, do NOT waste retry count
+		if (!navigator.onLine) {
+			this._showItemError(id, "Tidak ada koneksi internet. Coba lagi saat online.");
 			return;
 		}
 
-		await this._refreshCsrfToken();
-		if (!this.csrfToken) {
-			console.error("[Queue] Cannot retry — no CSRF token available");
-			return;
-		}
-
+		// Mark as retrying + disable button IMMEDIATELY (sync, before any await)
+		this._retryingIds.add(id);
 		const btn = document.querySelector(`.queue-btn-retry[data-id="${id}"]`);
 		if (btn) {
 			btn.disabled = true;
 			btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Retrying...';
 		}
+
+		// CSRF refresh (async — button already disabled)
+		await this._refreshCsrfToken();
+		if (!this.csrfToken) {
+			console.error("[Queue] Cannot retry — no CSRF token available");
+			this._retryingIds.delete(id);
+			if (btn) {
+				btn.disabled = false;
+				btn.innerHTML = '<i class="fas fa-redo"></i> Retry';
+			}
+			return;
+		}
+
+		// Reset retry counter — this is a fresh manual attempt
+		await this.queue.resetRetries(id);
 
 		try {
 			if (item.type === "save_photo" && item.data?.blobBase64) {
@@ -538,9 +581,34 @@ export class QueuePage {
 			await this.loadQueue();
 		} catch (e) {
 			console.error("[Queue] Retry failed:", e);
-			await this.queue.updateStatus(id, "pending", e.message);
-			await this.queue.incrementRetries(id);
+
+			// Detect network errors — do NOT increment retry count for these
+			const isNetworkError =
+				!navigator.onLine ||
+				e.message?.includes("Failed to fetch") ||
+				e.message?.includes("NetworkError") ||
+				e.message?.includes("network") ||
+				e.message?.includes("Load failed");
+
+			const friendlyMsg = isNetworkError
+				? "Gagal menghubungi server. Periksa koneksi internet Anda."
+				: e.message || "Terjadi kesalahan";
+
+			if (isNetworkError) {
+				// Network error: set status back to pending, do NOT increment retries
+				await this.queue.updateStatus(id, "pending", friendlyMsg);
+			} else {
+				// Real failure: use atomic update (single transaction)
+				await this.queue._updateStatusAndRetries(id, "pending", friendlyMsg);
+			}
+
 			delete this.uploadProgress[id];
+			this._retryingIds.delete(id);
+
+			// Show error inline and re-enable button
+			this._showItemError(id, friendlyMsg);
+
+			// Refresh queue data for accurate display
 			await this.loadQueue();
 		}
 	}
@@ -574,18 +642,19 @@ export class QueuePage {
 	}
 
 	async _processCapturedItems() {
-		const all = this.items;
-		const needsRetry = all.filter(
-			(i) => i.status === STATUS_CAPTURED || i.status === "uploading",
+		// First, clean up stale claims (uploading items stuck for >30s)
+		await this.queue.resetStaleClaims(30000);
+
+		// Reload to get fresh state after cleanup
+		await this.loadQueue();
+
+		// Now only handle "captured" items — do NOT touch "uploading" items
+		const capturedItems = this.items.filter(
+			(i) => i.status === STATUS_CAPTURED,
 		);
 
-		if (needsRetry.length === 0) return;
+		if (capturedItems.length === 0) return;
 
-		for (const item of needsRetry) {
-			await this.queue.updateStatus(item.id, STATUS_CAPTURED);
-		}
-
-		await this.loadQueue();
 		await this._autoRetryRecent();
 	}
 
@@ -603,18 +672,18 @@ export class QueuePage {
 
 	async _autoRetryRecent() {
 		const all = await this.queue.getAll();
-		const pending = all
+		const retryable = all
 			.filter(
 				(op) =>
 					op.status === "pending" ||
-					op.status === "failed" ||
-					op.status === STATUS_CAPTURED,
+					op.status === STATUS_CAPTURED ||
+					(op.status === "failed" && op.retries < (op.maxRetries || 5)),
 			)
 			.sort((a, b) => b.createdAt - a.createdAt);
 
-		if (pending.length === 0) return;
+		if (retryable.length === 0) return;
 
-		const mostRecent = pending[0];
+		const mostRecent = retryable[0];
 		await this.retryItem(mostRecent.id);
 
 		const url = new URL(window.location);
