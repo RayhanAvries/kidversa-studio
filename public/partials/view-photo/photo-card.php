@@ -1,3 +1,14 @@
+<?php
+/**
+ * @var string $filename
+ * @var string $fileExtension
+ * @var string $formattedDate
+ * @var string $formattedTime
+ * @var string $dimensionsStr
+ * @var string $fileSizeStr
+ * @var string $locationName
+ */
+?>
 <div class="photo-card">
     <div class="photo-preview">
         <img src="/uploads/photos/<?php echo htmlspecialchars($filename); ?>" alt="Foto Kenangan">

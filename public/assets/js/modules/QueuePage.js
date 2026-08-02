@@ -19,8 +19,11 @@ export class QueuePage {
 		await this.queue.init();
 		this._bindFilterTabs();
 		this._bindFooterActions();
+
 		await this.loadQueue();
+
 		await this._processCapturedItems();
+
 		this._startPolling();
 
 		window.addEventListener("beforeunload", () => this.destroy());
@@ -563,6 +566,7 @@ export class QueuePage {
 		const needsRetry = all.filter(
 			(i) => i.status === STATUS_CAPTURED || i.status === "uploading",
 		);
+
 		if (needsRetry.length === 0) return;
 
 		for (const item of needsRetry) {
@@ -588,7 +592,12 @@ export class QueuePage {
 	async _autoRetryRecent() {
 		const all = await this.queue.getAll();
 		const pending = all
-			.filter((op) => op.status === "pending" || op.status === "failed" || op.status === STATUS_CAPTURED)
+			.filter(
+				(op) =>
+					op.status === "pending" ||
+					op.status === "failed" ||
+					op.status === STATUS_CAPTURED,
+			)
 			.sort((a, b) => b.createdAt - a.createdAt);
 
 		if (pending.length === 0) return;

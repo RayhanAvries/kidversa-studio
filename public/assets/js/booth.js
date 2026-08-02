@@ -383,10 +383,10 @@ export class Booth {
 				this.ui.updateCountdownUI(c);
 			} else {
 				clearInterval(iv);
+				this.counting = false; // Reset flag BEFORE capture()
 				this.ui.stopCountdownUI();
 				this.ui.triggerFlash();
 				this.capture();
-				this.counting = false;
 				this.ui.setCaptureButtonState(false);
 			}
 		}, 1000);
@@ -515,7 +515,10 @@ export class Booth {
 					canvas.height = targetHeight || this.camera.cnv.height;
 					const ctx = canvas.getContext("2d");
 
-					const filterObj = this.filters.applyFilter(this.selFilter);
+					const filterObj = this.filters.applyFilter(this.selFilter) || {
+						filter: "none",
+						overlay: null,
+					};
 					ImageComposer.fitAndDraw(
 						ctx,
 						img,
@@ -588,7 +591,7 @@ export class Booth {
 			frameImg.crossOrigin = "anonymous";
 			frameImg.onload = () => resolve(frameImg);
 			frameImg.onerror = () => {
-				console.warn("[Booth] Failed to load frame:", frameName);
+				console.error("[Booth] Failed to load frame:", frameName);
 				resolve(null);
 			};
 			frameImg.src = `${framePath}/${frameName}.png`;
@@ -628,20 +631,22 @@ export class Booth {
 		}
 
 		if (this.captured && !this.savedFilename && this.currentUploadFilename) {
-			await this.operationQueue.enqueue({
-				type: "save_photo",
-				data: {
-					filename: this.currentUploadFilename,
-					blobBase64: this.captured,
-					location: this._getUploadLocation(),
-					csrfToken: this.csrfToken,
-				},
-				maxRetries: Booth.MAX_RETRIES,
-				status: STATUS_CAPTURED,
-			});
-		} catch (e) {
-			console.error("[Booth] Retake enqueue failed:", e);
-			this.ui.showToastMessage("Gagal menyimpan foto ke antrian", 4000);
+			try {
+				await this.operationQueue.enqueue({
+					type: "save_photo",
+					data: {
+						filename: this.currentUploadFilename,
+						blobBase64: this.captured,
+						location: this._getUploadLocation(),
+						csrfToken: this.csrfToken,
+					},
+					maxRetries: Booth.MAX_RETRIES,
+					status: STATUS_CAPTURED,
+				});
+			} catch (e) {
+				console.error("[Booth] Retake enqueue failed:", e);
+				this.ui.showToastMessage("Gagal menyimpan foto ke antrian", 4000);
+			}
 		}
 		this.currentUploadFilename = null;
 		this.rawData = null;
@@ -705,9 +710,10 @@ export class Booth {
 				this.ui.showToastMessage("Gagal menyimpan foto ke antrian", 4000);
 			}
 			window.location.href = "queue.php?autoretry=1";
+		}
 	}
 
-	_loadSettings() 
+	_loadSettings() {
 		try {
 			const savedDevice = localStorage.getItem("kidversa_camera_device");
 			const savedMirrorH = localStorage.getItem("kidversa_mirror_h");
@@ -716,10 +722,11 @@ export class Booth {
 			if (savedMirrorH === "true") this.camera.mirrorH = true;
 			if (savedMirrorV === "true") this.camera.mirrorV = true;
 		} catch (e) {
-			console.warn("[Booth] Failed to load settings from localStorage", e);
+			console.error("[Booth] Failed to load settings from localStorage", e);
 		}
+	}
 
-	_saveSettings() 
+	_saveSettings() {
 		try {
 			if (this.camera.currentDeviceId) {
 				localStorage.setItem(
@@ -732,10 +739,11 @@ export class Booth {
 			localStorage.setItem("kidversa_mirror_h", String(this.camera.mirrorH));
 			localStorage.setItem("kidversa_mirror_v", String(this.camera.mirrorV));
 		} catch (e) {
-			console.warn("[Booth] Failed to save settings to localStorage", e);
+			console.error("[Booth] Failed to save settings to localStorage", e);
 		}
+	}
 
-	destroy() 
+	destroy() {
 		if (this.uploadProcessor) {
 			this.uploadProcessor.stop();
 		}
@@ -762,6 +770,7 @@ export class Booth {
 		}
 		this.filters.stopPreviews();
 		this.camera.stop();
+	}
 
 	_initHandDetection() {
 		const badgeWrap = document.getElementById("handDetectBadgeWrap");
@@ -816,14 +825,16 @@ export class Booth {
 		}
 	}
 
-	_handleHandDetected() 
+	_handleHandDetected() {
 		if (!this.camera.ready || this.counting || this.captured) return;
 		this.startCountdown();
+	}
 
-	_enableHandDetectionIfActive() 
+	_enableHandDetectionIfActive() {
 		if (this.handDetect && this.handDetect.isEnabled()) {
 			this.handDetect.start();
 		}
+	}
 
 	async _initCameraSelect() {
 		const select = document.getElementById("cameraSelect");
@@ -834,7 +845,7 @@ export class Booth {
 		}
 
 		if (this.camera.devices.length > 0) {
-			select.innerHTML = "";
+			select.replaceChildren();
 			this.camera.devices.forEach((device, i) => {
 				const option = document.createElement("option");
 				option.value = device.deviceId;

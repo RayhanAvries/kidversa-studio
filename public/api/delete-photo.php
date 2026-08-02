@@ -8,7 +8,6 @@ use Kidversa\Helpers\FileHelper;
 use Kidversa\Helpers\PathHelper;
 use Kidversa\Helpers\SecurityHelper;
 use Kidversa\Helpers\ValidationHelper;
-use Kidversa\Services\PhotoService;
 
 SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');

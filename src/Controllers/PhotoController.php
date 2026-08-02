@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Kidversa\Controllers;
 
-use Kidversa\Config\AppConfig;
 use Kidversa\Services\PhotoService;
 
 class PhotoController

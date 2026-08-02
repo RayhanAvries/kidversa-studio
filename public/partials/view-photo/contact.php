@@ -1,3 +1,11 @@
+<?php
+/**
+ * @var string|null $mapsUrl
+ * @var string $locationName
+ * @var string $mailtoUrl
+ * @var string $contactEmail
+ */
+?>
 <div class="contact-card">
     <h3 class="contact-title">Hubungi Kami</h3>
     <div class="contact-grid">

@@ -8,7 +8,7 @@ class EnvHelper
 {
     private static $loadedEnv = [];
 
-    public static function load($path)
+    public static function load(string $path): bool
     {
         if (!file_exists($path)) {
             return false;
@@ -29,7 +29,7 @@ class EnvHelper
         return true;
     }
 
-    public static function get($name, $default = null)
+    public static function get(string $name, mixed $default = null): mixed
     {
         return self::$loadedEnv[$name] ?? $default;
     }

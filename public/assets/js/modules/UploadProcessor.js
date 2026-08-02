@@ -55,10 +55,15 @@ export class UploadProcessor {
 		window.removeEventListener("online", this._handleOnline);
 
 		// Mark any in-flight item as captured so QueuePage can pick it up
-		if (this._currentOperation && this._currentOperation.status === "uploading") {
-			this.queue.updateStatus(this._currentOperation.id, STATUS_CAPTURED).catch(() => {
-				// If update fails, item stays as "uploading" — QueuePage will handle it
-			});
+		if (
+			this._currentOperation &&
+			this._currentOperation.status === "uploading"
+		) {
+			this.queue
+				.updateStatus(this._currentOperation.id, STATUS_CAPTURED)
+				.catch(() => {
+					// If update fails, item stays as "uploading" — QueuePage will handle it
+				});
 		}
 	}
 
