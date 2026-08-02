@@ -52,6 +52,69 @@ class RateLimitHelper
         return true;
     }
 
+    public static function getRemaining(string $key): int
+    {
+        $rateLimitDir = self::getStorageDir();
+        $file = $rateLimitDir . '/' . md5($key) . '.json';
+
+        if (!file_exists($file)) {
+            return 0;
+        }
+
+        $fp = fopen($file, 'r');
+        if (!$fp) {
+            return 0;
+        }
+
+        flock($fp, LOCK_SH);
+        $raw = stream_get_contents($fp);
+        flock($fp, LOCK_UN);
+        fclose($fp);
+
+        $data = json_decode($raw ?: '{}', true);
+        $now = time();
+        $windowStart = $data['window_start'] ?? 0;
+        $count = $data['count'] ?? 0;
+
+        // Window has expired — full capacity available
+        if (($now - $windowStart) >= 3600) {
+            return 0;
+        }
+
+        return max(0, $count);
+    }
+
+    public static function getRetryAfter(string $key): int
+    {
+        $rateLimitDir = self::getStorageDir();
+        $file = $rateLimitDir . '/' . md5($key) . '.json';
+
+        if (!file_exists($file)) {
+            return 0;
+        }
+
+        $fp = fopen($file, 'r');
+        if (!$fp) {
+            return 0;
+        }
+
+        flock($fp, LOCK_SH);
+        $raw = stream_get_contents($fp);
+        flock($fp, LOCK_UN);
+        fclose($fp);
+
+        $data = json_decode($raw ?: '{}', true);
+        $now = time();
+        $windowStart = $data['window_start'] ?? 0;
+        $elapsed = $now - $windowStart;
+
+        // Assume 60s window (most endpoints use this)
+        $windowSeconds = 60;
+        $remaining = $windowSeconds - $elapsed;
+
+        return max(0, (int) $remaining);
+    }
+
     public static function recordRequest(string $key): void
     {
         self::isAllowed($key, PHP_INT_MAX, PHP_INT_MAX);

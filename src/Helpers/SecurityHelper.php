@@ -29,6 +29,22 @@ class SecurityHelper
         header('Pragma: no-cache');
     }
 
+    public static function sendRateLimitHeaders(string $key, int $maxRequests): void
+    {
+        $remaining = RateLimitHelper::getRemaining($key);
+        $retryAfter = RateLimitHelper::getRetryAfter($key);
+        $limit = $maxRequests;
+        $reset = time() + $retryAfter;
+
+        header("X-RateLimit-Limit: {$limit}");
+        header("X-RateLimit-Remaining: {$remaining}");
+        header("X-RateLimit-Reset: {$reset}");
+
+        if ($remaining <= 0) {
+            header("Retry-After: {$retryAfter}");
+        }
+    }
+
     public static function setCorsHeaders(string $allowedOrigin = '*'): void
     {
         header("Access-Control-Allow-Origin: $allowedOrigin");
