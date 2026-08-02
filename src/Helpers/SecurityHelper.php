@@ -29,10 +29,10 @@ class SecurityHelper
         header('Pragma: no-cache');
     }
 
-    public static function sendRateLimitHeaders(string $key, int $maxRequests): void
+    public static function sendRateLimitHeaders(string $key, int $maxRequests, int $windowSeconds = 60): void
     {
-        $remaining = RateLimitHelper::getRemaining($key);
-        $retryAfter = RateLimitHelper::getRetryAfter($key);
+        $remaining = RateLimitHelper::getRemaining($key, $maxRequests, $windowSeconds);
+        $retryAfter = RateLimitHelper::getRetryAfter($key, $windowSeconds);
         $limit = $maxRequests;
         $reset = time() + $retryAfter;
 
