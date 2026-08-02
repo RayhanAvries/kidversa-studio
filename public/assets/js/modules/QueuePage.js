@@ -1,5 +1,6 @@
 import { OperationQueue, STATUS_CAPTURED } from "./OperationQueue.js";
 import { Config } from "./Config.js";
+import { RateLimitError } from "./RateLimitError.js";
 
 export class QueuePage {
 	constructor() {
@@ -577,6 +578,10 @@ export class QueuePage {
 						csrf_token: this.csrfToken,
 					}),
 				});
+				if (res.status === 429) {
+					const retryAfter = parseInt(res.headers.get("Retry-After") || "30", 10);
+					throw new RateLimitError("send-email", retryAfter);
+				}
 				const data = await res.json();
 				if (!data.success) throw new Error(data.message || "Email send failed");
 				await this.queue.updateStatus(id, "completed");
@@ -589,7 +594,8 @@ export class QueuePage {
 		} catch (e) {
 			console.error("[Queue] Retry failed:", e);
 
-			// Detect network errors — do NOT increment retry count for these
+			// Detect rate limit errors — do NOT increment retry count, apply backoff
+			const isRateLimit = e instanceof RateLimitError;
 			const isNetworkError =
 				!navigator.onLine ||
 				e.message?.includes("Failed to fetch") ||
@@ -597,12 +603,20 @@ export class QueuePage {
 				e.message?.includes("network") ||
 				e.message?.includes("Load failed");
 
-			const friendlyMsg = isNetworkError
-				? "Gagal menghubungi server. Periksa koneksi internet Anda."
-				: e.message || "Terjadi kesalahan";
+			const isTransient = isRateLimit || isNetworkError;
 
-			if (isNetworkError) {
-				// Network error: set status back to pending, do NOT increment retries
+			let friendlyMsg;
+			if (isRateLimit) {
+				const waitSec = e.retryAfter || 30;
+				friendlyMsg = `Batas permintaan tercapai. Coba lagi dalam ${waitSec} detik.`;
+			} else if (isNetworkError) {
+				friendlyMsg = "Gagal menghubungi server. Periksa koneksi internet Anda.";
+			} else {
+				friendlyMsg = e.message || "Terjadi kesalahan";
+			}
+
+			if (isTransient) {
+				// Transient error (rate limit or network): set status back to pending, do NOT increment retries
 				await this.queue.updateStatus(id, "pending", friendlyMsg);
 			} else {
 				// Real failure: use atomic update (single transaction)
@@ -614,6 +628,27 @@ export class QueuePage {
 
 			// Show error inline and re-enable button
 			this._showItemError(id, friendlyMsg);
+
+			// For rate limit errors, add cooldown before allowing retry
+			if (isRateLimit) {
+				const cooldownMs = Math.min((e.retryAfter || 30) * 1000, 60000);
+				const btn = document.querySelector(`.queue-btn-retry[data-id="${id}"]`);
+				if (btn) {
+					btn.disabled = true;
+					let remaining = Math.ceil(cooldownMs / 1000);
+					btn.innerHTML = `<i class="fas fa-clock"></i> Tunggu ${remaining}s...`;
+					const countdown = setInterval(() => {
+						remaining--;
+						if (remaining <= 0) {
+							clearInterval(countdown);
+							btn.disabled = false;
+							btn.innerHTML = '<i class="fas fa-redo"></i> Retry';
+						} else {
+							btn.innerHTML = `<i class="fas fa-clock"></i> Tunggu ${remaining}s...`;
+						}
+					}, 1000);
+				}
+			}
 
 			// Refresh queue data for accurate display
 			await this.loadQueue();
