@@ -1,3 +1,5 @@
+import { RateLimitError } from "./RateLimitError.js";
+
 export class ChunkUploader {
     constructor(options = {}) {
         this.chunkSize = options.chunkSize || 512 * 1024;
@@ -74,6 +76,11 @@ export class ChunkUploader {
             })
         });
 
+        if (res.status === 429) {
+            const retryAfter = parseInt(res.headers.get('Retry-After') || '30', 10);
+            throw new RateLimitError('chunk-init', retryAfter);
+        }
+
         if (!res.ok) {
             throw new Error(`Failed to init chunk session: ${res.status}`);
         }
@@ -128,6 +135,11 @@ export class ChunkUploader {
             xhr.onload = () => {
                 if (signal) signal.removeEventListener('abort', onAbort);
                 this._currentXhr = null;
+                if (xhr.status === 429) {
+                    const retryAfter = parseInt(xhr.getResponseHeader('Retry-After') || '30', 10);
+                    reject(new RateLimitError('chunk-upload', retryAfter));
+                    return;
+                }
                 if (xhr.status >= 200 && xhr.status < 300) {
                     try {
                         const data = JSON.parse(xhr.responseText);
@@ -172,6 +184,11 @@ export class ChunkUploader {
                 location_name: location?.name
             })
         });
+
+        if (res.status === 429) {
+            const retryAfter = parseInt(res.headers.get('Retry-After') || '30', 10);
+            throw new RateLimitError('chunk-complete', retryAfter);
+        }
 
         if (!res.ok) {
             throw new Error(`Failed to complete upload: ${res.status}`);
