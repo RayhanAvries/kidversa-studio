@@ -166,7 +166,7 @@ docs/
 - **CSRF on POST endpoints.** Frontend fetches token from `api/csrf-token.php`, includes in body (`csrf_token`). Cleanup-photos uses CSRF token as GET param (unusual — intentional).
 - **File-based rate limiting.** Stored in `storage/ratelimit/` with JSON files and `flock()` for concurrency safety. 9 endpoints rate-limited with per-endpoint limits.
 - **Chunked upload.** Blobs split into 512KB chunks client-side by `ChunkUploader.js`, sent to `chunk-init` → `chunk-upload` (×N) → `chunk-complete`, reassembled by `ChunkAssemblyHelper` with atomic `.tmp.{pid}` writes in `storage/chunks/`.
-- **Operation queue.** `OperationQueue.js` persists upload tasks in IndexedDB (`KidversaQueue`, v2) with status tracking, progress, and retry support via `RetryManager.js` (30s background interval).
+- **Operation queue.** `OperationQueue.js` persists upload tasks in IndexedDB (`KidversaQueue`, v3) with status tracking, progress, atomic claim mechanism (`claimNextItem`), and retry support. `QueuePage.retryItem()` handles UI-level retry with re-entrancy guard (`_retryingIds` Set), offline detection, and friendly error mapping. Network errors do NOT increment retry counter. Manual retry resets counter to 0.
 - **PWA.** `sw.js` fetches `version.json` at install for dynamic cache name (`kidversa-v${version}`). CSS/JS: network-first (always fresh). Images: cache-first (performance). API: network-only, 503 offline fallback. Static assets cached on-demand (no hardcoded list). Deploy: bump `version.json` only.
 - **Gallery and Queue are standalone pages.** `gallery.php` and `queue.php` load their own page-level JS modules (`GalleryPage.js`, `QueuePage.js`) — NOT through `booth.js`. `GalleryPage` has its own modal logic (does not use `ModalManager`).
 - **All API files include `src/bootstrap.php`** — loads autoloader, parses `.env`, starts session, sets timezone.
@@ -249,7 +249,7 @@ On push/PR to `main` / `v4.1`:
 2. **App init** (`booth.js`): `Booth.init()` loads Config from `api/config.php` → fetches CSRF token → opens `OperationQueue` IndexedDB → loads filters JSON → fetches frame list → builds UI → requests camera via `CameraManager.start()` → starts 15fps filter preview loop → initializes hand detection → sets up `ModalManager` → starts `RetryManager` background processor.
 3. **Photo capture**: User selects filter/frame/timer → `startCountdown()` counts down → `triggerFlash()` → `capture()` pauses hand detection, stops preview, renders canvas via `ImageComposer.fitAndDraw()`, applies CSS filter + frame overlay PNG → transitions to "captured" UI state.
 4. **Upload**: `savePhotoToBackend()` converts dataURL to Blob → `ChunkUploader.upload()` splits into 512KB chunks → POST to `api/chunk-init.php` → POST ×N to `api/chunk-upload.php` → POST to `api/chunk-complete.php` → assembled file in `public/uploads/photos/` → optional `.json` metadata file.
-5. **Queue fallback**: If upload fails, `OperationQueue.enqueue('save_photo')` → `RetryManager` 30s interval retries via `queue.process()` → user can manage at `queue.php` (with autoretry, progress bars, chunk info).
+5. **Queue fallback**: If upload fails, `OperationQueue.enqueue('save_photo')` → user manages at `queue.php`. Retry button disabled when maxRetries reached (shows "Batas percobaan tercapai"). Stale "uploading" claims auto-reset after 30s via `resetStaleClaims()`.
 6. **View photo**: Redirect to `view-photo.php?file=xxx.png` → `PhotoController::prepareViewData()` → `PhotoService::formatFileInfo()` reads metadata → renders action card with download/email/QR/share options.
 7. **Cleanup**: `api/cleanup-photos.php` (GET, CSRF in query) or `cron/cleanup-chunks.php` (CLI) → `PhotoService::deleteExpiredPhotos()` removes files older than `PHOTO_EXPIRY_TIME` (3600s) + `ChunkAssemblyHelper::cleanupStale()`.
 
@@ -274,10 +274,11 @@ On push/PR to `main` / `v4.1`:
 
 ### Frontend Patterns
 
-- **booth.js is the central orchestrator** — creates all subsystem instances, wires callbacks, manages state
+- **booth.js is the central orchestrator** - creates all subsystem instances, wires callbacks, manages state
 - **`Config.js` is a singleton** — fetched once, cached, dot-notation access
 - **`Lang.js` is a plain object** (not a class) — Indonesian primary, English fallback
 - **Shared utility**: `SharedActions.js` used by both `ModalManager` (booth page) and `GalleryPage` (gallery page)
+- **Queue retry uses re-entrancy guard** — `_retryingIds` Set prevents concurrent `retryItem()` calls for the same item. Button is disabled synchronously (before any `await`). Network errors do NOT increment retry counter.
 - **Page-level modules** (GalleryPage, QueuePage) are standalone — they have their own modal logic
 - **Service worker versioning**: Version sourced from `version.json` via `AppConfig::getAppVersion()` in PHP pages. Page-side check compares `localStorage.kidversa_sw_version` with current version — mismatch triggers cache clear + reload. SW itself reads `version.json` at install to set dynamic `CACHE_NAME`. All CSS links use `?v=X.Y.Z` query strings for HTTP cache busting.
 - **Mirror toggles**: `MirrorToggleUI.js` creates horizontal/vertical mirror toggle badges, read from `CameraManager.mirrorH`/`mirrorV` and persisted via localStorage
@@ -302,7 +303,7 @@ On push/PR to `main` / `v4.1`:
 - **`window.booth`** is the global Booth instance — only used inside `booth.js` itself (8 references).
 - **Service worker cache.** Deploy: bump `public/version.json` only. SW reads it dynamically; PHP pages read it via `AppConfig::getAppVersion()`. CSS links auto-version via `?v=`. See `DEPLOY.md` for full checklist. `nginx-cache.conf` is a reference config for production Nginx headers (copy blocks to VPS).
 - **Chunk storage cleanup.** `storage/chunks/` is NOT auto-cleaned by the main cleanup endpoint. Run `cron/cleanup-chunks.php` hourly via cron for production.
-- **IndexedDB queue persistence.** `OperationQueue` stores pending uploads in IndexedDB (`KidversaQueue` v2). Clearing browser storage will lose the queue. Stale entries for already-uploaded files are cleaned on page load.
+- **IndexedDB queue persistence.** `OperationQueue` stores pending uploads in IndexedDB (`KidversaQueue` v3 with `claimedBy`/`claimedAt` fields). Clearing browser storage will lose the queue. Stale entries for already-uploaded files are cleaned on page load. Stale "uploading" claims (>30s) reset to "captured" via `resetStaleClaims()`.
 - **CSRF on chunked uploads.** All three chunk endpoints require CSRF in the request body. `ChunkUploader.js` handles token injection.
 - **No test suite.** Manual testing flow: upload photo → view photo → download/email/QR.
 - **`GalleryPage` has its own modal logic** — it does NOT import `ModalManager`. It directly manages `printModal`/`qrModal`/`emailModal` DOM and uses `SharedActions`.
