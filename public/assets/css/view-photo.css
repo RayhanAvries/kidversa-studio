@@ -1,304 +1,670 @@
+/* ============================================
+   Material 3 — View Photo Page
+   Source color: Deep Purple #6750A4
+   ============================================ */
 :root {
-  --bg: #fafafa;
-  --surface: #ffffff;
-  --primary: #1f2937;
-  --accent: #a855f7;
-  --accent-secondary: #eab308;
-  --accent-gradient: linear-gradient(135deg, #a855f7, #7c3aed);
-  --text: #1f2937;
-  --text-muted: #9ca3af;
-  --border: #e5e7eb;
-  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.06);
-  --radius-md: 22px;
-  --radius-sm: 12px;
-  --radius-full: 60px;
-  --font: "Plus Jakarta Sans", system-ui, sans-serif;
-  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-}
+	/* ---- M3 Primary tonal palette ---- */
+	--md-primary: #6750a4;
+	--md-on-primary: #ffffff;
+	--md-primary-container: #eaddff;
+	--md-on-primary-container: #21005d;
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-html,
-body {
-  width: 100%;
-  font-family: var(--font);
-  background: var(--bg);
-  margin: 0;
-  padding: 0;
-}
-body {
-  display: block;
-  overflow-y: auto;
-  overflow-x: hidden;
+	/* ---- M3 Secondary tonal palette ---- */
+	--md-secondary: #625b71;
+	--md-on-secondary: #ffffff;
+	--md-secondary-container: #e8def8;
+	--md-on-secondary-container: #1d192b;
+
+	/* ---- M3 Tertiary tonal palette ---- */
+	--md-tertiary: #7d5260;
+	--md-on-tertiary: #ffffff;
+	--md-tertiary-container: #ffd8e4;
+	--md-on-tertiary-container: #31111d;
+
+	/* ---- M3 Error ---- */
+	--md-error: #b3261e;
+	--md-on-error: #ffffff;
+	--md-error-container: #f9dedc;
+	--md-on-error-container: #410e0b;
+
+	/* ---- M3 Surface / Neutral tonal palette ---- */
+	--md-surface: #fffbfe;
+	--md-surface-dim: #ded8e1;
+	--md-surface-bright: #fffbfe;
+	--md-surface-container-lowest: #ffffff;
+	--md-surface-container-low: #f7f2fa;
+	--md-surface-container: #f3edf7;
+	--md-surface-container-high: #ece6f0;
+	--md-surface-container-highest: #e6e0e9;
+	--md-on-surface: #1c1b1f;
+	--md-on-surface-variant: #49454f;
+	--md-outline: #79747e;
+	--md-outline-variant: #cac4d0;
+
+	/* ---- M3 Inverse ---- */
+	--md-inverse-surface: #313033;
+	--md-inverse-on-surface: #f4eff4;
+	--md-inverse-primary: #d0bcff;
+
+	/* ---- Elevation (M3 uses tonal elevation, not shadow) ---- */
+	--md-elevation-1:
+		0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+	--md-elevation-2:
+		0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15);
+
+	/* ---- Shape (M3 shape scale) ---- */
+	--md-shape-none: 0;
+	--md-shape-xs: 4px;
+	--md-shape-sm: 8px;
+	--md-shape-md: 12px;
+	--md-shape-lg: 16px;
+	--md-shape-xl: 28px;
+	--md-shape-full: 9999px;
+
+	/* ---- Typography (M3 type scale) ---- */
+	--md-type-display:
+		600 2.25rem / 2.75rem "Plus Jakarta Sans", system-ui, sans-serif;
+	--md-type-headline:
+		600 1.75rem / 2.25rem "Plus Jakarta Sans", system-ui, sans-serif;
+	--md-type-title-large:
+		600 1.375rem / 1.75rem "Plus Jakarta Sans", system-ui, sans-serif;
+	--md-type-title-medium:
+		600 1rem / 1.5rem "Plus Jakarta Sans", system-ui, sans-serif;
+	--md-type-body-large:
+		400 1rem / 1.5rem "Plus Jakarta Sans", system-ui, sans-serif;
+	--md-type-body-medium:
+		400 0.875rem / 1.25rem "Plus Jakarta Sans", system-ui, sans-serif;
+	--md-type-label-large:
+		500 0.875rem / 1.25rem "Plus Jakarta Sans", system-ui, sans-serif;
+	--md-type-label-medium:
+		500 0.75rem / 1rem "Plus Jakarta Sans", system-ui, sans-serif;
+	--md-type-label-small:
+		500 0.6875rem / 1rem "Plus Jakarta Sans", system-ui, sans-serif;
+
+	/* ---- Motion (M3 easing) ---- */
+	--md-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+	--md-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+	--md-motion-easing-emphasized-decel: cubic-bezier(0.05, 0.7, 0.1, 1);
+	--md-motion-easing-emphasized-accel: cubic-bezier(0.3, 0, 0.8, 0.15);
+	--md-motion-duration-short: 200ms;
+	--md-motion-duration-medium: 400ms;
+	--md-motion-duration-long: 600ms;
 }
 
 /* ============================================
-   APP HEADER — Material 3 Light Design (view-photo page)
+   Reset
+   ============================================ */
+*,
+*::before,
+*::after {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+html,
+body {
+	width: 100%;
+	height: auto;
+	font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+	background: var(--md-surface);
+	color: var(--md-on-surface);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+html {
+	overflow: auto;
+}
+
+body {
+	display: block;
+	overflow-y: auto;
+	overflow-x: hidden;
+	perspective: none;
+}
+
+/* ============================================
+   App Header — M3 Small Top App Bar
    ============================================ */
 .app-header {
-  position: relative;
-  height: var(--header-height, 64px);
-  background: var(--surface, #ffffff);
-  border-bottom: 1px solid var(--outline-variant, #e5e7eb);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-  z-index: 1000;
-  flex-shrink: 0;
+	position: relative;
+	height: 64px;
+	background: var(--md-surface);
+	border-bottom: 1px solid var(--md-outline-variant);
+	z-index: 1000;
+	flex-shrink: 0;
 }
+
 .app-header-inner {
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  height: 100%;
+	padding: 0 16px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	height: 100%;
+	max-width: 1200px;
+	margin: 0 auto;
 }
+
 .app-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	text-decoration: none;
+	flex-shrink: 0;
 }
+
 .app-brand-logo {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  object-fit: contain;
-  display: block;
+	width: 32px;
+	height: 32px;
+	border-radius: var(--md-shape-sm);
+	object-fit: contain;
+	display: block;
 }
+
 .app-brand-name {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--on-surface, #111827);
-  white-space: nowrap;
-  letter-spacing: -0.2px;
+	font: var(--md-type-title-medium);
+	color: var(--md-on-surface);
+	white-space: nowrap;
+	letter-spacing: -0.01em;
 }
+
 .app-brand-accent {
-  color: var(--primary, #4F46E5);
+	color: var(--md-primary);
 }
+
 .app-back-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--on-surface-variant, #6b7280);
-  text-decoration: none;
-  transition: background 150ms, color 150ms;
-  white-space: nowrap;
-  font-family: inherit;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 16px;
+	border-radius: var(--md-shape-full);
+	font: var(--md-type-label-large);
+	color: var(--md-on-surface-variant);
+	text-decoration: none;
+	transition: background var(--md-motion-duration-short)
+		var(--md-motion-easing-standard);
+	white-space: nowrap;
 }
+
 .app-back-btn:hover {
-  background: var(--surface-container, #f3f4f6);
-  color: var(--primary, #4F46E5);
+	background: var(--md-surface-container-high);
+	color: var(--md-primary);
 }
 
+.app-back-btn:focus-visible {
+	outline: 2px solid var(--md-primary);
+	outline-offset: 2px;
+}
+
+/* ============================================
+   Main Content
+   ============================================ */
 .main-content {
-  padding: 20px clamp(1rem, 5vw, 3rem);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+	padding: 24px clamp(16px, 5vw, 48px);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 }
 
-/* Back button - legacy support for view-photo pages */
-
+/* ============================================
+   Cards — M3 Filled Card
+   ============================================ */
 .photo-card,
 .thank-you-card,
 .contact-card {
-  background: var(--surface);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  width: 100%;
-  max-width: 500px;
-  padding: 24px;
-  margin-bottom: 20px;
-  animation: fadeUp 0.5s var(--ease-smooth);
+	background: var(--md-surface-container-low);
+	border-radius: var(--md-shape-xl);
+	width: 100%;
+	max-width: 480px;
+	padding: 24px;
+	margin-bottom: 16px;
+	animation: m3FadeUp var(--md-motion-duration-medium)
+		var(--md-motion-easing-emphasized-decel);
 }
 
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes m3FadeUp {
+	from {
+		opacity: 0;
+		transform: translateY(16px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
+/* ============================================
+   Photo Preview
+   ============================================ */
 .photo-preview {
-  position: relative;
-  aspect-ratio: 4/3;
-  background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border-radius: var(--radius-sm);
-  margin-bottom: 20px;
+	position: relative;
+	aspect-ratio: 4 / 3;
+	background: var(--md-surface-container-highest);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	border-radius: var(--md-shape-lg);
+	margin-bottom: 20px;
 }
 
 .photo-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
 }
 
 .photo-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(4px);
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  text-transform: uppercase;
+	position: absolute;
+	top: 12px;
+	right: 12px;
+	background: var(--md-inverse-surface);
+	color: var(--md-inverse-on-surface);
+	font: var(--md-type-label-small);
+	padding: 4px 10px;
+	border-radius: var(--md-shape-full);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
 }
 
+/* ============================================
+   Photo Info
+   ============================================ */
 .photo-title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  margin-bottom: 4px;
+	font: var(--md-type-headline);
+	color: var(--md-on-surface);
+	margin-bottom: 4px;
+	letter-spacing: -0.02em;
 }
+
 .photo-subtitle {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin-bottom: 20px;
+	font: var(--md-type-body-medium);
+	color: var(--md-on-surface-variant);
+	margin-bottom: 24px;
 }
 
+/* ============================================
+   Info Grid — M3 Supporting info
+   ============================================ */
 .info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 12px;
+	margin-bottom: 24px;
 }
+
 .info-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: #f9fafb;
-  border-radius: var(--radius-sm);
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 14px;
+	background: var(--md-surface-container);
+	border-radius: var(--md-shape-md);
+	transition: background var(--md-motion-duration-short)
+		var(--md-motion-easing-standard);
 }
+
+.info-item:hover {
+	background: var(--md-surface-container-high);
+}
+
 .info-item i {
-  color: var(--accent);
-  font-size: 1rem;
+	color: var(--md-primary);
+	font-size: 1.125rem;
+	width: 20px;
+	text-align: center;
+	flex-shrink: 0;
 }
+
 .info-label {
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
+	font: var(--md-type-label-small);
+	color: var(--md-on-surface-variant);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
 }
+
 .info-value {
-  font-size: 0.85rem;
-  font-weight: 600;
+	font: var(--md-type-label-large);
+	color: var(--md-on-surface);
 }
 
+/* ============================================
+   Action Buttons — M3 Filled / Outlined Button
+   ============================================ */
 .action-buttons {
-  display: flex;
-  gap: 12px;
+	display: flex;
+	gap: 12px;
 }
+
 .btn {
-  flex: 1;
-  padding: 14px 20px;
-  border: none;
-  border-radius: 40px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s;
-  text-decoration: none;
+	flex: 1;
+	padding: 10px 24px;
+	border: none;
+	border-radius: var(--md-shape-full);
+	font: var(--md-type-label-large);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	text-decoration: none;
+	transition:
+		background var(--md-motion-duration-short) var(--md-motion-easing-standard),
+		box-shadow var(--md-motion-duration-short) var(--md-motion-easing-standard);
+	min-height: 40px;
+	position: relative;
+	overflow: hidden;
 }
-.btn:hover {
-  transform: scale(1.02);
+
+.btn:focus-visible {
+	outline: 2px solid var(--md-primary);
+	outline-offset: 2px;
 }
+
+/* M3 Filled Button */
 .btn-primary {
-  background: var(--accent);
-  color: #fff;
+	background: var(--md-primary);
+	color: var(--md-on-primary);
+	box-shadow: var(--md-elevation-1);
 }
+
+.btn-primary:hover {
+	box-shadow: var(--md-elevation-2);
+	filter: brightness(1.08);
+}
+
+.btn-primary:active {
+	filter: brightness(0.92);
+}
+
+/* M3 Outlined Button */
 .btn-secondary {
-  background: var(--surface);
-  color: var(--primary);
-  border: 1px solid var(--border);
+	background: transparent;
+	color: var(--md-primary);
+	border: 1px solid var(--md-outline);
 }
 
+.btn-secondary:hover {
+	background: color-mix(in srgb, var(--md-primary) 8%, transparent);
+}
+
+.btn-secondary:active {
+	background: color-mix(in srgb, var(--md-primary) 12%, transparent);
+}
+
+/* ============================================
+   Thank You Card — M3 Primary Container
+   ============================================ */
 .thank-you-card {
-  background: var(--accent-gradient);
-  color: #fff;
-  text-align: center;
+	background: var(--md-primary-container);
+	color: var(--md-on-primary-container);
+	text-align: center;
+	padding: 32px 24px;
 }
 
+.thank-you-icon {
+	width: 56px;
+	height: 56px;
+	border-radius: var(--md-shape-full);
+	background: color-mix(
+		in srgb,
+		var(--md-on-primary-container) 12%,
+		transparent
+	);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 16px;
+}
+
+.thank-you-icon i {
+	font-size: 1.5rem;
+	color: var(--md-primary);
+}
+
+.thank-you-title {
+	font: var(--md-type-title-large);
+	color: var(--md-on-primary-container);
+	margin-bottom: 8px;
+	letter-spacing: -0.01em;
+}
+
+.thank-you-text {
+	font: var(--md-type-body-medium);
+	color: var(--md-on-primary-container);
+	opacity: 0.85;
+	line-height: 1.6;
+	max-width: 36ch;
+	margin: 0 auto;
+}
+
+/* ============================================
+   Contact Card
+   ============================================ */
 .contact-title {
-  font-size: 1rem;
-  font-weight: 700;
-  margin-bottom: 16px;
-  text-align: center;
+	font: var(--md-type-title-medium);
+	color: var(--md-on-surface);
+	margin-bottom: 16px;
+	text-align: center;
 }
+
 .contact-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
 }
+
 .contact-item {
-  text-align: center;
-  padding: 12px 8px;
-  background: #f9fafb;
-  border-radius: var(--radius-sm);
+	text-align: center;
+	padding: 16px 8px;
+	background: var(--md-surface-container);
+	border-radius: var(--md-shape-md);
+	transition: background var(--md-motion-duration-short)
+		var(--md-motion-easing-standard);
 }
+
+.contact-item:hover {
+	background: var(--md-surface-container-high);
+}
+
 .contact-link {
-  text-decoration: none;
-  color: inherit;
-  display: block;
+	text-decoration: none;
+	color: inherit;
+	display: block;
 }
+
+.contact-link:focus-visible {
+	outline: 2px solid var(--md-primary);
+	outline-offset: 2px;
+	border-radius: var(--md-shape-sm);
+}
+
 .contact-icon {
-  font-size: 1.2rem;
-  color: var(--accent);
-  margin-bottom: 8px;
+	width: 40px;
+	height: 40px;
+	border-radius: var(--md-shape-full);
+	background: var(--md-primary-container);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 10px;
 }
+
+.contact-icon i {
+	font-size: 1rem;
+	color: var(--md-primary);
+}
+
 .contact-label {
-  font-size: 0.6rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  margin-bottom: 4px;
+	font: var(--md-type-label-small);
+	color: var(--md-on-surface-variant);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	margin-bottom: 4px;
 }
+
 .contact-value {
-  font-size: 0.7rem;
-  font-weight: 600;
-  overflow-wrap: break-word;
+	font: var(--md-type-label-medium);
+	color: var(--md-on-surface);
+	overflow-wrap: break-word;
+	word-break: break-word;
 }
 
+/* ============================================
+   Error Section
+   ============================================ */
+.error-section {
+	background: var(--md-surface-container-low);
+	border-radius: var(--md-shape-xl);
+	width: 100%;
+	max-width: 480px;
+	padding: 48px 24px;
+	text-align: center;
+	animation: m3FadeUp var(--md-motion-duration-medium)
+		var(--md-motion-easing-emphasized-decel);
+}
+
+.error-icon {
+	width: 72px;
+	height: 72px;
+	border-radius: var(--md-shape-full);
+	background: var(--md-error-container);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 20px;
+}
+
+.error-icon i {
+	font-size: 1.75rem;
+	color: var(--md-on-error-container);
+}
+
+.error-title {
+	font: var(--md-type-title-large);
+	color: var(--md-on-surface);
+	margin-bottom: 8px;
+}
+
+.error-text {
+	font: var(--md-type-body-medium);
+	color: var(--md-on-surface-variant);
+	margin-bottom: 28px;
+	max-width: 36ch;
+	margin-left: auto;
+	margin-right: auto;
+	line-height: 1.6;
+}
+
+/* ============================================
+   Toast — M3 Snackbar
+   ============================================ */
 .toast {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: var(--primary);
-  color: #fff;
-  padding: 12px 24px;
-  border-radius: var(--radius-full);
-  transition: transform 0.3s;
-}
-.toast.show {
-  transform: translateX(-50%) translateY(0);
+	position: fixed;
+	bottom: 24px;
+	left: 50%;
+	transform: translateX(-50%) translateY(calc(100% + 32px));
+	background: var(--md-inverse-surface);
+	color: var(--md-inverse-on-surface);
+	padding: 12px 16px;
+	border-radius: var(--md-shape-xs);
+	font: var(--md-type-body-medium);
+	box-shadow: var(--md-elevation-2);
+	transition:
+		transform var(--md-motion-duration-medium)
+		var(--md-motion-easing-emphasized),
+		visibility 0ms var(--md-motion-duration-medium);
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	max-width: calc(100vw - 32px);
+	visibility: hidden;
+	pointer-events: none;
 }
 
+.toast.show {
+	transform: translateX(-50%) translateY(0);
+	visibility: visible;
+	pointer-events: auto;
+	transition:
+		transform var(--md-motion-duration-medium)
+		var(--md-motion-easing-emphasized),
+		visibility 0ms 0ms;
+}
+
+.toast i {
+	color: var(--md-inverse-primary);
+	font-size: 1.125rem;
+	flex-shrink: 0;
+}
+
+.toast span {
+	flex: 1;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
 @media (max-width: 480px) {
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-  .contact-grid {
-    grid-template-columns: 1fr;
-  }
+	.main-content {
+		padding: 16px;
+	}
+
+	.info-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.contact-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.contact-item {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		text-align: left;
+		padding: 12px 16px;
+	}
+
+	.contact-icon {
+		margin-bottom: 0;
+		flex-shrink: 0;
+	}
+
+	.action-buttons {
+		flex-direction: column;
+	}
+
+	.btn {
+		width: 100%;
+	}
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+	.info-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+/* ============================================
+   Accessibility: Reduced Motion
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+/* ============================================
+   Accessibility: Focus Visible
+   ============================================ */
+:focus:not(:focus-visible) {
+	outline: none;
 }

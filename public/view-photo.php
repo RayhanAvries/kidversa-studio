@@ -57,8 +57,8 @@ $mailtoUrl = 'mailto:' . $contactEmail;
         <?php endif; ?>
     </main>
 
-    <div id="toast" class="toast" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1F2937; color: white; padding: 12px 24px; border-radius: 50px; font-weight: 500; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1000; align-items: center; gap: 10px; transition: opacity 0.3s ease;">
-        <i class="fas fa-check-circle" style="color: #EAB308;"></i>
+    <div id="toast" class="toast" role="status" aria-live="polite">
+        <i class="fas fa-check-circle"></i>
         <span id="toast-message">Tautan berhasil disalin!</span>
     </div>
     
@@ -67,12 +67,10 @@ $mailtoUrl = 'mailto:' . $contactEmail;
         const toast = document.getElementById('toast');
         const msg = document.getElementById('toast-message');
         msg.textContent = message;
-        toast.style.display = 'flex';
-        toast.style.opacity = '1';
+        toast.classList.add('show');
         setTimeout(() => {
-            toast.style.opacity = '0';
-            setTimeout(() => { toast.style.display = 'none'; }, 300);
-        }, 2500);
+            toast.classList.remove('show');
+        }, 3000);
     }
     
     function copyToClipboard() {

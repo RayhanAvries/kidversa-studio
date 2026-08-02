@@ -12,6 +12,8 @@ export class QueuePage {
 		this.selectedIds = new Set();
 		this.uploadProgress = {};
 		this._pollInterval = null;
+		this._loading = false;
+		this._lastServerCheck = 0;
 	}
 
 	async init() {
@@ -36,7 +38,6 @@ export class QueuePage {
 
 	_startPolling() {
 		this._pollInterval = setInterval(async () => {
-			await this._refreshStats();
 			await this.loadQueue();
 		}, 5000);
 	}
@@ -150,34 +151,41 @@ export class QueuePage {
 	}
 
 	async loadQueue() {
-		const empty = document.getElementById("queueEmpty");
-		const content = document.getElementById("queueContent");
-		const stats = document.getElementById("queueStats");
-		const filters = document.getElementById("queueFilters");
-		const footer = document.getElementById("queueFooter");
+		if (this._loading) return;
+		this._loading = true;
 
-		if (content) content.style.display = "none";
-		if (empty) empty.style.display = "none";
+		try {
+			const empty = document.getElementById("queueEmpty");
+			const content = document.getElementById("queueContent");
+			const stats = document.getElementById("queueStats");
+			const filters = document.getElementById("queueFilters");
+			const footer = document.getElementById("queueFooter");
 
-		this.items = await this.queue.getAll();
+			if (content) content.style.display = "none";
+			if (empty) empty.style.display = "none";
 
-		if (this.items.length === 0) {
-			if (empty) empty.style.display = "flex";
-			if (stats) stats.style.display = "none";
-			if (filters) filters.style.display = "none";
-			if (footer) footer.style.display = "none";
-			return;
+			this.items = await this.queue.getAll();
+
+			if (this.items.length === 0) {
+				if (empty) empty.style.display = "flex";
+				if (stats) stats.style.display = "none";
+				if (filters) filters.style.display = "none";
+				if (footer) footer.style.display = "none";
+				return;
+			}
+
+			if (content) content.style.display = "block";
+			if (stats) stats.style.display = "block";
+			if (filters) filters.style.display = "flex";
+			if (footer) footer.style.display = "block";
+
+			await this._checkServerStatus();
+			await this._clearStaleErrors();
+			this._applyFilter();
+			this._refreshStats();
+		} finally {
+			this._loading = false;
 		}
-
-		if (content) content.style.display = "block";
-		if (stats) stats.style.display = "block";
-		if (filters) filters.style.display = "flex";
-		if (footer) footer.style.display = "block";
-
-		await this._checkServerStatus();
-		await this._clearStaleErrors();
-		this._applyFilter();
-		this._refreshStats();
 	}
 
 	async _clearStaleErrors() {
@@ -190,6 +198,9 @@ export class QueuePage {
 	}
 
 	async _checkServerStatus() {
+		const now = Date.now();
+		if (now - this._lastServerCheck < 5000) return;
+
 		const filenames = this.items
 			.filter((op) => op.data?.filename)
 			.map((op) => op.data.filename);
@@ -208,6 +219,7 @@ export class QueuePage {
 			});
 			const data = await res.json();
 			if (data.success && data.results) {
+				this._lastServerCheck = now;
 				data.results.forEach((r) => {
 					this.serverStatus[r.filename] = r.exists;
 				});
