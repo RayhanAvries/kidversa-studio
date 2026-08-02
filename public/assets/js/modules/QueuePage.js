@@ -16,7 +16,8 @@ export class QueuePage {
 		this._loading = false;
 		this._lastServerCheck = 0;
 		this._retryingIds = new Set();
-	}
+		this._cooldowns = new Map();
+}
 
 	async init() {
 		await this._refreshCsrfToken();
@@ -49,6 +50,13 @@ export class QueuePage {
 			clearInterval(this._pollInterval);
 			this._pollInterval = null;
 		}
+		// Clear all cooldown intervals
+		for (const [, cooldown] of this._cooldowns) {
+			if (cooldown.interval) {
+				clearInterval(cooldown.interval);
+			}
+		}
+		this._cooldowns.clear();
 	}
 
 	async _refreshCsrfToken() {
@@ -107,6 +115,12 @@ export class QueuePage {
 		if (this.selectedIds.size === 0) return;
 
 		for (const id of this.selectedIds) {
+			// Clean up cooldown if exists
+			const cooldown = this._cooldowns.get(id);
+			if (cooldown?.interval) {
+				clearInterval(cooldown.interval);
+			}
+			this._cooldowns.delete(id);
 			await this.queue.remove(id);
 		}
 		this.selectedIds.clear();
@@ -361,6 +375,12 @@ export class QueuePage {
 		const removeBtn = el.querySelector(".queue-btn-remove-single");
 		if (removeBtn) {
 			removeBtn.addEventListener("click", async () => {
+				// Clean up cooldown if exists
+				const cooldown = this._cooldowns.get(item.id);
+				if (cooldown?.interval) {
+					clearInterval(cooldown.interval);
+				}
+				this._cooldowns.delete(item.id);
 				await this.queue.remove(item.id);
 				this.selectedIds.delete(item.id);
 				await this.loadQueue();
@@ -471,12 +491,58 @@ export class QueuePage {
 		}
 		errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${this._escapeHtml(message)}`;
 
-		// Re-enable retry button
-		const btn = el.querySelector(`.queue-btn-retry[data-id="${id}"]`);
-		if (btn) {
-			btn.disabled = false;
-			btn.innerHTML = '<i class="fas fa-redo"></i> Retry';
+		// Re-enable retry button (unless cooldown is active)
+		if (!this._cooldowns.has(id)) {
+			const btn = el.querySelector(`.queue-btn-retry[data-id="${id}"]`);
+			if (btn) {
+				btn.disabled = false;
+				btn.innerHTML = '<i class="fas fa-redo"></i> Retry';
+			}
 		}
+	}
+
+	_applyCooldown(id) {
+		const cooldown = this._cooldowns.get(id);
+		if (!cooldown) return;
+
+		const btn = document.querySelector(`.queue-btn-retry[data-id="${id}"]`);
+		if (!btn) {
+			this._cooldowns.delete(id);
+			return;
+		}
+
+		// If cooldown already expired, clean up
+		if (Date.now() >= cooldown.until) {
+			this._cooldowns.delete(id);
+			return;
+		}
+
+		let remaining = Math.ceil((cooldown.until - Date.now()) / 1000);
+		btn.disabled = true;
+		btn.innerHTML = `<i class="fas fa-clock"></i> Tunggu ${remaining}s...`;
+
+		const countdown = setInterval(() => {
+			remaining--;
+			if (remaining <= 0) {
+				clearInterval(countdown);
+				this._cooldowns.delete(id);
+				// Re-query button (may have been re-rendered by loadQueue)
+				const currentBtn = document.querySelector(`.queue-btn-retry[data-id="${id}"]`);
+				if (currentBtn) {
+					currentBtn.disabled = false;
+					currentBtn.innerHTML = '<i class="fas fa-redo"></i> Retry';
+				}
+			} else {
+				// Re-query button each tick to survive loadQueue re-renders
+				const currentBtn = document.querySelector(`.queue-btn-retry[data-id="${id}"]`);
+				if (currentBtn) {
+					currentBtn.innerHTML = `<i class="fas fa-clock"></i> Tunggu ${remaining}s...`;
+				}
+			}
+		}, 1000);
+
+		// Store interval so we can clear it if needed
+		cooldown.interval = countdown;
 	}
 
 	async retryItem(id) {
@@ -629,29 +695,22 @@ export class QueuePage {
 			// Show error inline and re-enable button
 			this._showItemError(id, friendlyMsg);
 
-			// For rate limit errors, add cooldown before allowing retry
+			// Store cooldown state before loadQueue (survives DOM re-render)
 			if (isRateLimit) {
 				const cooldownMs = Math.min((e.retryAfter || 30) * 1000, 60000);
-				const btn = document.querySelector(`.queue-btn-retry[data-id="${id}"]`);
-				if (btn) {
-					btn.disabled = true;
-					let remaining = Math.ceil(cooldownMs / 1000);
-					btn.innerHTML = `<i class="fas fa-clock"></i> Tunggu ${remaining}s...`;
-					const countdown = setInterval(() => {
-						remaining--;
-						if (remaining <= 0) {
-							clearInterval(countdown);
-							btn.disabled = false;
-							btn.innerHTML = '<i class="fas fa-redo"></i> Retry';
-						} else {
-							btn.innerHTML = `<i class="fas fa-clock"></i> Tunggu ${remaining}s...`;
-						}
-					}, 1000);
-				}
+				this._cooldowns.set(id, {
+					until: Date.now() + cooldownMs,
+					remaining: Math.ceil(cooldownMs / 1000),
+				});
 			}
 
 			// Refresh queue data for accurate display
 			await this.loadQueue();
+
+			// Apply cooldown AFTER loadQueue (button is now re-rendered)
+			if (isRateLimit) {
+				this._applyCooldown(id);
+			}
 		}
 	}
 
