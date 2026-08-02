@@ -1,4 +1,5 @@
 import { STATUS_CAPTURED } from "../modules/OperationQueue.js";
+import { RateLimitError } from "../modules/RateLimitError.js";
 
 /**
  * UploadProcessor - Background upload worker for Queue-First architecture
@@ -27,6 +28,7 @@ export class UploadProcessor {
 		this._timer = null;
 		this._isProcessing = false;
 		this._currentOperation = null;
+		this._rateLimitCooldownUntil = 0;
 
 		// Re-enter when browser comes back online
 		this._handleOnline = () => this.processNext();
@@ -76,6 +78,12 @@ export class UploadProcessor {
 		if (!navigator.onLine) return;
 		if (this.uploader.isUploading) return;
 
+		// Respect rate limit cooldown
+		if (Date.now() < this._rateLimitCooldownUntil) {
+			this._isProcessing = false;
+			return;
+		}
+
 		this._isProcessing = true;
 
 		try {
@@ -119,10 +127,19 @@ export class UploadProcessor {
 			if (this._currentOperation) {
 				const item = this._currentOperation;
 
+				const isRateLimit = error instanceof RateLimitError;
+
 				if (error.message === "Upload cancelled") {
 					// Cancelled by user — revert to captured status for later retry
 					await this.queue.updateStatus(item.id, STATUS_CAPTURED);
 					this.onStatusChange(item.id, STATUS_CAPTURED);
+				} else if (isRateLimit) {
+					// Rate limit: do NOT increment retries, set cooldown to prevent rapid re-polling
+					const retryAfter = error.retryAfter || 30;
+					this._rateLimitCooldownUntil = Date.now() + (retryAfter * 1000);
+					const friendlyMsg = `Batas permintaan tercapai. Menunggu ${retryAfter}s...`;
+					await this.queue.updateStatus(item.id, "pending", friendlyMsg);
+					this.onStatusChange(item.id, "pending");
 				} else if (item.retries >= (item.maxRetries || 5)) {
 					// Max retries exceeded — permanent failure
 					await this.queue.updateStatus(item.id, "failed", error.message);
