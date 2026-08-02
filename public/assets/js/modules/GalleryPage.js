@@ -194,17 +194,18 @@ export class GalleryPage {
 			size.textContent = this._formatSize(photo.size);
 
 			meta.appendChild(date);
-			meta.appendChild(size);
 			info.appendChild(name);
 			info.appendChild(meta);
-			card.appendChild(img);
-			card.appendChild(actions);
-			card.appendChild(info);
+
+			// === BADGES ROW (size + countdown stacked vertically) ===
+			const badges = document.createElement("div");
+			badges.className = "gallery-card-badges";
+			badges.appendChild(size);
 
 			// === COUNTDOWN TIMER ===
 			if (photo.expires_at) {
 				const countdownBadge = this._renderCountdownBadge(photo);
-				card.appendChild(countdownBadge);
+				badges.appendChild(countdownBadge);
 
 				const progressBar = this._renderProgressBar(photo.expires_at);
 				card.appendChild(progressBar);
@@ -225,6 +226,11 @@ export class GalleryPage {
 					card: card,
 				});
 			}
+
+			info.appendChild(badges);
+			card.appendChild(img);
+			card.appendChild(actions);
+			card.appendChild(info);
 
 			card.addEventListener("click", () => this._selectPhoto(photo.filename));
 

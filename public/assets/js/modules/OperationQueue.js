@@ -356,9 +356,7 @@ export class OperationQueue {
 			getReq.onsuccess = () => {
 				const entry = getReq.result;
 				if (!entry) {
-					console.warn(
-						`[OperationQueue] resetRetries: entry ${id} not found`,
-					);
+					console.warn(`[OperationQueue] resetRetries: entry ${id} not found`);
 					resolve();
 					return;
 				}
