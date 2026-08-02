@@ -113,7 +113,8 @@ public/                  # Web root (Apache DocumentRoot)
         ChunkUploader.js   # Client-side chunked upload (512KB chunks, exponential backoff retry)
         OperationQueue.js  # IndexedDB-backed upload queue ('KidversaQueue', v2 schema)
         QueuePage.js       # Queue management page module (standalone, NOT loaded by booth.js)
-        RetryManager.js    # 30-second background interval for retrying failed queue items
+        UploadProcessor.js  # 2-second background poll interval for retrying pending queue items
+        RateLimitError.js     # Custom error class for HTTP 429 responses (status, retryAfter, endpoint)
         GalleryPage.js     # Gallery page module (standalone), pagination, rename/delete/modals
         ClientQR.js        # Client-side QR via global QRCode library (qrcode.js CDN)
         BlobDownloader.js  # XHR blob download with progress + exponential backoff retry
@@ -195,17 +196,17 @@ See `.env.example` (dev) and `.env.production.example` (production deployment re
 | `check-photo.php` | GET | - | - | Query | JSON |
 | `download-photo.php` | GET | - | - | Query | Image binary |
 | `frames.php` | GET | - | - | - | JSON |
-| `generate-qr.php` | GET | 20/min | - | Query | PNG image |
-| `list-photos.php` | GET | 30/min | - | Query | JSON (paginated) |
-| `cleanup-photos.php` | GET | 5/min | ✓ (query) | Query | JSON |
-| `save-photo.php` | POST | 10/min | ✓ | Multipart | JSON |
+| `generate-qr.php` | GET | 40/min | - | Query | PNG image |
+| `list-photos.php` | GET | 60/min | - | Query | JSON (paginated) |
+| `cleanup-photos.php` | GET | 10/min | ✓ (query) | Query | JSON |
+| `save-photo.php` | POST | 30/min | ✓ | Multipart | JSON |
 | `delete-photo.php` | POST | - | ✓ | Form | JSON |
 | `rename-photo.php` | POST | - | ✓ | JSON | JSON |
-| `send-email.php` | POST | 5/min | ✓ | JSON | JSON |
-| `check-queue.php` | POST | 20/min | ✓ | JSON | JSON |
-| `chunk-init.php` | POST | 10/min | ✓ | JSON | JSON |
-| `chunk-upload.php` | POST | 50/min | ✓ | Multipart | JSON |
-| `chunk-complete.php` | POST | 10/min | ✓ | JSON | JSON |
+| `send-email.php` | POST | 15/min | ✓ | JSON | JSON |
+| `check-queue.php` | POST | 60/min | ✓ | JSON | JSON |
+| `chunk-init.php` | POST | 30/min | ✓ | JSON | JSON |
+| `chunk-upload.php` | POST | 150/min | ✓ | Multipart | JSON |
+| `chunk-complete.php` | POST | 30/min | ✓ | JSON | JSON |
 
 Endpoints without rate limiting: config, csrf-token, check-photo, delete-photo, download-photo, frames, rename-photo.
 Endpoints without CSRF: config, csrf-token, check-photo, download-photo, frames, generate-qr, list-photos.
@@ -246,7 +247,7 @@ On push/PR to `main` / `v4.1`:
 ## Request Lifecycle
 
 1. **Page load**: Browser hits `take-photo.php` (or `gallery.php`, `queue.php`) → PHP includes `partials/app-header.php` + renders HTML → inline script checks SW version (`localStorage` vs `SW_VERSION`) → registers service worker → browser loads ES module (`booth.js`, `GalleryPage.js`, or `QueuePage.js`).
-2. **App init** (`booth.js`): `Booth.init()` loads Config from `api/config.php` → fetches CSRF token → opens `OperationQueue` IndexedDB → loads filters JSON → fetches frame list → builds UI → requests camera via `CameraManager.start()` → starts 15fps filter preview loop → initializes hand detection → sets up `ModalManager` → starts `RetryManager` background processor.
+2. **App init** (`booth.js`): `Booth.init()` loads Config from `api/config.php` → fetches CSRF token → opens `OperationQueue` IndexedDB → loads filters JSON → fetches frame list → builds UI → requests camera via `CameraManager.start()` → starts 15fps filter preview loop → initializes hand detection → sets up `ModalManager` → starts UploadProcessor background processor (2s poll interval).
 3. **Photo capture**: User selects filter/frame/timer → `startCountdown()` counts down → `triggerFlash()` → `capture()` pauses hand detection, stops preview, renders canvas via `ImageComposer.fitAndDraw()`, applies CSS filter + frame overlay PNG → transitions to "captured" UI state.
 4. **Upload**: `savePhotoToBackend()` converts dataURL to Blob → `ChunkUploader.upload()` splits into 512KB chunks → POST to `api/chunk-init.php` → POST ×N to `api/chunk-upload.php` → POST to `api/chunk-complete.php` → assembled file in `public/uploads/photos/` → optional `.json` metadata file.
 5. **Queue fallback**: If upload fails, `OperationQueue.enqueue('save_photo')` → user manages at `queue.php`. Retry button disabled when maxRetries reached (shows "Batas percobaan tercapai"). Stale "uploading" claims auto-reset after 30s via `resetStaleClaims()`.
