@@ -20,16 +20,42 @@ use Kidversa\Config\AppConfig;
     <?php $activePage = 'queue'; include __DIR__ . '/partials/app-header.php'; ?>
 
     <div class="queue-stats" id="queueStats" style="display:none">
-        <div class="stats-row">
-            <span class="stat-item"><i class="fas fa-layer-group"></i> <span id="statTotal">0</span> antrian</span>
-            <span class="stat-divider">|</span>
-            <span class="stat-item"><i class="fas fa-weight-hanging"></i> <span id="statTotalSize">0 KB</span></span>
-            <span class="stat-divider">|</span>
-            <span class="stat-item queue-stat-pending"><i class="fas fa-clock"></i> <span id="statPending">0</span> menunggu</span>
-            <span class="stat-divider">|</span>
-            <span class="stat-item queue-stat-completed"><i class="fas fa-check-circle"></i> <span id="statCompleted">0</span> selesai</span>
-            <span class="stat-divider">|</span>
-            <span class="stat-item queue-stat-failed"><i class="fas fa-times-circle"></i> <span id="statFailed">0</span> gagal</span>
+        <div class="stats-grid">
+            <div class="stat-card stat-card-total">
+                <div class="stat-card-icon"><i class="fas fa-layer-group"></i></div>
+                <div class="stat-card-content">
+                    <span class="stat-card-value" id="statTotal">0</span>
+                    <span class="stat-card-label">Antrian</span>
+                </div>
+            </div>
+            <div class="stat-card stat-card-size">
+                <div class="stat-card-icon"><i class="fas fa-weight-hanging"></i></div>
+                <div class="stat-card-content">
+                    <span class="stat-card-value" id="statTotalSize">0 KB</span>
+                    <span class="stat-card-label">Ukuran</span>
+                </div>
+            </div>
+            <div class="stat-card stat-card-pending">
+                <div class="stat-card-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-card-content">
+                    <span class="stat-card-value" id="statPending">0</span>
+                    <span class="stat-card-label">Menunggu</span>
+                </div>
+            </div>
+            <div class="stat-card stat-card-completed">
+                <div class="stat-card-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-card-content">
+                    <span class="stat-card-value" id="statCompleted">0</span>
+                    <span class="stat-card-label">Selesai</span>
+                </div>
+            </div>
+            <div class="stat-card stat-card-failed">
+                <div class="stat-card-icon"><i class="fas fa-times-circle"></i></div>
+                <div class="stat-card-content">
+                    <span class="stat-card-value" id="statFailed">0</span>
+                    <span class="stat-card-label">Gagal</span>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -177,7 +177,7 @@ export class QueuePage {
 			if (content) content.style.display = "block";
 			if (stats) stats.style.display = "block";
 			if (filters) filters.style.display = "flex";
-			if (footer) footer.style.display = "block";
+			if (footer) footer.style.display = "flex";
 
 			await this._checkServerStatus();
 			await this._clearStaleErrors();
