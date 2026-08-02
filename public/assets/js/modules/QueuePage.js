@@ -329,14 +329,16 @@ export class QueuePage {
                 ${item.error && displayStatus !== "completed" && displayStatus !== "verified" ? `<div class="queue-item-error"><i class="fas fa-exclamation-circle"></i> ${this._escapeHtml(item.error)}</div>` : ""}
                 <div class="queue-item-actions">
                     ${
-							displayStatus === "pending" ||
-								displayStatus === "failed"
-								? `
-                        <button class="queue-btn-retry" data-id="${item.id}">
+						displayStatus === "uploading"
+							? `<button class="queue-btn-retry" data-id="${item.id}" disabled>
+                            <i class="fas fa-spinner fa-spin"></i> Uploading...
+                        </button>`
+							: displayStatus === "pending" || displayStatus === "failed"
+								? `<button class="queue-btn-retry" data-id="${item.id}">
                             <i class="fas fa-redo"></i> Retry
                         </button>`
 								: ""
-										}
+							}
                     <button class="queue-btn-remove-single" data-id="${item.id}" title="Hapus dari antrian">
                         <i class="fas fa-times"></i>
                     </button>
