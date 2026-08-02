@@ -81,11 +81,6 @@ class RateLimitHelper
         return max(0, (int) $remaining);
     }
 
-    public static function recordRequest(string $key): void
-    {
-        self::isAllowed($key, PHP_INT_MAX, PHP_INT_MAX);
-    }
-
     public static function cleanup(int $maxAge = 3600): void
     {
         $rateLimitDir = self::getStorageDir();
