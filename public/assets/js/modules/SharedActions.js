@@ -139,6 +139,8 @@ export class SharedActions {
 				size: Config.qr().size || 300,
 				darkColor: "#000000",
 				lightColor: "#ffffff",
+				logoUrl: "/assets/img/logo.png",
+				logoWidth: Config.qr().logoWidth || 60,
 			});
 			qrImage.src = qrDataUrl;
 		} catch (e) {
