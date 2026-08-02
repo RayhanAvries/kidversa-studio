@@ -13,7 +13,8 @@ use Kidversa\Services\PhotoService;
 SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
 
-if (!RateLimitHelper::isAllowed('save-photo', 10, 60)) {
+SecurityHelper::sendRateLimitHeaders('save-photo', 30);
+if (!RateLimitHelper::isAllowed('save-photo', 30, 60)) {
     http_response_code(429);
     echo json_encode(['success' => false, 'message' => 'Rate limit exceeded. Please try again later.']);
     exit;

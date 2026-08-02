@@ -12,9 +12,10 @@ use Kidversa\Helpers\ValidationHelper;
 SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
 
-if (!RateLimitHelper::isAllowed('check-queue', 20, 60)) {
+SecurityHelper::sendRateLimitHeaders('check-queue', 60);
+if (!RateLimitHelper::isAllowed('check-queue', 60, 60)) {
     http_response_code(429);
-    echo json_encode(['success' => false, 'message' => 'Rate limit exceeded.']);
+    echo json_encode(['success' => false, 'message' => 'Rate limit exceeded. Please try again later.']);
     exit;
 }
 

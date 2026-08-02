@@ -15,7 +15,8 @@ use Kidversa\Helpers\ValidationHelper;
 
 SecurityHelper::sendApiSecurityHeaders();
 
-if (!RateLimitHelper::isAllowed('generate-qr', 20, 60)) {
+SecurityHelper::sendRateLimitHeaders('generate-qr', 40);
+if (!RateLimitHelper::isAllowed('generate-qr', 40, 60)) {
     http_response_code(429);
     header('Content-Type: application/json');
     echo json_encode(['success' => false, 'message' => 'Rate limit exceeded. Please try again later.']);

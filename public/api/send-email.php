@@ -13,7 +13,8 @@ use Kidversa\Services\EmailService;
 SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
 
-if (!RateLimitHelper::isAllowed('send-email', 5, 60)) {
+SecurityHelper::sendRateLimitHeaders('send-email', 15);
+if (!RateLimitHelper::isAllowed('send-email', 15, 60)) {
     http_response_code(429);
     echo json_encode(['success' => false, 'message' => 'Rate limit exceeded. Please try again later.']);
     exit;

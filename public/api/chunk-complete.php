@@ -13,9 +13,10 @@ use Kidversa\Helpers\SecurityHelper;
 SecurityHelper::sendApiSecurityHeaders();
 header('Content-Type: application/json');
 
-if (!RateLimitHelper::isAllowed('chunk-complete', 10, 60)) {
+SecurityHelper::sendRateLimitHeaders('chunk-complete', 30);
+if (!RateLimitHelper::isAllowed('chunk-complete', 30, 60)) {
     http_response_code(429);
-    echo json_encode(['success' => false, 'message' => 'Rate limit exceeded.']);
+    echo json_encode(['success' => false, 'message' => 'Rate limit exceeded. Please try again later.']);
     exit;
 }
 
