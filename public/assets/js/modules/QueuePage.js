@@ -17,7 +17,7 @@ export class QueuePage {
 		this._lastServerCheck = 0;
 		this._retryingIds = new Set();
 		this._cooldowns = new Map();
-}
+	}
 
 	async init() {
 		await this._refreshCsrfToken();
@@ -527,14 +527,18 @@ export class QueuePage {
 				clearInterval(countdown);
 				this._cooldowns.delete(id);
 				// Re-query button (may have been re-rendered by loadQueue)
-				const currentBtn = document.querySelector(`.queue-btn-retry[data-id="${id}"]`);
+				const currentBtn = document.querySelector(
+					`.queue-btn-retry[data-id="${id}"]`,
+				);
 				if (currentBtn) {
 					currentBtn.disabled = false;
 					currentBtn.innerHTML = '<i class="fas fa-redo"></i> Retry';
 				}
 			} else {
 				// Re-query button each tick to survive loadQueue re-renders
-				const currentBtn = document.querySelector(`.queue-btn-retry[data-id="${id}"]`);
+				const currentBtn = document.querySelector(
+					`.queue-btn-retry[data-id="${id}"]`,
+				);
 				if (currentBtn) {
 					currentBtn.innerHTML = `<i class="fas fa-clock"></i> Tunggu ${remaining}s...`;
 				}
@@ -645,7 +649,10 @@ export class QueuePage {
 					}),
 				});
 				if (res.status === 429) {
-					const retryAfter = parseInt(res.headers.get("Retry-After") || "30", 10);
+					const retryAfter = parseInt(
+						res.headers.get("Retry-After") || "30",
+						10,
+					);
 					throw new RateLimitError("send-email", retryAfter);
 				}
 				const data = await res.json();
@@ -676,7 +683,8 @@ export class QueuePage {
 				const waitSec = e.retryAfter || 30;
 				friendlyMsg = `Batas permintaan tercapai. Coba lagi dalam ${waitSec} detik.`;
 			} else if (isNetworkError) {
-				friendlyMsg = "Gagal menghubungi server. Periksa koneksi internet Anda.";
+				friendlyMsg =
+					"Gagal menghubungi server. Periksa koneksi internet Anda.";
 			} else {
 				friendlyMsg = e.message || "Terjadi kesalahan";
 			}
