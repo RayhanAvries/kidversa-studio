@@ -329,14 +329,12 @@ export class QueuePage {
                 ${item.error && displayStatus !== "completed" && displayStatus !== "verified" ? `<div class="queue-item-error"><i class="fas fa-exclamation-circle"></i> ${this._escapeHtml(item.error)}</div>` : ""}
                 <div class="queue-item-actions">
                     ${
-						(displayStatus === "pending" || displayStatus === "failed") &&
-						item.retries < (item.maxRetries || 5)
-							? `
+							displayStatus === "pending" ||
+								displayStatus === "failed"
+								? `
                         <button class="queue-btn-retry" data-id="${item.id}">
                             <i class="fas fa-redo"></i> Retry
                         </button>`
-							: displayStatus === "failed" && item.retries >= (item.maxRetries || 5)
-								? `<span class="queue-max-retries-msg"><i class="fas fa-ban"></i> Batas percobaan tercapai</span>`
 								: ""
 										}
                     <button class="queue-btn-remove-single" data-id="${item.id}" title="Hapus dari antrian">
@@ -487,7 +485,10 @@ export class QueuePage {
 
 		// Offline check — show friendly message, do NOT waste retry count
 		if (!navigator.onLine) {
-			this._showItemError(id, "Tidak ada koneksi internet. Coba lagi saat online.");
+			this._showItemError(
+				id,
+				"Tidak ada koneksi internet. Coba lagi saat online.",
+			);
 			return;
 		}
 
