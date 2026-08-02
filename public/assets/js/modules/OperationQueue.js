@@ -5,12 +5,11 @@ export class OperationQueue {
 		this.dbName = dbName;
 		this.storeName = storeName;
 		this.db = null;
-		this.isProcessing = false;
 	}
 
 	async init() {
 		return new Promise((resolve, reject) => {
-			const request = indexedDB.open(this.dbName, 2);
+			const request = indexedDB.open(this.dbName, 3);
 
 			request.onupgradeneeded = (event) => {
 				const db = event.target.result;
@@ -50,6 +49,40 @@ export class OperationQueue {
 								entry.totalChunks = 0;
 								needsUpdate = true;
 							}
+							if (needsUpdate) store.put(entry);
+							cursor.continue();
+						}
+					};
+				}
+
+				if (oldVersion < 3 && db.objectStoreNames.contains(this.storeName)) {
+					const tx = event.target.transaction;
+					const store = tx.objectStore(this.storeName);
+					const cursorReq = store.openCursor();
+					cursorReq.onsuccess = (e) => {
+						const cursor = e.target.result;
+						if (cursor) {
+							const entry = cursor.value;
+							let needsUpdate = false;
+
+							// Add claimedBy field
+							if (entry.claimedBy === undefined) {
+								entry.claimedBy = null;
+								needsUpdate = true;
+							}
+							// Add claimedAt field
+							if (entry.claimedAt === undefined) {
+								entry.claimedAt = null;
+								needsUpdate = true;
+							}
+							// Reset stale "uploading" items on upgrade
+							if (entry.status === "uploading") {
+								entry.status = STATUS_CAPTURED;
+								entry.claimedBy = null;
+								entry.claimedAt = null;
+								needsUpdate = true;
+							}
+
 							if (needsUpdate) store.put(entry);
 							cursor.continue();
 						}
@@ -121,35 +154,6 @@ export class OperationQueue {
 		});
 	}
 
-	async process(executeFn) {
-		if (this.isProcessing) return;
-		this.isProcessing = true;
-
-		try {
-			const pending = await this.getByStatus("pending");
-
-			for (const operation of pending) {
-				if (operation.retries >= operation.maxRetries) {
-					await this.updateStatus(operation.id, "failed");
-					continue;
-				}
-
-				try {
-					await executeFn(operation);
-					await this.updateStatus(operation.id, "completed");
-				} catch (error) {
-					await this._updateStatusAndRetries(
-						operation.id,
-						"pending",
-						error.message,
-					);
-				}
-			}
-		} finally {
-			this.isProcessing = false;
-		}
-	}
-
 	async getByStatus(status) {
 		if (!this.db) await this.init();
 
@@ -181,6 +185,88 @@ export class OperationQueue {
 		if (all.length === 0) return null;
 		// Sort by createdAt, oldest first
 		return all.sort((a, b) => a.createdAt - b.createdAt)[0];
+	}
+
+	async claimNextItem(consumerId) {
+		if (!this.db) await this.init();
+
+		return new Promise((resolve, reject) => {
+			const tx = this.db.transaction(this.storeName, "readwrite");
+			const store = tx.objectStore(this.storeName);
+			const pendingIndex = store.index("status");
+
+			// Get all pending items first, then captured — pick oldest
+			const pendingReq = pendingIndex.getAll("pending");
+			pendingReq.onsuccess = () => {
+				const pendingItems = pendingReq.result;
+				if (pendingItems.length > 0) {
+					pendingItems.sort((a, b) => a.createdAt - b.createdAt);
+					const entry = pendingItems[0];
+					entry.status = "uploading";
+					entry.claimedBy = consumerId;
+					entry.claimedAt = Date.now();
+					store.put(entry);
+					resolve(entry);
+					return;
+				}
+
+				// No pending — try captured
+				const capturedReq = pendingIndex.getAll(STATUS_CAPTURED);
+				capturedReq.onsuccess = () => {
+					const capturedItems = capturedReq.result;
+					if (capturedItems.length === 0) {
+						resolve(null);
+						return;
+					}
+					capturedItems.sort((a, b) => a.createdAt - b.createdAt);
+					const entry = capturedItems[0];
+					entry.status = "uploading";
+					entry.claimedBy = consumerId;
+					entry.claimedAt = Date.now();
+					store.put(entry);
+					resolve(entry);
+				};
+				capturedReq.onerror = () => reject(capturedReq.error);
+			};
+			pendingReq.onerror = () => reject(pendingReq.error);
+		});
+	}
+
+	async resetStaleClaims(timeoutMs = 30000) {
+		if (!this.db) await this.init();
+
+		return new Promise((resolve, reject) => {
+			const tx = this.db.transaction(this.storeName, "readwrite");
+			const store = tx.objectStore(this.storeName);
+			const index = store.index("status");
+			const request = index.getAll("uploading");
+			let resetCount = 0;
+
+			request.onsuccess = () => {
+				const uploadingItems = request.result;
+				const now = Date.now();
+
+				for (const entry of uploadingItems) {
+					const claimedAt = entry.claimedAt || entry.lastAttemptAt || 0;
+					if (now - claimedAt > timeoutMs) {
+						entry.status = STATUS_CAPTURED;
+						entry.claimedBy = null;
+						entry.claimedAt = null;
+						store.put(entry);
+						resetCount++;
+					}
+				}
+
+				if (resetCount > 0) {
+					console.log(
+						`[OperationQueue] Reset ${resetCount} stale claims (>${timeoutMs}ms)`,
+					);
+				}
+				resolve(resetCount);
+			};
+
+			request.onerror = () => reject(request.error);
+		});
 	}
 
 	async countByStatus(status) {
@@ -251,6 +337,34 @@ export class OperationQueue {
 					return;
 				}
 				entry.retries++;
+				store.put(entry);
+				resolve();
+			};
+
+			getReq.onerror = () => reject(getReq.error);
+		});
+	}
+
+	async resetRetries(id) {
+		if (!this.db) await this.init();
+
+		return new Promise((resolve, reject) => {
+			const tx = this.db.transaction(this.storeName, "readwrite");
+			const store = tx.objectStore(this.storeName);
+			const getReq = store.get(id);
+
+			getReq.onsuccess = () => {
+				const entry = getReq.result;
+				if (!entry) {
+					console.warn(
+						`[OperationQueue] resetRetries: entry ${id} not found`,
+					);
+					resolve();
+					return;
+				}
+				entry.retries = 0;
+				entry.error = null;
+				entry.lastAttemptAt = Date.now();
 				store.put(entry);
 				resolve();
 			};
